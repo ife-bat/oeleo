@@ -24,6 +24,15 @@ def get_checksum_local_file(file_path: Path) -> str:
     return file_hash.hexdigest()
 
 
+def get_checksum_copied_file(file_path: Path) -> str:
+    if file_path.is_file():
+        with open(file_path, "rb") as f:
+            file_hash = hashlib.md5()
+            while chunk := f.read(8192):
+                file_hash.update(chunk)
+        return file_hash.hexdigest()
+
+
 def simple_mover(path: Path, to: Path):
     shutil.copyfile(path, to)
 
