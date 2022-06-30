@@ -1,0 +1,32 @@
+[[package]]
+name = "peewee"
+version = "3.15.0"
+description = "a little orm"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
+name = "python-dotenv"
+version = "0.20.0"
+description = "Read key-value pairs from a .env file and set them as environment variables"
+category = "main"
+optional = false
+python-versions = ">=3.5"
+
+[package.extras]
+cli = ["click (>=5.0)"]
+
+[metadata]
+lock-version = "1.1"
+python-versions = "^3.10"
+content-hash = "c342c9826186627b546b2f0c99924e1324d1dac042885686ce8f6570a9e74688"
+
+[metadata.files]
+peewee = [
+    {file = "peewee-3.15.0.tar.gz", hash = "sha256:48eac70be812ac84daa5400fb8e7b545e0c83adcfa05c8e2a8612f9ced4da495"},
+]
+python-dotenv = [
+    {file = "python-dotenv-0.20.0.tar.gz", hash = "sha256:b7e3b04a59693c42c36f9ab1cc2acc46fa5df8c78e178fc33a8d4cd05c8d498f"},
+    {file = "python_dotenv-0.20.0-py3-none-any.whl", hash = "sha256:d92a187be61fe482e4fd675b6d52200e7be63a12b724abbf931a40ce4fa92938"},
+]
