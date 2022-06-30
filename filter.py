@@ -25,6 +25,7 @@ def get_checksum_local_file(file_path: Path) -> str:
 
 
 def get_checksum_copied_file(file_path: Path) -> str:
+    # if using hash from the actual file:
     if file_path.is_file():
         with open(file_path, "rb") as f:
             file_hash = hashlib.md5()
