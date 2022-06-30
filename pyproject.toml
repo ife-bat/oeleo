@@ -9,6 +9,7 @@ python = "^3.10"
 peewee = "^3.15.0"
 python-dotenv = "^0.20.0"
 black = "^22.6.0"
+peewee-migrations = "^0.3.32"
 
 [tool.poetry.dev-dependencies]
 

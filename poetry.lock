@@ -63,6 +63,18 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "peewee-migrations"
+version = "0.3.32"
+description = "Migration engine for peewee orm"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+click = ">=7.0"
+peewee = ">=3.6.4"
+
+[[package]]
 name = "platformdirs"
 version = "2.5.2"
 description = "A small Python module for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
@@ -96,7 +108,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "21f6c66fd39ae212ee5a30ab8293f6c06f3134231ede3a70d24b006775a6d225"
+content-hash = "5c4ca9fb23b5d64d798219da12d677ed7ad2030d34bd0fdf71aecbe65aeaf42c"
 
 [metadata.files]
 black = [
@@ -142,6 +154,10 @@ pathspec = [
 ]
 peewee = [
     {file = "peewee-3.15.0.tar.gz", hash = "sha256:48eac70be812ac84daa5400fb8e7b545e0c83adcfa05c8e2a8612f9ced4da495"},
+]
+peewee-migrations = [
+    {file = "peewee-migrations-0.3.32.tar.gz", hash = "sha256:813f7089946aa26228d1e40daa0c30746ca94b805a449cc930f499ca32f5929f"},
+    {file = "peewee_migrations-0.3.32-py3-none-any.whl", hash = "sha256:225ccff8535e9d8b4b8aa4697d1d93eca5f651477708f6dfeb60168256e976fb"},
 ]
 platformdirs = [
     {file = "platformdirs-2.5.2-py3-none-any.whl", hash = "sha256:027d8e83a2d7de06bbac4e5ef7e023c02b863d7ea5d079477e722bb41ab25788"},
