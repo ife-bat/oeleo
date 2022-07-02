@@ -3,8 +3,7 @@ from pathlib import Path
 
 import peewee
 
-db = peewee.SqliteDatabase(None)
-
+DATABASE = peewee.SqliteDatabase(None)
 DEFAULT_DB_NAME = "oeleo-file-list.db"
 
 CODES = [
@@ -22,37 +21,54 @@ class FileList(peewee.Model):
     code = peewee.SmallIntegerField(choices=CODES, default=0)
 
     class Meta:
-        database = db
+        database = DATABASE
 
 
-implemented_models = [FileList]
+class DbHandler:
+    pass
 
 
-def initialize_db(database_name: str = DEFAULT_DB_NAME) -> peewee.Database:
-    db.init(database_name)
-    db.connect()
-    db.create_tables(implemented_models)
-    return db
+class SimpleDbHandler(DbHandler):
 
+    def __init__(self, db_name: str) -> None:
+        self.db_name = db_name
+        self.db_model: peewee.Model = FileList
+        self._current_record = None
+        self.db_instance = DATABASE
 
-def get_record_and_status(f: Path, checksum):
-    record, new = FileList.get_or_create(local_name=f.name)
-    needs_updating = True
-    if new:
-        print(f"Creating a new record for {f.name}")
-        record.checksum = checksum
-        record.code = 0
-        record.save()
-    else:
-        print(f"Reading record for {f.name}")
-        if record.checksum == checksum:
-            needs_updating = False
-    return record, needs_updating
+    @property
+    def record(self):
+        return self._current_record
 
+    @record.setter
+    def record(self, value):
+        self._current_record = value
 
-def update(record, external_name: Path, checksum: str):
-    record.checksum = checksum
-    record.processed_date = datetime.datetime.now()
-    record.code = 1
-    record.external_name = external_name
-    record.save()
+    @record.deleter
+    def record(self):
+        self._current_record = None
+
+    def initialize_db(self):
+        self.db_instance.init(self.db_name)
+        self.db_instance.connect()
+        self.db_instance.create_tables([self.db_model])
+
+    def register(self, f: Path):
+        """ Get or create record of the file and check if it needs to be copied. """
+        self._current_record, new = self.db_model.get_or_create(local_name=f.name)
+        if new:
+            self.record.code = 0
+            self.record.save()
+
+    def is_changed(self, checksum):
+        if self.record.checksum == checksum:
+            return False
+        return True
+
+    def update_record(self, external_name: Path, checksum: str):
+        self.record.checksum = checksum
+        self.record.processed_date = datetime.datetime.now()
+        self.record.code = 1
+        self.record.external_name = external_name
+        self.record.save()
+
