@@ -29,6 +29,7 @@ class DbHandler:
 
 
 class SimpleDbHandler(DbHandler):
+    CHECK_ON = "checksum"
 
     def __init__(self, db_name: str) -> None:
         self.db_name = db_name
@@ -54,16 +55,22 @@ class SimpleDbHandler(DbHandler):
         self.db_instance.create_tables([self.db_model])
 
     def register(self, f: Path):
-        """ Get or create record of the file and check if it needs to be copied. """
+        """Get or create record of the file and check if it needs to be copied."""
         self._current_record, new = self.db_model.get_or_create(local_name=f.name)
         if new:
             self.record.code = 0
             self.record.save()
 
-    def is_changed(self, checksum):
-        if self.record.checksum == checksum:
-            return False
-        return True
+    def is_changed(self, **checks) -> bool:
+        _is_changed = False
+        for k in checks:
+            try:
+                v = getattr(self.record, k)
+            except AttributeError as e:
+                raise AttributeError("oeleo-model-key mismatch") from e
+            if v != checks[k]:
+                _is_changed = True
+        return _is_changed
 
     def update_record(self, external_name: Path, checksum: str):
         self.record.checksum = checksum
@@ -71,4 +78,3 @@ class SimpleDbHandler(DbHandler):
         self.record.code = 1
         self.record.external_name = external_name
         self.record.save()
-

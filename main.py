@@ -1,83 +1,145 @@
+import logging
 import os
 from dataclasses import dataclass, field
-import time
 from pathlib import Path
 from typing import Any, Generator
 
 import dotenv
-from rich.progress import Progress
+import peewee
+from rich.logging import RichHandler
 
+from checkers import SimpleChecker
 from filters import filter_content
-from models import SimpleDbHandler, DbHandler
+from models import DbHandler, SimpleDbHandler
 from movers import simple_mover
-from utils import calculate_checksum
+
+FORMAT = "%(message)s"
+
+logging.basicConfig(
+    format=FORMAT,
+    datefmt="[%X]",
+    handlers=[RichHandler(rich_tracebacks=True, tracebacks_suppress=[peewee])],
+)
+
+log = logging.getLogger(__name__)
 
 
 @dataclass
 class Worker:
     filter_method: Any
-    checker_method: Any
-    mover_method: Any
+    checker: Any
+    mover_method: Any  # MAKE THIS A CLASS INSTEAD
     from_dir: Path
     to_dir: Path
     bookkeeper: DbHandler
+    check_to: bool = False  # NOT IMPLEMENTED YET (checking to directory) (needs a better checker)
+    dry_run: bool = False  # NOT IMPLEMENTED YET (perform without copying/moving and updating db)
+
     file_names: Generator[Path, None, None] = field(init=False)
 
+    _external_name: str = field(init=False, default="")
+    _status: dict = field(init=False, default_factory=dict)
+
     def connect_to_db(self):
-        print("...Connecting to db")
         self.bookkeeper.initialize_db()
-        print(f" -> {self.bookkeeper.db_name}")
+        log.info(f"Connecting to db -> '{self.bookkeeper.db_name}' DONE")
 
     def filter(self, *args, **kwargs):
-        print("...Filtering")
-        """ Update the db """
+        """ Selects the files that should be processed """
         self.file_names = self.filter_method(
             self.from_dir,
-            *args, **kwargs,
+            *args,
+            **kwargs,
         )
+        log.info("Filtering -> DONE")
 
     def check(self):
-        """ Check for differences between the two directories. """
+        """Check for differences between the two directories."""
         pass
 
     def run(self):
-        """ Copy the files that needs to be copied and update the db. """
-        with Progress() as progress:
-            for f in self.file_names:
-                task_id = progress.add_task(f"{f.name} processing")
-                progress.update(task_id, advance=10, description=f"{f.name} calculate checksum")
-                checksum = calculate_checksum(f)
-                progress.update(task_id, advance=10, description=f"{f.name} registering")
-                self.bookkeeper.register(f)
-                if self.bookkeeper.is_changed(checksum):
-                    status = ":bow_and_arrow:"
-                    external_name = self.to_dir / f.name
-                    progress.update(task_id, advance=10, description=f"{f.name} copying")
-                    success = self.mover_method(f, external_name)
-                    if success:
-                        progress.update(task_id, advance=10, description=f"{f.name} updating")
-                        self.bookkeeper.update_record(external_name, checksum)
-                        status += ":thumbs_up:"
-                    else:
-                        status += ":thumbs_down:"
-                else:
-                    status = ":sleeping_face:"
-                    progress.update(task_id, advance=100)
-                progress.update(task_id, advance=100, description=f"{f.name} {status}")
+        """Copy the files that needs to be copied and update the db."""
+        log.info("Running...")
+        for f in self.file_names:
+            del self.status
+            self.make_external_name(f)
+            log.debug(f"{f.name} -> {self.external_name}")
+            self.bookkeeper.register(f)
+            checks = self.checker.check(f)
+
+            if self.bookkeeper.is_changed(**checks):
+                self.status = ("changed", True)
+                if self.mover_method(f, self.external_name):
+                    self.status = ("moved", True)
+                    self.bookkeeper.update_record(self.external_name, **checks)
+
+            self.report()
+
+    def report(self):
+        status = self.status
+        f1 = status["name"]
+        f2 = status["external_name"]
+
+        if status.get("changed", False):
+            txt = f"[bold blue]{f1}"
+            if status.get("moved", False):
+                txt += f" -> {f2}[/]"
+            else:
+                txt += f"[/] -> [bold red blink]{f2}[/]"
+        else:
+            txt = f"[bold green]{f1} == {f2}[/]"
+
+        log.info(txt, extra={"markup": True})
+
+    def make_external_name(self, f):
+        name = self.to_dir / f.name
+        self.external_name = name
+        self.status = ("name", f.name)
+        self.status = ("external_name", str(self._external_name))
+
+    @property
+    def status(self):
+        return self._status
+
+    @status.setter
+    def status(self, pair: tuple):
+        key, value = pair
+        self._status[key] = value
+
+    @status.deleter
+    def status(self):
+        self._status = {}
+
+    @property
+    def external_name(self):
+        return self._external_name
+
+    @external_name.setter
+    def external_name(self, name):
+        self._external_name = name
 
 
 def main():
+
+    log.setLevel(logging.INFO)
+    log.info(f"Starting oeleo!")
+
     dotenv.load_dotenv()
 
     bookkeeper = SimpleDbHandler(os.environ["DB_NAME"])
+    checker = SimpleChecker()
+    # mover = SimpleMover()
 
     base_directory_from = Path(os.environ["BASE_DIR_FROM"])
     base_directory_to = Path(os.environ["BASE_DIR_TO"])
     filter_extension = os.environ["FILTER_EXTENSION"]
 
+    log.info(f"[bold]from:[/] [bold green]{base_directory_from}[/]", extra={"markup": True})
+    log.info(f"[bold]to  :[/] [bold blue]{base_directory_to}[/]", extra={"markup": True})
+
     worker = Worker(
         filter_method=filter_content,
-        checker_method=None,
+        checker=checker,
         mover_method=simple_mover,
         from_dir=base_directory_from,
         to_dir=base_directory_to,
