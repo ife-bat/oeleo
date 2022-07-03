@@ -1,5 +1,7 @@
 import datetime
 from pathlib import Path
+from typing import Any
+import random
 
 import peewee
 
@@ -26,6 +28,33 @@ class FileList(peewee.Model):
 
 class DbHandler:
     pass
+
+
+class MockDbHandler:
+    def __init__(self):
+        self.db_name = "mock"
+
+    @staticmethod
+    def initialize_db():
+        print("INITIALIZING DB")
+
+    @staticmethod
+    def register(f: Path):
+        print(f"REGISTERING {f}")
+
+    @staticmethod
+    def is_changed(**checks) -> bool:
+        print(f"CHECKING IF IT HAS CHANGED")
+        print(f"checks: {checks}")
+        _is_changed = random.choice([True, False])
+        print(f"is-changed: {_is_changed}")
+        return _is_changed
+
+    @staticmethod
+    def update_record(external_name: Path, **checks: Any):
+        print("UPDATE RECORD IN DB")
+        print(f"external name: {external_name}")
+        print(f"additional: {checks}")
 
 
 class SimpleDbHandler(DbHandler):
@@ -72,9 +101,10 @@ class SimpleDbHandler(DbHandler):
                 _is_changed = True
         return _is_changed
 
-    def update_record(self, external_name: Path, checksum: str):
+    def update_record(self, external_name: Path, code: int = 1, **checks: str):
+        checksum = checks.get("checksum", None)
         self.record.checksum = checksum
         self.record.processed_date = datetime.datetime.now()
-        self.record.code = 1
+        self.record.code = code
         self.record.external_name = external_name
         self.record.save()
