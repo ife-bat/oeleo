@@ -36,8 +36,9 @@ class Worker:
         log.info(f"Connecting to db -> '{self.bookkeeper.db_name}' DONE")
 
     def filter_local(self, *args, **kwargs):
-        """ Selects the files that should be processed """
-        self.file_names = self.filter_method(
+        """Selects the files that should be processed"""
+        self.file_names = self._filter(
+            None,
             self.from_dir,
             *args,
             **kwargs,
@@ -45,7 +46,12 @@ class Worker:
         log.info("Filtering -> DONE")
 
     def _filter(self, connector, dir_path, *args, **kwargs):
-        """ Selects the files that should be checked """
+        """Selects the files that should be checked .
+        Arguments:
+            connector:
+            dir_path:
+            additional_filters:
+        """
         file_names = self.filter_method(
             dir_path,
             *args,
@@ -55,23 +61,45 @@ class Worker:
 
     def check(self, *args, **kwargs):
         """Check for differences between the two directories."""
-        log.info("Running...")
-        local_files = self._filter(self.local_connector, self.from_dir, *args, **kwargs)
-        external_files = list(self._filter(self.external_connector, self.to_dir, *args, **kwargs))
+        print(f"Comparing {self.from_dir} <=> {self.to_dir}")
+        additional_filters = kwargs.pop("additional_filters", None)
+        local_files = self._filter(
+            self.local_connector,
+            self.from_dir,
+            *args,
+            additional_filters=additional_filters,
+            **kwargs,
+        )
+        external_files = list(
+            self._filter(self.external_connector, self.to_dir, *args, **kwargs)
+        )
+        number_of_local_files = 0
+        number_of_external_duplicates = 0
+        number_of_duplicates_out_of_sync = 0
 
         for f in local_files:
+            number_of_local_files += 1
             external_name = self._create_external_name(f)
+            print(f" (*) {f.name}", end=" ")
             if external_name in external_files:
-                print(f"FOUND {external_name}")
+                print(f"[FOUND EXTERNAL]")
+                number_of_external_duplicates += 1
                 local_vals = self.checker.check(f)
                 external_vals = self.checker.check(external_name)
                 same = True
                 for k in local_vals:
-                    print(f"{k}: {local_vals[k]}")
-                    print(f"{k}: {external_vals[k]}")
+                    print(f"     (L) {k}: {local_vals[k]}")
+                    print(f"     (E) {k}: {external_vals[k]}")
                     if local_vals[k] != external_vals[k]:
                         same = False
-                print(f"Same file: {same}")
+                        number_of_duplicates_out_of_sync += 1
+                print(f"     In sync: {same}")
+            else:
+                print("[ONLY LOCAL]")
+        print()
+        print(f" Total number of local files:    {number_of_local_files}")
+        print(f" Files with external duplicates: {number_of_external_duplicates}")
+        print(f" Files out of sync:              {number_of_duplicates_out_of_sync}")
 
     def run(self):
         """Copy the files that needs to be copied and update the db."""
@@ -136,4 +164,3 @@ class Worker:
     @external_name.setter
     def external_name(self, name):
         self._external_name = name
-

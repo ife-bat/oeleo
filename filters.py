@@ -35,8 +35,9 @@ FilterTuple = tuple[str, FilterFunction]
 
 
 def filter_content(
-        path: Path, extension: str = None,
-        additional_filters: Iterable[FilterTuple] = None,
+    path: Path,
+    extension: str = None,
+    additional_filters: Iterable[FilterTuple] = None,
 ) -> Generator[Path, None, None]:
 
     file_list = path.glob(f"*.{extension}")
@@ -55,7 +56,6 @@ def main():
     print("Starting...")
 
     my_filters = [
-
         ("not_before", not_before),
         ("not_after", not_after),
     ]
@@ -65,5 +65,5 @@ def main():
         print(i)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

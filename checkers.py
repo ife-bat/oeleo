@@ -13,7 +13,6 @@ class Checker:
 
 
 class SimpleChecker(Checker):
-
     @staticmethod
     def check(f: Path) -> Dict[str, str]:
         """Calculates checksum and returns record key and"""
