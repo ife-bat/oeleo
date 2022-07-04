@@ -1,8 +1,27 @@
 [tool.poetry]
 name = "oeleo"
 version = "0.1.0"
-description = ""
+description = "A one-eyed tool to copy files with."
 authors = ["jepegit <jepe@ife.no>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/ife-bat/oeleo"
+repository = "https://github.com/ife-bat/oeleo"
+keywords = ["ssh", "db"]
+classifiers = [
+    "Environment :: Console",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Other Audience",
+    "Topic :: Communications :: File Sharing",
+    "Topic :: Home Automation",
+    "Topic :: Software Development :: Documentation",
+    "Topic :: System :: Networking",
+    "Topic :: Utilities",
+]
+include = [
+    "LICENSE.md",
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"
