@@ -16,17 +16,26 @@ Hash = str
 class Connector(Protocol):
     """Connectors are used to establish a connection to the server and
     provide the functions and methods needed for the movers and checkers.
+
+    Connectors are typically only needed for transactions between computers.
+    If no connector is given to the oeleo worker, the worker will use the
+    same methods for local and external files.
     """
+
     def connect(self, use_password: bool = False, **kwargs) -> None:
         ...
 
-    def close(self, ):
+    def close(
+        self,
+    ):
         ...
 
-    def base_filter_func(self, *args, **kwargs) -> list:
+    def base_filter_sub_method(self, glob_pattern: str = "*", **kwargs) -> list:
         ...
 
-    def list_content(self, glob_pattern: str = "*", max_depth: int = 1, hide=False) -> FabricRunResult:
+    def list_content(
+        self, glob_pattern: str = "*", max_depth: int = 1, hide=False
+    ) -> FabricRunResult:
         ...
 
     def calculate_checksum(self, f: Path, hide: bool = True) -> Hash:
@@ -40,8 +49,8 @@ class SSHConnector(Connector):
     def __init__(self, username=None, host=None, directory=None, is_posix=True):
         self.session_password = os.environ["OELEO_PASSWORD"]
         self.username = username or os.environ["OELEO_USERNAME"]
-        self.host = host or os.environ["EXTERNAL_TEST_HOST"]
-        self.directory = directory or os.environ["BASE_DIR_TO"]
+        self.host = host or os.environ["OELEO_EXTERNAL_HOST"]
+        self.directory = directory or os.environ["OELEO_BASE_DIR_TO"]
         self.is_posix = is_posix
         self.c = None
         self._validate()
@@ -82,10 +91,10 @@ class SSHConnector(Connector):
         if self.c is not None:
             self.c.close()
 
-    def base_filter_func(self, glob_pattern="*") -> list:
-        log.debug("base filter function for SSHConnector")
-        log.debug("got this glob pattern:")
-        log.debug(f"{glob_pattern}")
+    def base_filter_sub_method(self, glob_pattern: str = "*", **kwargs: Any) -> list:
+        log.info("base filter function for SSHConnector")
+        log.info("got this glob pattern:")
+        log.info(f"{glob_pattern}")
 
         if self.c is None:  # make this as a decorator ("@connected")
             log.debug("Connecting ...")

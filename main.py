@@ -9,9 +9,8 @@ from rich.logging import RichHandler
 
 from checkers import ConnectedChecker, SimpleChecker
 from connectors import SSHConnector, register_password
-from filters import filter_content
 from models import SimpleDbHandler
-from movers import simple_mover, connected_mover
+from movers import connected_mover, simple_mover
 from workers import Worker
 
 FORMAT = "%(message)s"
@@ -28,9 +27,9 @@ log = logging.getLogger("oeleo")
 def setup_worker(
     dry_run=False, db_name=None, base_directory_from=None, base_directory_to=None
 ):
-    db_name = db_name or os.environ["DB_NAME"]
-    base_directory_from = base_directory_from or Path(os.environ["BASE_DIR_FROM"])
-    base_directory_to = base_directory_to or Path(os.environ["BASE_DIR_TO"])
+    db_name = db_name or os.environ["OELEO_DB_NAME"]
+    base_directory_from = base_directory_from or Path(os.environ["OELEO_BASE_DIR_FROM"])
+    base_directory_to = base_directory_to or Path(os.environ["OELEO_BASE_DIR_TO"])
 
     bookkeeper = SimpleDbHandler(db_name)
     checker = SimpleChecker()
@@ -44,7 +43,6 @@ def setup_worker(
     )
 
     worker = Worker(
-        filter_method=filter_content,
         checker=checker,
         mover_method=simple_mover,
         from_dir=base_directory_from,
@@ -61,15 +59,14 @@ def setup_ssh_worker(
     db_name: str | None = None,
     base_directory_from: Path | None = None,
 ):
-    db_name = db_name or os.environ["DB_NAME"]
-    base_directory_from = base_directory_from or Path(os.environ["BASE_DIR_FROM"])
+    db_name = db_name or os.environ["OELEO_DB_NAME"]
+    base_directory_from = base_directory_from or Path(os.environ["OELEO_BASE_DIR_FROM"])
     base_directory_to = connector.directory
 
     # connector.connect()
 
     bookkeeper = SimpleDbHandler(db_name)
     checker = ConnectedChecker()
-    # mover = SimpleMover()
 
     log.info(
         f"[bold]from:[/] [bold green]{base_directory_from}[/]", extra={"markup": True}
@@ -80,7 +77,6 @@ def setup_ssh_worker(
     )
 
     worker = Worker(
-        filter_method=filter_content,
         checker=checker,
         mover_method=connected_mover,
         from_dir=base_directory_from,
@@ -96,7 +92,7 @@ def main():
     log.setLevel(logging.INFO)
     log.info(f"Starting oeleo!")
     dotenv.load_dotenv()
-    filter_extension = os.environ["FILTER_EXTENSION"]
+    filter_extension = os.environ["OELEO_FILTER_EXTENSION"]
     worker = setup_worker()
     worker.connect_to_db()
     worker.filter_local(filter_extension)

@@ -3,6 +3,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Generator
 
+from connectors import Connector
+from filters import base_filter
 from models import DbHandler, MockDbHandler
 from movers import mock_mover
 
@@ -11,16 +13,37 @@ log = logging.getLogger("oeleo")
 
 @dataclass
 class Worker:
-    filter_method: Any
+    """The worker class is responsible for orchestrating the transfers.
+
+    A typical transfer consists of the following steps:
+    1. Asking the bookkeeper to connect to its database.
+    >>> worker.connect_to_db()
+    2. Collect (and filter) the files in the local directory that are candidates for copying to
+       the external directory (server).
+    >>> worker.filter_local("*.res", additional_filters=my_filters)
+    3. Calculate checksum for each file collected and check copy if they have changed.
+    >>> worker.run()
+
+    A worker needs to be initiated with the at least the following handlers:
+        checker: Checker object
+        mover_method: mover method
+        from_dir: Path of local directory
+        to_dir: Path of external directory
+        bookkeeper: DbHandler to interact with the db
+
+    Optinal handlers:
+        external_connector:  Connector class for handling "difficult" connections (e.g. ssh)."""
+
     checker: Any
-    mover_method: Any  # MAKE THIS A CLASS INSTEAD
+    mover_method: Any
     from_dir: Path
     to_dir: Path
     bookkeeper: DbHandler
     dry_run: bool = False
     local_connector: Any = None
     external_connector: Any = None
-    file_names: Generator[Path, None, None] = field(init=False)
+    filter_method: Any = base_filter
+    file_names: Generator[Path, None, None] = field(init=False, default=None)
     _external_name: str = field(init=False, default="")
     _status: dict = field(init=False, default_factory=dict)
 
@@ -44,18 +67,26 @@ class Worker:
         )
         log.info("Filtering -> DONE")
 
-    def _filter(self, connector, dir_path, *args, **kwargs):
+    def _filter(
+        self, connector: Connector | None, dir_path: Path, extension, *args, **kwargs
+    ) -> Generator | list:
         """Selects the files that should be checked .
+
         Arguments:
-            connector:
-            dir_path:
-            additional_filters:
+            connector: if using a Connector object (can be None).
+            dir_path: path to files.
+            extension: file extension filter on.
+            args: transferred untouched.
+        Optional keyword arguments:
+            base_filter_func: deprecated - will be extracted from the connector instead.
+            additional_filters: list of tuples describing additional filter to use (only for local files)
         """
         base_filter_func = kwargs.pop("base_filter_func", None)
         if (base_filter_func is None) and (connector is not None):
-            base_filter_func = connector.base_filter_func
+            base_filter_func = connector.base_filter_sub_method
         file_names = self.filter_method(
             dir_path,
+            extension,
             *args,
             base_filter_func=base_filter_func,
             **kwargs,
@@ -63,7 +94,15 @@ class Worker:
         return file_names
 
     def check(self, *args, update_db=False, **kwargs):
-        """Check for differences between the two directories."""
+        """Check for differences between the two directories.
+
+        Arguments:
+            *args: sent to the filter functions (should as minimum contain dir_path and extension).
+            update_db: set to True if you want the check to also update the db.
+        Additional keyword arguments:
+            sent to the filter functions.
+
+        """
 
         # PLEASE, REFACTOR ME!
         print(f"Comparing {self.from_dir} <=> {self.to_dir}")
@@ -137,7 +176,9 @@ class Worker:
 
             if self.bookkeeper.is_changed(**checks):
                 self.status = ("changed", True)
-                if self.mover_method(f, self.external_name, connector=self.external_connector):
+                if self.mover_method(
+                    f, self.external_name, connector=self.external_connector
+                ):
                     self.status = ("moved", True)
                     self.bookkeeper.update_record(self.external_name, **checks)
 

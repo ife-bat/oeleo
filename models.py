@@ -30,7 +30,7 @@ class DbHandler:
     pass
 
 
-class MockDbHandler:
+class MockDbHandler(DbHandler):
     def __init__(self):
         self.db_name = "mock"
 
@@ -58,7 +58,7 @@ class MockDbHandler:
 
 
 class SimpleDbHandler(DbHandler):
-    CHECK_ON = "checksum"
+    """A simple db bookkeeper that checks on checksum."""
 
     def __init__(self, db_name: str) -> None:
         self.db_name = db_name

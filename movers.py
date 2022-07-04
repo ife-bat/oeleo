@@ -3,14 +3,14 @@ import shutil
 from pathlib import Path
 
 
-def mock_mover(path: Path, to: Path):
+def mock_mover(path: Path, to: Path, *args, **kwargs):
     print(f"COPYING {path} -> {to}")
     success = random.choice([True, False])
     print(f"success={success}")
     return success
 
 
-def simple_mover(path: Path, to: Path, **kwargs):
+def simple_mover(path: Path, to: Path, *args, **kwargs):
     try:
         shutil.copyfile(path, to)
         return True
@@ -20,6 +20,7 @@ def simple_mover(path: Path, to: Path, **kwargs):
 
 
 def connected_mover(path: Path, to: Path, connector=None, *args, **kwargs):
+    """ Copies files using the method implemented in the connector. """
     if connector is None:
         move_func = simple_mover
     else:
@@ -30,4 +31,3 @@ def connected_mover(path: Path, to: Path, connector=None, *args, **kwargs):
     except OSError:
         print("Could not copy this file - destination most likely not writable!")
         return False
-

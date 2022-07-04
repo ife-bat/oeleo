@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from functools import partial
 from pathlib import Path
-from typing import Any, Generator, Iterable, Sequence, Tuple
+from typing import Any, Generator, Iterable
 
 log = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ FilterFunction = Any
 FilterTuple = tuple[str, FilterFunction]
 
 
-def filter_content(
+def base_filter(
     path: Path,
     extension: str = None,
     additional_filters: Iterable[FilterTuple] = None,
@@ -66,7 +66,7 @@ def main():
         ("not_after", not_after),
     ]
 
-    g = filter_content(directory, extension, additional_filters=my_filters)
+    g = base_filter(directory, extension, additional_filters=my_filters)
     for i in g:
         print(i)
 
