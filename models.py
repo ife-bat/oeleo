@@ -96,13 +96,10 @@ class SimpleDbHandler(DbHandler):
 
         _is_changed = False
         for k in checks:
-            print(k)
             try:
                 v = getattr(self.record, k)
             except AttributeError as e:
                 raise AttributeError("oeleo-model-key mismatch") from e
-            print(v)
-            print(checks[k])
             if v != checks[k]:
                 _is_changed = True
         return _is_changed

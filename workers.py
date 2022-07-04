@@ -62,22 +62,10 @@ class Worker:
         )
         return file_names
 
-    def trying_out(self, *args, **kwargs):
-        print("TRYING OUT SOME STUFF")
-        for f in self.file_names:
-            print(f)
-            del self.status
-            self.make_external_name(f)
-            log.debug(f"{f.name} -> {self.external_name}")
-            self.bookkeeper.register(f)
-            checks = self.checker.check(f)
-
-            if self.bookkeeper.is_changed(**checks):
-                print("IS CHANGED")
-            print(self.bookkeeper.code)
-
     def check(self, *args, update_db=False, **kwargs):
         """Check for differences between the two directories."""
+
+        # PLEASE, REFACTOR ME!
         print(f"Comparing {self.from_dir} <=> {self.to_dir}")
         additional_filters = kwargs.pop("additional_filters", None)
         local_files = self._filter(
@@ -101,8 +89,6 @@ class Worker:
             self.make_external_name(f)
             external_name = self.external_name
             log.debug(f"{f.name} -> {self.external_name}")
-            # self.bookkeeper.register(f)
-
             print(f" (*) {f.name}", end=" ")
             if external_name in external_files:
                 code = 1
