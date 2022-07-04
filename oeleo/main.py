@@ -114,7 +114,7 @@ def example_check_with_ssh_connection():
     connector.connect()
 
     worker = setup_ssh_worker(
-        db_name="test_ssh_to_odin.db",
+        db_name=r"test_databases\test_ssh_to_odin.db",
         base_directory_from=Path(r"C:\scripting\processing_cellpy\raw"),
         connector=connector,
     )
@@ -143,7 +143,7 @@ def example_check_first_then_run():
     dotenv.load_dotenv()
     filter_extension = "res"
     worker = setup_worker(
-        db_name="another.db",
+        db_name=r"test_databases\another.db",
         base_directory_from=Path(r"C:\scripting\processing_cellpy\raw"),
         base_directory_to=Path(r"C:\scripting\trash"),
     )
@@ -157,6 +157,6 @@ def example_check_first_then_run():
 
 if __name__ == "__main__":
     print(f"HEI from {__name__} in {__file__}")
-    example_check_with_ssh_connection()
-    # example_check_first_then_run()
-    # main()
+    # example_check_with_ssh_connection()
+    example_check_first_then_run()
+    main()

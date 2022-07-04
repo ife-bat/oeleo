@@ -55,7 +55,7 @@ def base_filter(
 
 
 def main():
-    directory = Path(r"C:\scripting\oeleo\check\from")
+    directory = Path(r"/check/from")
     extension = "*"
     not_before = datetime(year=2022, month=7, day=1, hour=1, minute=0, second=0)
     not_after = datetime(year=2022, month=7, day=4, hour=1, minute=0, second=0)
