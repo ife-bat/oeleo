@@ -8,6 +8,7 @@ import peewee
 from rich.logging import RichHandler
 
 from checkers import SimpleChecker
+from connectors import SSHConnector, register_password
 from filters import filter_content
 from models import SimpleDbHandler
 from movers import simple_mover
@@ -54,6 +55,41 @@ def setup_worker(
     return worker
 
 
+def setup_ssh_worker(
+        connector: SSHConnector,
+        dry_run: bool = False,
+        db_name: str | None = None,
+        base_directory_from: Path | None = None
+):
+    db_name = db_name or os.environ["DB_NAME"]
+    base_directory_from = base_directory_from or Path(os.environ["BASE_DIR_FROM"])
+    base_directory_to = connector.directory
+
+    # connector.connect()
+
+    bookkeeper = SimpleDbHandler(db_name)
+    checker = SimpleChecker()
+    # mover = SimpleMover()
+
+    log.info(
+        f"[bold]from:[/] [bold green]{base_directory_from}[/]", extra={"markup": True}
+    )
+    log.info(
+        f"[bold]to  :[/] [bold blue]{connector.host}:{base_directory_to}[/]", extra={"markup": True}
+    )
+
+    worker = Worker(
+        filter_method=filter_content,
+        checker=checker,
+        mover_method=simple_mover,
+        from_dir=base_directory_from,
+        to_dir=base_directory_to,
+        bookkeeper=bookkeeper,
+        dry_run=dry_run,
+    )
+    return worker
+
+
 def main():
     log.setLevel(logging.INFO)
     log.info(f"Starting oeleo!")
@@ -64,6 +100,32 @@ def main():
     worker.filter_local(filter_extension)
     # worker.check(filter_extension)
     worker.run()
+
+
+def example_check_with_ssh_connection():
+
+    log.setLevel(logging.INFO)
+    log.info(f"Starting oeleo!")
+    dotenv.load_dotenv()
+
+    register_password(os.environ["OELEO_PASSWORD"])
+    external_dir = "/home/jepe@ad.ife.no/Temp"
+    connector = SSHConnector(directory=external_dir)
+    print(connector)
+    # connector.connect()
+    # connector.list_content()
+
+    filter_extension = "res"
+    worker = setup_ssh_worker(
+        db_name="another.db",
+        base_directory_from=Path(r"C:\scripting\processing_cellpy\raw"),
+        connector=connector,
+    )
+    worker.connect_to_db()
+    # worker.filter_local(filter_extension)
+
+    # BREAKS HERE (in filters.filter_content) - NEED TO IMPLEMENT A base_filter_func for ssh
+    worker.check(filter_extension)
 
 
 def example_check_first_then_run():
@@ -95,5 +157,6 @@ def example_check_first_then_run():
 
 
 if __name__ == "__main__":
-    print("HEI")
+    print(f"HEI from {__name__} in {__file__}")
+    # example_check_with_ssh_connection()
     example_check_first_then_run()

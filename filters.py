@@ -38,9 +38,15 @@ def filter_content(
     path: Path,
     extension: str = None,
     additional_filters: Iterable[FilterTuple] = None,
+    base_filter_func: Any = None,
 ) -> Generator[Path, None, None]:
 
-    file_list = path.glob(f"*.{extension}")
+    """Simple directory content filter - cannot be used for ssh (yet)?"""
+
+    if base_filter_func is None:
+        base_filter_func = path.glob
+
+    file_list = base_filter_func(f"*.{extension}")
     if additional_filters is not None:
         for filter_name, filter_val in additional_filters:
             filter_func = FILTERS[filter_name]
