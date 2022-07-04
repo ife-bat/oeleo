@@ -1,8 +1,8 @@
 import logging
 from datetime import datetime
-from pathlib import Path
-from typing import Generator, Tuple, Any, Iterable, Sequence
 from functools import partial
+from pathlib import Path
+from typing import Any, Generator, Iterable, Sequence, Tuple
 
 log = logging.getLogger(__name__)
 

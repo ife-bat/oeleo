@@ -1,5 +1,4 @@
 import logging
-
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Generator
@@ -52,9 +51,13 @@ class Worker:
             dir_path:
             additional_filters:
         """
+        base_filter_func = kwargs.pop("base_filter_func", None)
+        if (base_filter_func is None) and (connector is not None):
+            base_filter_func = connector.base_filter_func
         file_names = self.filter_method(
             dir_path,
             *args,
+            base_filter_func=base_filter_func,
             **kwargs,
         )
         return file_names
@@ -73,6 +76,7 @@ class Worker:
         external_files = list(
             self._filter(self.external_connector, self.to_dir, *args, **kwargs)
         )
+        log.info(external_files)
         number_of_local_files = 0
         number_of_external_duplicates = 0
         number_of_duplicates_out_of_sync = 0
@@ -85,7 +89,14 @@ class Worker:
                 print(f"[FOUND EXTERNAL]")
                 number_of_external_duplicates += 1
                 local_vals = self.checker.check(f)
-                external_vals = self.checker.check(external_name)
+
+                # ch = self.external_connector.calculate_checksum(external_name)
+                # external_vals = {"checksum": ch}
+
+                external_vals = self.checker.check(
+                    external_name,
+                    connector=self.external_connector,
+                )
                 same = True
                 for k in local_vals:
                     print(f"     (L) {k}: {local_vals[k]}")
@@ -113,7 +124,7 @@ class Worker:
 
             if self.bookkeeper.is_changed(**checks):
                 self.status = ("changed", True)
-                if self.mover_method(f, self.external_name):
+                if self.mover_method(f, self.external_name, connector=self.external_connector):
                     self.status = ("moved", True)
                     self.bookkeeper.update_record(self.external_name, **checks)
 

@@ -1,7 +1,7 @@
 import datetime
+import random
 from pathlib import Path
 from typing import Any
-import random
 
 import peewee
 

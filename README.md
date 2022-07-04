@@ -4,8 +4,8 @@ Python app for transferring files from an instrument-PC to a data server
 
 ## Features (or limitations)
 - Transferring using an ssh connection should preferably be used with key-pairs. This might involve some
-  setting up on your server (ACL) to prevent security breaches (`oeleo` user should only have access to
-  the data folder on your server)
+  setting up on your server (ACL) to prevent security issues (the `oeleo` user should only have access to
+  the data folder on your server).
 - Accessing ssh can be done using password if you are not able to figure out how to set proper ownerships 
   on your server.
 - Tracking of the "state of the duplicates" is only performed on the local side (where `oeleo` is running).
@@ -16,12 +16,23 @@ Python app for transferring files from an instrument-PC to a data server
 - Configuration is done using environmental variables. 
 
 ## Next
-- make connectors (`fabric`) and implement first for `worker.check()`
 - make `worker.check()` update the database (using `code` or maybe I should add other columns?)
 - make mover classes instead of functions
-- make ssh mover class
 - implement proxy for `peewee` database
 
+## Status
+- [x] Works on my PC &rarr; PC
+- [x] Works on my PC &rarr; my server
+- [ ] Works on my server &rarr; my server
+- [ ] Works on my instrument PC &rarr; my instrument PC
+- [ ] Works on my instrument PC &rarr; my server
+- [ ] Works OK
+- [ ] Deployable
+
+## Licence
+MIT
+
+Read more [here](./LICENSE.md).
 
 ## Development lead
 - Jan Petter Maehlen, IFE
