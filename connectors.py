@@ -7,8 +7,6 @@ from typing import Any, Protocol
 import dotenv
 from fabric import Connection
 
-# Playing around a bit to find out how to do ssh with python.
-
 log = logging.getLogger("oeleo")
 
 FabricRunResult = Any
@@ -132,7 +130,7 @@ class SSHConnector(Connector):
             self.connect()
 
         try:
-            print(f"Copying {path} to {to}")
+            log.debug(f"Copying {path} to {to}")
             result = self.c.put(str(path), remote=str(to))
         except Exception as e:
             print("GOT AN EXCEPTION DURING COPYING FILE")

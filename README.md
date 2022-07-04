@@ -15,6 +15,10 @@ Python app for transferring files from an instrument-PC to a data server
   as the `oeleo` is running. If you delete it (by accident?), `oeleo` will make a new empty one from scratch.
 - Configuration is done using environmental variables. 
 
+## Usage
+
+
+
 ## Next
 - make `worker.check()` update the database (using `code` or maybe I should add other columns?)
 - make mover classes instead of functions

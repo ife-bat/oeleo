@@ -62,7 +62,21 @@ class Worker:
         )
         return file_names
 
-    def check(self, *args, **kwargs):
+    def trying_out(self, *args, **kwargs):
+        print("TRYING OUT SOME STUFF")
+        for f in self.file_names:
+            print(f)
+            del self.status
+            self.make_external_name(f)
+            log.debug(f"{f.name} -> {self.external_name}")
+            self.bookkeeper.register(f)
+            checks = self.checker.check(f)
+
+            if self.bookkeeper.is_changed(**checks):
+                print("IS CHANGED")
+            print(self.bookkeeper.code)
+
+    def check(self, *args, update_db=False, **kwargs):
         """Check for differences between the two directories."""
         print(f"Comparing {self.from_dir} <=> {self.to_dir}")
         additional_filters = kwargs.pop("additional_filters", None)
@@ -76,27 +90,30 @@ class Worker:
         external_files = list(
             self._filter(self.external_connector, self.to_dir, *args, **kwargs)
         )
-        log.info(external_files)
+        log.debug(external_files)
         number_of_local_files = 0
         number_of_external_duplicates = 0
         number_of_duplicates_out_of_sync = 0
 
         for f in local_files:
             number_of_local_files += 1
-            external_name = self._create_external_name(f)
+
+            self.make_external_name(f)
+            external_name = self.external_name
+            log.debug(f"{f.name} -> {self.external_name}")
+            # self.bookkeeper.register(f)
+
             print(f" (*) {f.name}", end=" ")
             if external_name in external_files:
+                code = 1
                 print(f"[FOUND EXTERNAL]")
                 number_of_external_duplicates += 1
                 local_vals = self.checker.check(f)
-
-                # ch = self.external_connector.calculate_checksum(external_name)
-                # external_vals = {"checksum": ch}
-
                 external_vals = self.checker.check(
                     external_name,
                     connector=self.external_connector,
                 )
+
                 same = True
                 for k in local_vals:
                     print(f"     (L) {k}: {local_vals[k]}")
@@ -106,7 +123,17 @@ class Worker:
                         number_of_duplicates_out_of_sync += 1
                 print(f"     In sync: {same}")
             else:
+                code = 0
                 print("[ONLY LOCAL]")
+            if update_db:
+                print("     ! UPDATING DB")
+                self.bookkeeper.register(f)
+                if self.bookkeeper.code < 2:
+                    self.bookkeeper.code = code
+                if self.bookkeeper.code == 1:
+                    self.bookkeeper.update_record(external_name, **local_vals)
+            else:
+                print()
         print()
         print(f" Total number of local files:    {number_of_local_files}")
         print(f" Files with external duplicates: {number_of_external_duplicates}")

@@ -9,9 +9,9 @@ DATABASE = peewee.SqliteDatabase(None)
 DEFAULT_DB_NAME = "oeleo-file-list.db"
 
 CODES = [
-    (0, "new"),
-    (1, "updated-minimum-once"),
-    (2, "locked"),
+    (0, "should-be-copied"),
+    (1, "should-be-copied-if-changed"),
+    (2, "should-not-be-copied"),
 ]
 
 
@@ -91,12 +91,18 @@ class SimpleDbHandler(DbHandler):
             self.record.save()
 
     def is_changed(self, **checks) -> bool:
+        if self.record.code == 0:
+            return True
+
         _is_changed = False
         for k in checks:
+            print(k)
             try:
                 v = getattr(self.record, k)
             except AttributeError as e:
                 raise AttributeError("oeleo-model-key mismatch") from e
+            print(v)
+            print(checks[k])
             if v != checks[k]:
                 _is_changed = True
         return _is_changed
@@ -107,4 +113,15 @@ class SimpleDbHandler(DbHandler):
         self.record.processed_date = datetime.datetime.now()
         self.record.code = code
         self.record.external_name = external_name
+        self.record.save()
+
+    @property
+    def code(self):
+        return self.record.code
+
+    @code.setter
+    def code(self, code):
+        if code not in (0, 1, 2):
+            raise ValueError(f"code is not valid")
+        self.record.code = code
         self.record.save()

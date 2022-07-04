@@ -100,7 +100,7 @@ def main():
     worker = setup_worker()
     worker.connect_to_db()
     worker.filter_local(filter_extension)
-    # worker.check(filter_extension)
+    worker.check(filter_extension)
     worker.run()
 
 
@@ -124,7 +124,7 @@ def example_check_with_ssh_connection():
     )
     worker.connect_to_db()
     try:
-        worker.check(filter_extension)
+        worker.check(filter_extension, update_db=True)
         worker.filter_local(filter_extension)
         worker.run()
     finally:
@@ -163,3 +163,4 @@ if __name__ == "__main__":
     print(f"HEI from {__name__} in {__file__}")
     example_check_with_ssh_connection()
     # example_check_first_then_run()
+    # main()
