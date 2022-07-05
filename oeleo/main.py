@@ -4,24 +4,15 @@ from datetime import datetime
 from pathlib import Path
 
 import dotenv
-import peewee
-from rich.logging import RichHandler
 
-from checkers import ConnectedChecker, SimpleChecker
-from connectors import SSHConnector, register_password
-from models import SimpleDbHandler
-from movers import connected_mover, simple_mover
-from workers import Worker
+from oeleo.checkers import ConnectedChecker, SimpleChecker
+from oeleo.connectors import SSHConnector, register_password
+from oeleo.models import SimpleDbHandler
+from oeleo.movers import connected_mover, simple_mover
+from oeleo.workers import Worker
+from oeleo.utils import logger
 
-FORMAT = "%(message)s"
-
-logging.basicConfig(
-    format=FORMAT,
-    datefmt="[%X]",
-    handlers=[RichHandler(rich_tracebacks=True, tracebacks_suppress=[peewee])],
-)
-
-log = logging.getLogger("oeleo")
+log = logger()
 
 
 def setup_worker(
@@ -156,7 +147,7 @@ def example_check_first_then_run():
 
 
 if __name__ == "__main__":
-    print(f"HEI from {__name__} in {__file__}")
+    # print(f"HEI from {__name__} in {__file__}")
     # example_check_with_ssh_connection()
-    example_check_first_then_run()
+    # example_check_first_then_run()
     main()

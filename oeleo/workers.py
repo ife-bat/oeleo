@@ -3,13 +3,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Generator
 
-from connectors import Connector
-from filters import base_filter
-from models import DbHandler, MockDbHandler
-from movers import mock_mover
+from oeleo.connectors import Connector
+from oeleo.filters import base_filter
+from oeleo.models import DbHandler, MockDbHandler
+from oeleo.movers import mock_mover
 
 log = logging.getLogger("oeleo")
-
 
 @dataclass
 class Worker:

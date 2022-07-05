@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any, Dict
 
-from utils import calculate_checksum
+from oeleo.utils import calculate_checksum
 
 
 class Checker:
