@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "oeleo"
-version = "0.3.0"
+version = "0.3.1"
 description = "A one-eyed tool to copy files with."
 authors = ["jepegit <jepe@ife.no>"]
 license = "MIT"
@@ -24,7 +24,7 @@ include = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.8"
 peewee = "^3.15.0"
 python-dotenv = "^0.20.0"
 rich = "^12.4.4"
