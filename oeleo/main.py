@@ -72,7 +72,7 @@ def example_check_first_then_run():
         base_directory_to=Path(r"C:\scripting\trash"),
     )
     worker.connect_to_db()
-    worker.filter_local(filter_extension)
+    worker.filter_local(filter_extension, additional_filters=my_filters)
     worker.check(filter_extension, additional_filters=my_filters)
     run_oeleo = input("\n Continue ([y]/n)? ") or "y"
     if run_oeleo.lower() in ["y", "yes"]:

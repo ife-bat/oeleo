@@ -60,7 +60,11 @@ class Worker:
         log.info(f"Connecting to db -> '{self.bookkeeper.db_name}' DONE")
 
     def filter_local(self, *args, **kwargs):
-        """Selects the files that should be processed"""
+        """Selects the files that should be processed.txt
+
+        TODO: This method should be updated so that it uses the value from the
+           environment as default.
+        """
         self.file_names = self._filter(
             None,
             self.from_dir,
@@ -70,7 +74,12 @@ class Worker:
         log.info("Filtering -> DONE")
 
     def _filter(
-        self, connector: Union[Connector, None], dir_path: Path, extension, *args, **kwargs
+        self,
+        connector: Union[Connector, None],
+        dir_path: Path,
+        extension,
+        *args,
+        **kwargs,
     ) -> Union[Generator, list]:
         """Selects the files that should be checked .
 
@@ -99,16 +108,19 @@ class Worker:
         """Check for differences between the two directories.
 
         Arguments:
-            *args: sent to the filter functions (should as minimum contain dir_path and extension).
+            *args: sent to the filter functions (should as a minimum contain file extension for filtering).
             update_db: set to True if you want the check to also update the db.
         Additional keyword arguments:
             sent to the filter functions.
 
+        TODO: This method should be updated so that it uses the value from the
+           environment as default
         """
 
         # PLEASE, REFACTOR ME!
         print(f"Comparing {self.from_dir} <=> {self.to_dir}")
         additional_filters = kwargs.pop("additional_filters", None)
+
         local_files = self._filter(
             self.local_connector,
             self.from_dir,

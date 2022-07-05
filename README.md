@@ -134,9 +134,9 @@ Just plans, no promises given.
 - [x] Works on my PC &rarr; PC
 - [x] Works on my PC &rarr; my server
 - [x] Works on my server &rarr; my server
-- [ ] Works on my instrument PC &rarr; my instrument PC
-- [ ] Works on my instrument PC &rarr; my server
-- [ ] Works OK
+- [x] Works on my instrument PC &rarr; my instrument PC
+- [x] Works on my instrument PC &rarr; my server
+- [x] Works OK
 - [x] Deployable
 - [x] On testpypi
 - [x] On pypi
