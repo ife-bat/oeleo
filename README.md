@@ -111,11 +111,13 @@ Just plans, no promises given.
 
 - [x] Works on my PC &rarr; PC
 - [x] Works on my PC &rarr; my server
-- [ ] Works on my server &rarr; my server
+- [x] Works on my server &rarr; my server
 - [ ] Works on my instrument PC &rarr; my instrument PC
 - [ ] Works on my instrument PC &rarr; my server
 - [ ] Works OK
-- [ ] Deployable
+- [x] Deployable
+- [x] On testpypi
+- [ ] On pypi
 
 ## Licence
 MIT
@@ -147,6 +149,9 @@ poetry build
 ```bash
 poetry publish
 ```
+
+### Next
+- publish to pypi.
 
 ### Development lead
 - Jan Petter Maehlen, IFE
