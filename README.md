@@ -32,10 +32,14 @@ $ pip install oeleo
 4. Run to copy files.
 5. Repeat from step 3.
 
-### Example
+### Examples
+
+#### Simple script for copying between local folders
+
 ```python
 import os
 from pathlib import Path
+import time
 
 import dotenv
 
@@ -43,30 +47,51 @@ from oeleo.checkers import  SimpleChecker
 from oeleo.models import SimpleDbHandler
 from oeleo.movers import simple_mover
 from oeleo.workers import Worker
+from oeleo.utils import logger
 
-# assuming you have made a .env file:
-dotenv.load_dotenv()
+def main():
+    log = logger()
+    # assuming you have made a .env file:
+    dotenv.load_dotenv()
+    
+    db_name = os.environ["OELEO_DB_NAME"]
+    base_directory_from = Path(os.environ["OELEO_BASE_DIR_FROM"])
+    base_directory_to = Path(os.environ["OELEO_BASE_DIR_TO"])
+    filter_extension = os.environ["OELEO_FILTER_EXTENSION"]
+    
+    bookkeeper = SimpleDbHandler(db_name)
+    checker = SimpleChecker()
+    
+    worker = Worker(
+        checker=checker,
+        mover_method=simple_mover,
+        from_dir=base_directory_from,
+        to_dir=base_directory_to,
+        bookkeeper=bookkeeper,
+    )
+    
+    worker.connect_to_db()
+    while True:
+        worker.filter_local(filter_extension)
+        worker.run()
+        time.sleep(300)
 
-db_name = os.environ["OELEO_DB_NAME"]
-base_directory_from = Path(os.environ["OELEO_BASE_DIR_FROM"])
-base_directory_to = Path(os.environ["OELEO_BASE_DIR_TO"])
-filter_extension = os.environ["OELEO_FILTER_EXTENSION"]
+if __name__ == "__main__":
+    main()
+```
 
-bookkeeper = SimpleDbHandler(db_name)
-checker = SimpleChecker()
+#### Example .env file
+```.env
+OELEO_BASE_DIR_FROM=C:\data\local
+OELEO_BASE_DIR_TO=C:\data\pub
+OELEO_FILTER_EXTENSION=csv
+OELEO_DB_NAME=local2pub.db
 
-worker = Worker(
-    checker=checker,
-    mover_method=simple_mover,
-    from_dir=base_directory_from,
-    to_dir=base_directory_to,
-    bookkeeper=bookkeeper,
-)
-
-worker.connect_to_db()
-while True:
-  worker.filter_local(filter_extension)
-  worker.run()
+## only needed for SSHConnector:
+# OELEO_EXTERNAL_HOST=<ssh hostname>
+# OELEO_USERNAME=<ssh username>
+# OELEO_PASSWORD=<ssh password>
+# OELEO_KEY_FILENAME=<ssh key-pair filename>
 ```
 
 
@@ -95,7 +120,33 @@ Just plans, no promises given.
 ## Licence
 MIT
 
-Read it [here](./LICENSE.md) if you want.
+## Development
 
-## Development lead
+Developed using `poetry` on `python 3.10`.
+
+### Some useful commands
+
+#### Update version
+
+```bash
+# update version e.g. from 0.3.1 to 0.3.2:
+poetry version patch
+```
+Then edit `__init__.py`:
+```python
+__version__ = "0.3.2"
+```
+#### Build
+
+```bash
+poetry build
+```
+
+#### Publish
+
+```bash
+poetry publish
+```
+
+### Development lead
 - Jan Petter Maehlen, IFE
