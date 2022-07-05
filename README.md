@@ -59,6 +59,9 @@ def main():
     base_directory_to = Path(os.environ["OELEO_BASE_DIR_TO"])
     filter_extension = os.environ["OELEO_FILTER_EXTENSION"]
     
+    # Making a worker using the Worker class.
+    # You can also use the `factory` functions in `oeleo.worker`
+    # (e.g. `ssh_worker` and `simple_worker`)
     bookkeeper = SimpleDbHandler(db_name)
     checker = SimpleChecker()
     
@@ -94,13 +97,32 @@ OELEO_DB_NAME=local2pub.db
 # OELEO_KEY_FILENAME=<ssh key-pair filename>
 ```
 
+#### The database
+
+The database contains one table called `filelist`:
+
+| id  | processed_date             | local_name         | external_name                         | checksum                         | code |
+|-----|:---------------------------|:-------------------|:--------------------------------------|:---------------------------------|-----:|
+| 1   | 2022-07-05 15:55:02.521154 | file_number_1.xyz	 | C:\oeleo\check\to\file_number_1.xyz   | c976e564825667d7c11ba200457af263 |    1 |
+| 2   | 2022-07-05 15:55:02.536152 | file_number_10.xyz | C:\oeleo\check\to\file_number_10.xyz	 | d502512c0d32d7503feb3fd3dd287376 |    1 |
+| 3   | 2022-07-05 15:55:02.553157 | file_number_2.xyz	 | C:\oeleo\check\to\file_number_2.xyz   | cb89d576f5bd57566c78247892baffa3 |    1 |
+
+The `processed_date` is when the file was last updated (meaning last time `oeleo` found a new checksum for it).
+
+The table below shows what the different values of `code` mean:
+
+| code | meaning                       |
+|:-----|:------------------------------|
+| 0    | `should-be-copied`            |
+| 1    | `should-be-copied-if-changed` |
+| 2    | `should-not-be-copied`        |
+
+Hint! You can **lock** (chose to never copy) a file by editing the `code` manually to 2. 
 
 ## Future planned improvements
 
 Just plans, no promises given.
 
-- add tests.
-- implement proxy for `peewee` database (makes it possible to switch db from `sqlite3` to for example `postgresql`).
 - implement a `SharePointConnector`.
 - create CLI.
 - create an executable.
@@ -117,7 +139,7 @@ Just plans, no promises given.
 - [ ] Works OK
 - [x] Deployable
 - [x] On testpypi
-- [ ] On pypi
+- [x] On pypi
 
 ## Licence
 MIT
