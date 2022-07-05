@@ -35,7 +35,7 @@ def example_check_with_ssh_connection():
 
     register_password(os.environ["OELEO_PASSWORD"])
     connector = SSHConnector(directory=external_dir)
-    connector.connect()
+    connector.connect(use_password=True)
 
     worker = ssh_worker(
         db_name=r"C:\scripting\oeleo\test_databases\test_ssh_to_odin.db",
@@ -81,5 +81,3 @@ def example_check_first_then_run():
 
 if __name__ == "__main__":
     main()
-    example_check_first_then_run()
-    example_check_with_ssh_connection()
