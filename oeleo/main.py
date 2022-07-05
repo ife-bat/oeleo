@@ -38,7 +38,7 @@ def example_check_with_ssh_connection():
     connector.connect()
 
     worker = ssh_worker(
-        db_name=r"test_databases\test_ssh_to_odin.db",
+        db_name=r"C:\scripting\oeleo\test_databases\test_ssh_to_odin.db",
         base_directory_from=Path(r"C:\scripting\processing_cellpy\raw"),
         connector=connector,
     )
@@ -67,7 +67,7 @@ def example_check_first_then_run():
     dotenv.load_dotenv()
     filter_extension = "res"
     worker = simple_worker(
-        db_name=r"test_databases\another.db",
+        db_name=r"C:\scripting\oeleo\test_databases\another.db",
         base_directory_from=Path(r"C:\scripting\processing_cellpy\raw"),
         base_directory_to=Path(r"C:\scripting\trash"),
     )

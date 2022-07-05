@@ -2,7 +2,7 @@ import logging
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any, Generator, Union
 
 from oeleo.checkers import ConnectedChecker, SimpleChecker
 from oeleo.connectors import Connector, SSHConnector
@@ -70,8 +70,8 @@ class Worker:
         log.info("Filtering -> DONE")
 
     def _filter(
-        self, connector: Connector | None, dir_path: Path, extension, *args, **kwargs
-    ) -> Generator | list:
+        self, connector: Union[Connector, None], dir_path: Path, extension, *args, **kwargs
+    ) -> Union[Generator, list]:
         """Selects the files that should be checked .
 
         Arguments:
@@ -277,9 +277,9 @@ def simple_worker(
 
 
 def ssh_worker(
-    base_directory_from: Path | None = None,
-    connector: SSHConnector | None = None,
-    db_name: str | None = None,
+    base_directory_from: Union[Path, None] = None,
+    connector: Union[SSHConnector, None] = None,
+    db_name: Union[str, None] = None,
     dry_run: bool = False,
 ):
     """Create a Worker with SSHConnector.

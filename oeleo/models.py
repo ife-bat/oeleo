@@ -91,7 +91,15 @@ class SimpleDbHandler(DbHandler):
         self._current_record = None
 
     def initialize_db(self):
+        print()
+        print("SOME ERROR HERE?")
+        print(Path(".").resolve())
+        dbname = Path(self.db_name).resolve()
+        print(dbname)
+        print(dbname.is_file())
+
         self.db_instance.init(self.db_name)
+
         self.db_instance.connect()
         self.db_instance.create_tables([self.db_model])
 

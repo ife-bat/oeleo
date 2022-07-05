@@ -31,7 +31,7 @@ FILTERS = {
 }
 
 FilterFunction = Any
-FilterTuple = tuple[str, FilterFunction]
+FilterTuple = Any  # tuple[str, FilterFunction] for py3.10
 
 
 def base_filter(
