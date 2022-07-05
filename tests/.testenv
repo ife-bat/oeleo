@@ -1,0 +1,8 @@
+OELEO_BASE_DIR_FROM=../check/from
+OELEO_BASE_DIR_TO=../check/to
+OELEO_FILTER_EXTENSION=xyz
+OELEO_DB_NAME=../test_databases/testdb.db
+OELEO_EXTERNAL_HOST=localhost
+OELEO_USERNAME=oeleo
+OELEO_PASSWORD=oeleo
+OELEO_KEY_FILENAME=oeleo

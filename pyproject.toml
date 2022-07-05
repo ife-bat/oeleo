@@ -25,16 +25,25 @@ include = [
 
 [tool.poetry.dependencies]
 python = "^3.10"
-
-[tool.poetry.dev-dependencies]
-black = "^22.6.0"
-isort = "^5.10.1"
-python = "^3.10"
 peewee = "^3.15.0"
 python-dotenv = "^0.20.0"
 rich = "^12.4.4"
 Fabric = "^2.7.0"
 
+[tool.poetry.dev-dependencies]
+black = "^22.6.0"
+isort = "^5.10.1"
+pytest = "^7.1.2"
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-rA"
+log_cli = true
+log_cli_level = "DEBUG"
+markers = [
+    "slow",
+]

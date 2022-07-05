@@ -1,14 +1,17 @@
 import logging
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Generator
 
-from oeleo.connectors import Connector
+from oeleo.checkers import SimpleChecker, ConnectedChecker
+from oeleo.connectors import Connector, SSHConnector
 from oeleo.filters import base_filter
-from oeleo.models import DbHandler, MockDbHandler
-from oeleo.movers import mock_mover
+from oeleo.models import DbHandler, MockDbHandler, SimpleDbHandler
+from oeleo.movers import mock_mover, simple_mover, connected_mover
 
 log = logging.getLogger("oeleo")
+
 
 @dataclass
 class Worker:
@@ -228,3 +231,90 @@ class Worker:
     @external_name.setter
     def external_name(self, name):
         self._external_name = name
+
+
+def simple_worker(
+    base_directory_from=None, base_directory_to=None, db_name=None, dry_run=False,
+):
+    """ Create a Worker for copying files locally.
+
+    Args:
+        base_directory_from: directory to copy from.
+        base_directory_to: directory to copy to.
+        db_name: name of the database.
+        dry_run: set to True if you would like to run without updating or moving anything.
+
+    Returns:
+        simple worker that can copy files between two local folder.
+    """
+    db_name = db_name or os.environ["OELEO_DB_NAME"]
+    base_directory_from = base_directory_from or Path(os.environ["OELEO_BASE_DIR_FROM"])
+    base_directory_to = base_directory_to or Path(os.environ["OELEO_BASE_DIR_TO"])
+
+    bookkeeper = SimpleDbHandler(db_name)
+    checker = SimpleChecker()
+    # mover = SimpleMover()
+
+    log.info(
+        f"[bold]from:[/] [bold green]{base_directory_from}[/]", extra={"markup": True}
+    )
+    log.info(
+        f"[bold]to  :[/] [bold blue]{base_directory_to}[/]", extra={"markup": True}
+    )
+
+    worker = Worker(
+        checker=checker,
+        mover_method=simple_mover,
+        from_dir=base_directory_from,
+        to_dir=base_directory_to,
+        bookkeeper=bookkeeper,
+        dry_run=dry_run,
+    )
+    return worker
+
+
+def ssh_worker(
+    base_directory_from: Path | None = None,
+    connector: SSHConnector | None = None,
+    db_name: str | None = None,
+    dry_run: bool = False,
+):
+    """Create a Worker with SSHConnector.
+
+    Args:
+        base_directory_from: directory to copy from.
+        connector: an SSHConnector with external directory given.
+        db_name: name of the database.
+        dry_run: set to True if you would like to run without updating or moving anything.
+
+    Returns:
+        worker with SSHConnector attached to it.
+    """
+    if connector is None:
+        raise ValueError("Required argument missing! connector cannot be None")
+
+    db_name = db_name or os.environ["OELEO_DB_NAME"]
+    base_directory_from = base_directory_from or Path(os.environ["OELEO_BASE_DIR_FROM"])
+    base_directory_to = connector.directory
+
+    bookkeeper = SimpleDbHandler(db_name)
+    checker = ConnectedChecker()
+
+    log.info(
+        f"[bold]from:[/] [bold green]{base_directory_from}[/]", extra={"markup": True}
+    )
+    log.info(
+        f"[bold]to  :[/] [bold blue]{connector.host}:{base_directory_to}[/]",
+        extra={"markup": True},
+    )
+
+    worker = Worker(
+        checker=checker,
+        mover_method=connected_mover,
+        from_dir=base_directory_from,
+        to_dir=base_directory_to,
+        external_connector=connector,
+        bookkeeper=bookkeeper,
+        dry_run=dry_run,
+    )
+    return worker

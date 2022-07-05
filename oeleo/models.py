@@ -1,11 +1,10 @@
 import datetime
 import random
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 import peewee
 
-DATABASE = peewee.SqliteDatabase(None)
 DEFAULT_DB_NAME = "oeleo-file-list.db"
 
 CODES = [
@@ -13,6 +12,8 @@ CODES = [
     (1, "should-be-copied-if-changed"),
     (2, "should-not-be-copied"),
 ]
+
+database_proxy = peewee.DatabaseProxy()
 
 
 class FileList(peewee.Model):
@@ -23,48 +24,59 @@ class FileList(peewee.Model):
     code = peewee.SmallIntegerField(choices=CODES, default=0)
 
     class Meta:
-        database = DATABASE
+        database = database_proxy
 
 
-class DbHandler:
-    pass
+class DbHandler(Protocol):
+    def initialize_db(self):
+        ...
+
+    def register(self, f: Path):
+        ...
+
+    def is_changed(self, **checks: Any) -> bool:
+        ...
+
+    def update_record(self, external_name: Path, code: int = 1, **checks: Any):
+        ...
 
 
 class MockDbHandler(DbHandler):
     def __init__(self):
         self.db_name = "mock"
 
-    @staticmethod
-    def initialize_db():
+    def initialize_db(self):
         print("INITIALIZING DB")
 
-    @staticmethod
-    def register(f: Path):
+    def register(self, f: Path):
         print(f"REGISTERING {f}")
 
-    @staticmethod
-    def is_changed(**checks) -> bool:
+    def is_changed(self, **checks) -> bool:
         print(f"CHECKING IF IT HAS CHANGED")
         print(f"checks: {checks}")
         _is_changed = random.choice([True, False])
         print(f"is-changed: {_is_changed}")
         return _is_changed
 
-    @staticmethod
-    def update_record(external_name: Path, **checks: Any):
+    def update_record(self, external_name: Path, code: int = 1, **checks: Any):
         print("UPDATE RECORD IN DB")
         print(f"external name: {external_name}")
-        print(f"additional: {checks}")
+        print(f"additional checks: {checks}")
 
 
 class SimpleDbHandler(DbHandler):
-    """A simple db bookkeeper that checks on checksum."""
+    """A simple db bookkeeper using sqlite3 that checks on checksum."""
 
     def __init__(self, db_name: str) -> None:
         self.db_name = db_name
         self.db_model: peewee.Model = FileList
         self._current_record = None
-        self.db_instance = DATABASE
+        self.db_instance = database_proxy
+        self._set_up_sqlite_db()
+
+    @staticmethod
+    def _set_up_sqlite_db():
+        database_proxy.initialize(peewee.SqliteDatabase(None))
 
     @property
     def record(self):
@@ -104,7 +116,7 @@ class SimpleDbHandler(DbHandler):
                 _is_changed = True
         return _is_changed
 
-    def update_record(self, external_name: Path, code: int = 1, **checks: str):
+    def update_record(self, external_name: Path, code: int = 1, **checks: Any):
         checksum = checks.get("checksum", None)
         self.record.checksum = checksum
         self.record.processed_date = datetime.datetime.now()

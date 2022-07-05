@@ -5,78 +5,11 @@ from pathlib import Path
 
 import dotenv
 
-from oeleo.checkers import ConnectedChecker, SimpleChecker
 from oeleo.connectors import SSHConnector, register_password
-from oeleo.models import SimpleDbHandler
-from oeleo.movers import connected_mover, simple_mover
-from oeleo.workers import Worker
+from oeleo.workers import simple_worker, ssh_worker
 from oeleo.utils import logger
 
 log = logger()
-
-
-def setup_worker(
-    dry_run=False, db_name=None, base_directory_from=None, base_directory_to=None
-):
-    db_name = db_name or os.environ["OELEO_DB_NAME"]
-    base_directory_from = base_directory_from or Path(os.environ["OELEO_BASE_DIR_FROM"])
-    base_directory_to = base_directory_to or Path(os.environ["OELEO_BASE_DIR_TO"])
-
-    bookkeeper = SimpleDbHandler(db_name)
-    checker = SimpleChecker()
-    # mover = SimpleMover()
-
-    log.info(
-        f"[bold]from:[/] [bold green]{base_directory_from}[/]", extra={"markup": True}
-    )
-    log.info(
-        f"[bold]to  :[/] [bold blue]{base_directory_to}[/]", extra={"markup": True}
-    )
-
-    worker = Worker(
-        checker=checker,
-        mover_method=simple_mover,
-        from_dir=base_directory_from,
-        to_dir=base_directory_to,
-        bookkeeper=bookkeeper,
-        dry_run=dry_run,
-    )
-    return worker
-
-
-def setup_ssh_worker(
-    connector: SSHConnector,
-    dry_run: bool = False,
-    db_name: str | None = None,
-    base_directory_from: Path | None = None,
-):
-    db_name = db_name or os.environ["OELEO_DB_NAME"]
-    base_directory_from = base_directory_from or Path(os.environ["OELEO_BASE_DIR_FROM"])
-    base_directory_to = connector.directory
-
-    # connector.connect()
-
-    bookkeeper = SimpleDbHandler(db_name)
-    checker = ConnectedChecker()
-
-    log.info(
-        f"[bold]from:[/] [bold green]{base_directory_from}[/]", extra={"markup": True}
-    )
-    log.info(
-        f"[bold]to  :[/] [bold blue]{connector.host}:{base_directory_to}[/]",
-        extra={"markup": True},
-    )
-
-    worker = Worker(
-        checker=checker,
-        mover_method=connected_mover,
-        from_dir=base_directory_from,
-        to_dir=base_directory_to,
-        external_connector=connector,
-        bookkeeper=bookkeeper,
-        dry_run=dry_run,
-    )
-    return worker
 
 
 def main():
@@ -84,7 +17,7 @@ def main():
     log.info(f"Starting oeleo!")
     dotenv.load_dotenv()
     filter_extension = os.environ["OELEO_FILTER_EXTENSION"]
-    worker = setup_worker()
+    worker = simple_worker()
     worker.connect_to_db()
     worker.filter_local(filter_extension)
     worker.check(filter_extension)
@@ -92,7 +25,7 @@ def main():
 
 
 def example_check_with_ssh_connection():
-
+    print(" example_check_with_ssh_connection ".center(80, "-"))
     log.setLevel(logging.INFO)
     log.info(f"Starting oeleo!")
     dotenv.load_dotenv()
@@ -104,7 +37,7 @@ def example_check_with_ssh_connection():
     connector = SSHConnector(directory=external_dir)
     connector.connect()
 
-    worker = setup_ssh_worker(
+    worker = ssh_worker(
         db_name=r"test_databases\test_ssh_to_odin.db",
         base_directory_from=Path(r"C:\scripting\processing_cellpy\raw"),
         connector=connector,
@@ -119,7 +52,7 @@ def example_check_with_ssh_connection():
 
 
 def example_check_first_then_run():
-
+    print(" example_check_first_then_run ".center(80, "-"))
     not_before = datetime(year=2021, month=3, day=1, hour=1, minute=0, second=0)
     not_after = datetime(year=2022, month=7, day=1, hour=1, minute=0, second=0)
     print("Starting...")
@@ -133,7 +66,7 @@ def example_check_first_then_run():
     log.info(f"Starting oeleo!")
     dotenv.load_dotenv()
     filter_extension = "res"
-    worker = setup_worker(
+    worker = simple_worker(
         db_name=r"test_databases\another.db",
         base_directory_from=Path(r"C:\scripting\processing_cellpy\raw"),
         base_directory_to=Path(r"C:\scripting\trash"),
@@ -141,13 +74,13 @@ def example_check_first_then_run():
     worker.connect_to_db()
     worker.filter_local(filter_extension)
     worker.check(filter_extension, additional_filters=my_filters)
-    run_oeleo = input("\n Continue ([y]/n)? ") or "y"
-    if run_oeleo.lower() in ["y", "yes"]:
-        worker.run()
+    # run_oeleo = input("\n Continue ([y]/n)? ") or "y"
+    # if run_oeleo.lower() in ["y", "yes"]:
+    #     worker.run()
+    worker.run()
 
 
 if __name__ == "__main__":
-    # print(f"HEI from {__name__} in {__file__}")
-    # example_check_with_ssh_connection()
-    # example_check_first_then_run()
     main()
+    example_check_first_then_run()
+    example_check_with_ssh_connection()
