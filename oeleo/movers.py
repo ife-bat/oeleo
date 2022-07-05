@@ -20,7 +20,7 @@ def simple_mover(path: Path, to: Path, *args, **kwargs):
 
 
 def connected_mover(path: Path, to: Path, connector=None, *args, **kwargs):
-    """ Copies files using the method implemented in the connector. """
+    """Copies files using the method implemented in the connector."""
     if connector is None:
         move_func = simple_mover
     else:

@@ -4,11 +4,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Generator
 
-from oeleo.checkers import SimpleChecker, ConnectedChecker
+from oeleo.checkers import ConnectedChecker, SimpleChecker
 from oeleo.connectors import Connector, SSHConnector
 from oeleo.filters import base_filter
 from oeleo.models import DbHandler, MockDbHandler, SimpleDbHandler
-from oeleo.movers import mock_mover, simple_mover, connected_mover
+from oeleo.movers import connected_mover, mock_mover, simple_mover
 
 log = logging.getLogger("oeleo")
 
@@ -234,9 +234,12 @@ class Worker:
 
 
 def simple_worker(
-    base_directory_from=None, base_directory_to=None, db_name=None, dry_run=False,
+    base_directory_from=None,
+    base_directory_to=None,
+    db_name=None,
+    dry_run=False,
 ):
-    """ Create a Worker for copying files locally.
+    """Create a Worker for copying files locally.
 
     Args:
         base_directory_from: directory to copy from.

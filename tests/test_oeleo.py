@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import dotenv
+
 from oeleo.utils import logger
 from oeleo.workers import simple_worker
 
@@ -10,6 +11,7 @@ log = logger()
 
 def test_import():
     from oeleo import connectors
+
     assert "SSHConnector" in dir(connectors)
 
 

@@ -6,8 +6,8 @@ from pathlib import Path
 import dotenv
 
 from oeleo.connectors import SSHConnector, register_password
-from oeleo.workers import simple_worker, ssh_worker
 from oeleo.utils import logger
+from oeleo.workers import simple_worker, ssh_worker
 
 log = logger()
 
@@ -74,10 +74,9 @@ def example_check_first_then_run():
     worker.connect_to_db()
     worker.filter_local(filter_extension)
     worker.check(filter_extension, additional_filters=my_filters)
-    # run_oeleo = input("\n Continue ([y]/n)? ") or "y"
-    # if run_oeleo.lower() in ["y", "yes"]:
-    #     worker.run()
-    worker.run()
+    run_oeleo = input("\n Continue ([y]/n)? ") or "y"
+    if run_oeleo.lower() in ["y", "yes"]:
+        worker.run()
 
 
 if __name__ == "__main__":
