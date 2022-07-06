@@ -1,11 +1,9 @@
 import getpass
 import logging
 import os
-from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, Generator, Protocol, Union
 
-import dotenv
 from fabric import Connection
 from filters import base_filter
 from movers import simple_mover
@@ -176,7 +174,7 @@ class SSHConnector(Connector):
 
         try:
             log.debug(f"Copying {path} to {to}")
-            result = self.c.put(str(path), remote=str(to))
+            self.c.put(str(path), remote=str(to))
         except Exception as e:
             print("GOT AN EXCEPTION DURING COPYING FILE")
             print(f"FROM     : {path}")

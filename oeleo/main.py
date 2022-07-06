@@ -5,16 +5,18 @@ from pathlib import Path
 
 import dotenv
 
-from oeleo.connectors import SSHConnector, register_password
+from oeleo.connectors import register_password
 from oeleo.utils import logger
 from oeleo.workers import simple_worker, ssh_worker
+from oeleo.console import console
 
 log = logger()
 
 
 def main():
     log.setLevel(logging.INFO)
-    log.info(f"Starting oeleo!")
+    log.debug(f"Starting oeleo!")
+    console.print(f"Starting oeleo!")
     dotenv.load_dotenv()
     worker = simple_worker()
     worker.connect_to_db()
@@ -80,5 +82,5 @@ def example_check_first_then_run():
 
 if __name__ == "__main__":
     main()
-    example_check_with_ssh_connection()
-    example_check_first_then_run()
+    # example_check_with_ssh_connection()
+    # example_check_first_then_run()

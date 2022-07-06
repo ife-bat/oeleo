@@ -7,7 +7,6 @@ from typing import Any, Generator, Union
 from oeleo.checkers import ChecksumChecker
 from oeleo.connectors import Connector, LocalConnector, SSHConnector
 from oeleo.models import DbHandler, MockDbHandler, SimpleDbHandler
-from oeleo.movers import connected_mover, mock_mover
 
 log = logging.getLogger("oeleo")
 
