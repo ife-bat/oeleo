@@ -48,7 +48,7 @@ def example_check_with_ssh_connection():
         worker.filter_local()
         worker.run()
     finally:
-        worker.external_connector.close()
+        worker.close()
 
 
 def example_check_first_then_run():
