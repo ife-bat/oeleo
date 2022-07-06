@@ -16,11 +16,10 @@ def main():
     log.setLevel(logging.INFO)
     log.info(f"Starting oeleo!")
     dotenv.load_dotenv()
-    filter_extension = os.environ["OELEO_FILTER_EXTENSION"]
     worker = simple_worker()
     worker.connect_to_db()
-    worker.filter_local(filter_extension)
-    worker.check(filter_extension)
+    worker.filter_local()
+    worker.check()
     worker.run()
 
 
@@ -31,24 +30,23 @@ def example_check_with_ssh_connection():
     dotenv.load_dotenv()
 
     external_dir = "/home/jepe@ad.ife.no/Temp"
-    filter_extension = "res"
+    filter_extension = ".res"
 
     register_password(os.environ["OELEO_PASSWORD"])
-    connector = SSHConnector(directory=external_dir)
-    connector.connect(use_password=True)
 
     worker = ssh_worker(
         db_name=r"C:\scripting\oeleo\test_databases\test_ssh_to_odin.db",
         base_directory_from=Path(r"C:\scripting\processing_cellpy\raw"),
-        connector=connector,
+        base_directory_to=external_dir,
+        extension=filter_extension
     )
     worker.connect_to_db()
     try:
-        worker.check(filter_extension, update_db=True)
-        worker.filter_local(filter_extension)
+        worker.check(update_db=True)
+        worker.filter_local()
         worker.run()
     finally:
-        connector.close()
+        worker.external_connector.close()
 
 
 def example_check_first_then_run():
@@ -70,10 +68,11 @@ def example_check_first_then_run():
         db_name=r"C:\scripting\oeleo\test_databases\another.db",
         base_directory_from=Path(r"C:\scripting\processing_cellpy\raw"),
         base_directory_to=Path(r"C:\scripting\trash"),
+        extension=filter_extension,
     )
     worker.connect_to_db()
-    worker.filter_local(filter_extension, additional_filters=my_filters)
-    worker.check(filter_extension, additional_filters=my_filters)
+    worker.filter_local(additional_filters=my_filters)
+    worker.check( additional_filters=my_filters)
     run_oeleo = input("\n Continue ([y]/n)? ") or "y"
     if run_oeleo.lower() in ["y", "yes"]:
         worker.run()
@@ -81,3 +80,5 @@ def example_check_first_then_run():
 
 if __name__ == "__main__":
     main()
+    example_check_with_ssh_connection()
+    example_check_first_then_run()

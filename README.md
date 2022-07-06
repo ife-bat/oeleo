@@ -43,9 +43,9 @@ import time
 
 import dotenv
 
-from oeleo.checkers import  SimpleChecker
+from oeleo.checkers import  ConnectedChecker
 from oeleo.models import SimpleDbHandler
-from oeleo.movers import simple_mover
+from oeleo.connectors import LocalConnector
 from oeleo.workers import Worker
 from oeleo.utils import logger
 
@@ -63,19 +63,21 @@ def main():
     # You can also use the `factory` functions in `oeleo.worker`
     # (e.g. `ssh_worker` and `simple_worker`)
     bookkeeper = SimpleDbHandler(db_name)
-    checker = SimpleChecker()
+    checker = ConnectedChecker()
+    local_connector = LocalConnector(directory=base_directory_from)
+    external_connector = LocalConnector(directory=base_directory_to)
     
     worker = Worker(
         checker=checker,
-        mover_method=simple_mover,
-        from_dir=base_directory_from,
-        to_dir=base_directory_to,
+        local_connector=local_connector,
+        external_connector=external_connector,
         bookkeeper=bookkeeper,
+        extension=filter_extension
     )
     
     worker.connect_to_db()
     while True:
-        worker.filter_local(filter_extension)
+        worker.filter_local()
         worker.run()
         time.sleep(300)
 

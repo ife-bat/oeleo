@@ -4,11 +4,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Generator, Union
 
-from oeleo.checkers import ConnectedChecker, SimpleChecker
-from oeleo.connectors import Connector, SSHConnector
-from oeleo.filters import base_filter
+from oeleo.checkers import ConnectedChecker
+from oeleo.connectors import Connector, SSHConnector, LocalConnector
 from oeleo.models import DbHandler, MockDbHandler, SimpleDbHandler
-from oeleo.movers import connected_mover, mock_mover, simple_mover
+from oeleo.movers import mock_mover, connected_mover
 
 log = logging.getLogger("oeleo")
 
@@ -28,23 +27,17 @@ class Worker:
 
     A worker needs to be initiated with the at least the following handlers:
         checker: Checker object
-        mover_method: mover method
-        from_dir: Path of local directory
-        to_dir: Path of external directory
         bookkeeper: DbHandler to interact with the db
-
-    Optinal handlers:
-        external_connector:  Connector class for handling "difficult" connections (e.g. ssh)."""
+        local_connector: Connector = None
+        external_connector: Connector = None
+"""
 
     checker: Any
-    mover_method: Any
-    from_dir: Path
-    to_dir: Path
     bookkeeper: DbHandler
     dry_run: bool = False
-    local_connector: Any = None
-    external_connector: Any = None
-    filter_method: Any = base_filter
+    local_connector: Connector = None
+    external_connector: Connector = None
+    extension: str = None,
     file_names: Generator[Path, None, None] = field(init=False, default=None)
     _external_name: str = field(init=False, default="")
     _status: dict = field(init=False, default_factory=dict)
@@ -52,91 +45,46 @@ class Worker:
     def __post_init__(self):
         if self.dry_run:
             log.info("[bold red blink]DRY RUN[/]", extra={"markup": True})
-            self.mover_method = mock_mover
             self.bookkeeper = MockDbHandler()
+        self.external_connector.connect()
 
     def connect_to_db(self):
         self.bookkeeper.initialize_db()
         log.info(f"Connecting to db -> '{self.bookkeeper.db_name}' DONE")
 
-    def filter_local(self, *args, **kwargs):
+    def filter_local(self, **kwargs):
         """Selects the files that should be processed.txt
 
         TODO: This method should be updated so that it uses the value from the
            environment as default.
         """
-        self.file_names = self._filter(
-            None,
-            self.from_dir,
-            *args,
-            **kwargs,
-        )
-        log.info("Filtering -> DONE")
+        local_files = self.local_connector.base_filter_sub_method(self.extension, **kwargs)
+        self.file_names = local_files
+        return local_files
 
-    def _filter(
-        self,
-        connector: Union[Connector, None],
-        dir_path: Path,
-        extension,
-        *args,
-        **kwargs,
-    ) -> Union[Generator, list]:
-        """Selects the files that should be checked .
+    def filter_external(self, **kwargs):
+        external_files = self.external_connector.base_filter_sub_method(self.extension, **kwargs)
+        return external_files
 
-        Arguments:
-            connector: if using a Connector object (can be None).
-            dir_path: path to files.
-            extension: file extension filter on.
-            args: transferred untouched.
-        Optional keyword arguments:
-            base_filter_func: deprecated - will be extracted from the connector instead.
-            additional_filters: list of tuples describing additional filter to use (only for local files)
-        """
-        base_filter_func = kwargs.pop("base_filter_func", None)
-        if (base_filter_func is None) and (connector is not None):
-            base_filter_func = connector.base_filter_sub_method
-        file_names = self.filter_method(
-            dir_path,
-            extension,
-            *args,
-            base_filter_func=base_filter_func,
-            **kwargs,
-        )
-        return file_names
-
-    def check(self, *args, update_db=False, **kwargs):
+    def check(self, update_db=False, **kwargs):
         """Check for differences between the two directories.
 
         Arguments:
-            *args: sent to the filter functions (should as a minimum contain file extension for filtering).
             update_db: set to True if you want the check to also update the db.
         Additional keyword arguments:
             sent to the filter functions.
-
-        TODO: This method should be updated so that it uses the value from the
-           environment as default
         """
-
         # PLEASE, REFACTOR ME!
-        print(f"Comparing {self.from_dir} <=> {self.to_dir}")
-        additional_filters = kwargs.pop("additional_filters", None)
+        print(f"Comparing {self.local_connector.directory} <=> {self.external_connector.directory}")
+        local_files = self.filter_local(**kwargs)
+        external_files = self.filter_external(**kwargs)
 
-        local_files = self._filter(
-            self.local_connector,
-            self.from_dir,
-            *args,
-            additional_filters=additional_filters,
-            **kwargs,
-        )
-        external_files = list(
-            self._filter(self.external_connector, self.to_dir, *args, **kwargs)
-        )
-        log.debug(external_files)
         number_of_local_files = 0
         number_of_external_duplicates = 0
         number_of_duplicates_out_of_sync = 0
 
         for f in local_files:
+            print(f"Iterating: {f}")
             number_of_local_files += 1
 
             self.make_external_name(f)
@@ -147,7 +95,10 @@ class Worker:
                 code = 1
                 print(f"[FOUND EXTERNAL]")
                 number_of_external_duplicates += 1
-                local_vals = self.checker.check(f)
+                local_vals = self.checker.check(
+                    f,
+                    connector=self.local_connector,
+                )
                 external_vals = self.checker.check(
                     external_name,
                     connector=self.external_connector,
@@ -190,8 +141,8 @@ class Worker:
 
             if self.bookkeeper.is_changed(**checks):
                 self.status = ("changed", True)
-                if self.mover_method(
-                    f, self.external_name, connector=self.external_connector
+                if self.external_connector.move_func(
+                    f, self.external_name,
                 ):
                     self.status = ("moved", True)
                     self.bookkeeper.update_record(self.external_name, **checks)
@@ -215,7 +166,7 @@ class Worker:
         log.info(txt, extra={"markup": True})
 
     def _create_external_name(self, f):
-        return self.to_dir / f.name
+        return self.external_connector.directory / f.name
 
     def make_external_name(self, f):
         name = self._create_external_name(f)
@@ -250,6 +201,7 @@ def simple_worker(
     base_directory_to=None,
     db_name=None,
     dry_run=False,
+    extension=None,
 ):
     """Create a Worker for copying files locally.
 
@@ -258,6 +210,7 @@ def simple_worker(
         base_directory_to: directory to copy to.
         db_name: name of the database.
         dry_run: set to True if you would like to run without updating or moving anything.
+        extension: file extension to filter on (for example '.csv').
 
     Returns:
         simple worker that can copy files between two local folder.
@@ -265,10 +218,11 @@ def simple_worker(
     db_name = db_name or os.environ["OELEO_DB_NAME"]
     base_directory_from = base_directory_from or Path(os.environ["OELEO_BASE_DIR_FROM"])
     base_directory_to = base_directory_to or Path(os.environ["OELEO_BASE_DIR_TO"])
-
+    extension = extension or os.environ["OELEO_FILTER_EXTENSION"]
     bookkeeper = SimpleDbHandler(db_name)
-    checker = SimpleChecker()
-    # mover = SimpleMover()
+    checker = ConnectedChecker()
+    local_connector = LocalConnector(directory=base_directory_from)
+    external_connector = LocalConnector(directory=base_directory_to)
 
     log.info(
         f"[bold]from:[/] [bold green]{base_directory_from}[/]", extra={"markup": True}
@@ -279,10 +233,10 @@ def simple_worker(
 
     worker = Worker(
         checker=checker,
-        mover_method=simple_mover,
-        from_dir=base_directory_from,
-        to_dir=base_directory_to,
+        local_connector=local_connector,
+        external_connector=external_connector,
         bookkeeper=bookkeeper,
+        extension=extension,
         dry_run=dry_run,
     )
     return worker
@@ -290,46 +244,53 @@ def simple_worker(
 
 def ssh_worker(
     base_directory_from: Union[Path, None] = None,
-    connector: Union[SSHConnector, None] = None,
+    base_directory_to: Union[Path, str, None] = None,
     db_name: Union[str, None] = None,
+    extension: str = None,
+    use_password: bool = False,
     dry_run: bool = False,
+    is_posix: bool = True
 ):
     """Create a Worker with SSHConnector.
 
     Args:
         base_directory_from: directory to copy from.
-        connector: an SSHConnector with external directory given.
+        base_directory_to: directory to copy to.
         db_name: name of the database.
         dry_run: set to True if you would like to run without updating or moving anything.
+        extension: file extension to filter on (for example '.csv').
+        use_password: set to True if you want to connect using a password instead of key-pair.
+        is_posix: make external path (base_directory_to) a PurePosixPath.
 
     Returns:
         worker with SSHConnector attached to it.
     """
-    if connector is None:
-        raise ValueError("Required argument missing! connector cannot be None")
 
     db_name = db_name or os.environ["OELEO_DB_NAME"]
     base_directory_from = base_directory_from or Path(os.environ["OELEO_BASE_DIR_FROM"])
-    base_directory_to = connector.directory
+    base_directory_to = base_directory_to or Path(os.environ["OELEO_BASE_DIR_TO"])
+    extension = extension or os.environ["OELEO_FILTER_EXTENSION"]
+
+    local_connector = LocalConnector(directory=base_directory_from)
+    external_connector = SSHConnector(directory=base_directory_to, use_password=use_password, is_posix=is_posix)
 
     bookkeeper = SimpleDbHandler(db_name)
     checker = ConnectedChecker()
 
     log.info(
-        f"[bold]from:[/] [bold green]{base_directory_from}[/]", extra={"markup": True}
+        f"[bold]from:[/] [bold green]{local_connector.directory}[/]", extra={"markup": True}
     )
     log.info(
-        f"[bold]to  :[/] [bold blue]{connector.host}:{base_directory_to}[/]",
+        f"[bold]to  :[/] [bold blue]{external_connector.host}:{external_connector.directory}[/]",
         extra={"markup": True},
     )
 
     worker = Worker(
         checker=checker,
-        mover_method=connected_mover,
-        from_dir=base_directory_from,
-        to_dir=base_directory_to,
-        external_connector=connector,
+        local_connector=local_connector,
+        external_connector=external_connector,
         bookkeeper=bookkeeper,
+        extension=extension,
         dry_run=dry_run,
     )
     return worker

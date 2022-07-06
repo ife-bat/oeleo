@@ -8,17 +8,11 @@ class Checker:
     def __init__(self):
         pass
 
-    def check(self, f: Path) -> Dict[str, str]:
+    def check(self, f: Path) -> Dict[str, str]:  # UPDATE TYPES FOR ARGS
         pass
 
 
-class SimpleChecker(Checker):
-    @staticmethod
-    def check(f: Path, **kwargs) -> Dict[str, str]:
-        return {"checksum": calculate_checksum(f)}
-
-
-class ConnectedChecker(Checker):
+class ConnectedChecker(Checker):  # RENAME -> ChecksumChecker
     @staticmethod
     def check(f: Path, connector: Any = None, **kwargs) -> Dict[str, str]:
         """Calculates checksum using method provided by the connector"""

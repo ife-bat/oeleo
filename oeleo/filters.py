@@ -46,11 +46,12 @@ def base_filter(
     if base_filter_func is None:
         base_filter_func = path.glob
 
-    file_list = base_filter_func(f"*.{extension}")
+    file_list = base_filter_func(f"*{extension}")
     if additional_filters is not None:
         for filter_name, filter_val in additional_filters:
             filter_func = FILTERS[filter_name]
             file_list = filter(partial(filter_func, value=filter_val), file_list)
+
     return file_list
 
 

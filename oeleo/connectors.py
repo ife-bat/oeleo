@@ -1,11 +1,16 @@
 import getpass
 import logging
 import os
+from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Any, Protocol
+from typing import Any, Protocol, Generator, Union
 
 import dotenv
 from fabric import Connection
+
+from filters import base_filter
+from movers import simple_mover
+from utils import calculate_checksum
 
 log = logging.getLogger("oeleo")
 
@@ -22,36 +27,58 @@ class Connector(Protocol):
     same methods for local and external files.
     """
 
-    def connect(self, use_password: bool = False, **kwargs) -> None:
+    directory = None
+
+    def connect(self, **kwargs) -> None:
         ...
 
-    def close(
-        self,
-    ):
+    def close(self) -> None:
         ...
 
-    def base_filter_sub_method(self, glob_pattern: str = "*", **kwargs) -> list:
-        ...
-
-    def list_content(
-        self, glob_pattern: str = "*", max_depth: int = 1, hide=False
-    ) -> FabricRunResult:
+    def base_filter_sub_method(self, glob_pattern: str = "*", **kwargs) -> Union[list, Generator]:
         ...
 
     def calculate_checksum(self, f: Path, hide: bool = True) -> Hash:
         ...
 
-    def move_func(self, *args, **kwargs) -> str:
+    def move_func(self, path: Path, to: Path, *args, **kwargs) -> bool:
         ...
 
 
+class LocalConnector(Connector):
+
+    def __init__(self, directory=None):
+        self.directory = directory or os.environ["OELEO_BASE_DIR_TO"]
+
+    def __str__(self):
+        text = "LocalConnector"
+        text += f"{self.directory=}\n"
+        return text
+
+    def connect(self, **kwargs) -> None:
+        pass
+
+    def close(self):
+        pass
+
+    def base_filter_sub_method(self, glob_pattern: str = "*", **kwargs) -> Generator[Path, None, None]:  # RENAME TO enquire
+        return base_filter(self.directory, glob_pattern)
+
+    def calculate_checksum(self, f: Path, hide: bool = True) -> Hash:
+        return calculate_checksum(f)
+
+    def move_func(self, path: Path, to: Path, *args, **kwargs) -> bool:
+        return simple_mover(path, to, *args, **kwargs)
+
+
 class SSHConnector(Connector):
-    def __init__(self, username=None, host=None, directory=None, is_posix=True):
+    def __init__(self, username=None, host=None, directory=None, is_posix=True, use_password=False):
         self.session_password = os.environ["OELEO_PASSWORD"]
         self.username = username or os.environ["OELEO_USERNAME"]
         self.host = host or os.environ["OELEO_EXTERNAL_HOST"]
         self.directory = directory or os.environ["OELEO_BASE_DIR_TO"]
         self.is_posix = is_posix
+        self.use_password = use_password
         self.c = None
         self._validate()
 
@@ -71,8 +98,8 @@ class SSHConnector(Connector):
         else:
             self.directory = Path(self.directory)
 
-    def connect(self, use_password: bool = False, **kwargs) -> None:
-        if use_password:
+    def connect(self, **kwargs) -> None:
+        if self.use_password:
             connect_kwargs = {
                 "password": os.environ["OELEO_PASSWORD"],
             }
@@ -100,7 +127,7 @@ class SSHConnector(Connector):
             log.debug("Connecting ...")
             self.connect()
 
-        result = self.list_content(glob_pattern, hide=True)
+        result = self._list_content(glob_pattern, hide=True)
         file_list = result.stdout.strip().split("\n")
         if self.is_posix:
             file_list = [PurePosixPath(f) for f in file_list]
@@ -108,7 +135,7 @@ class SSHConnector(Connector):
             file_list = [Path(f) for f in file_list]  # OBS Linux -> Win not supported!
         return file_list
 
-    def list_content(self, glob_pattern="*", max_depth=1, hide=False):
+    def _list_content(self, glob_pattern="*", max_depth=1, hide=False):
 
         if self.c is None:  # make this as a decorator ("@connected")
             log.debug("Connecting ...")
@@ -133,7 +160,7 @@ class SSHConnector(Connector):
         checksum = result.stdout.strip().split()[0]
         return checksum
 
-    def move_func(self, path: Path, to: Path, **kwargs):
+    def move_func(self, path: Path, to: Path, *args, **kwargs) -> bool:
         if self.c is None:  # make this as a decorator ("@connected")
             log.debug("Connecting ...")
             self.connect()
