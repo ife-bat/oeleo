@@ -144,6 +144,9 @@ Just plans, no promises given.
 - [x] Deployable
 - [x] On testpypi
 - [x] On pypi
+- [x] Code understandable for others
+- [ ] Looking good
+- [ ] Easy to use
 
 ## Licence
 MIT
