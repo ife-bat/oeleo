@@ -1,8 +1,6 @@
 # oeleo
 Python package / app that can be used for transferring files from an instrument-PC to a data server.
 
-It is not very sophisticated. But I am not very sophisticated either.
-
 
 ## Features (or limitations)
 - Transferring using an ssh connection should preferably be used with key-pairs. This might involve some
@@ -76,6 +74,7 @@ def main():
     extension=filter_extension
   )
 
+  # You can also use an oeleo scheduler for this.
   worker.connect_to_db()
   while True:
     worker.filter_local()
@@ -128,10 +127,11 @@ Hint! You can **lock** (chose to never copy) a file by editing the `code` manual
 Just plans, no promises given.
 
 - implement a `SharePointConnector`.
+- make much nicer printing and logging.
 - create CLI.
 - create an executable.
 - create a web-app.
-- create a GUI.
+- create a GUI (not likely).
 
 ## Status
 
