@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import Any, Generator, Union
 
 from oeleo.checkers import ChecksumChecker
-from oeleo.connectors import Connector, SSHConnector, LocalConnector
+from oeleo.connectors import Connector, LocalConnector, SSHConnector
 from oeleo.models import DbHandler, MockDbHandler, SimpleDbHandler
-from oeleo.movers import mock_mover, connected_mover
+from oeleo.movers import connected_mover, mock_mover
 
 log = logging.getLogger("oeleo")
 
@@ -29,15 +29,14 @@ class Worker:
         checker: Checker object
         bookkeeper: DbHandler to interact with the db
         local_connector: Connector = None
-        external_connector: Connector = None
-"""
+        external_connector: Connector = None"""
 
     checker: Any
     bookkeeper: DbHandler
     dry_run: bool = False
     local_connector: Connector = None
     external_connector: Connector = None
-    extension: str = None,
+    extension: str = (None,)
     file_names: Generator[Path, None, None] = field(init=False, default=None)
     _external_name: Union[Path, str] = field(init=False, default="")
     _status: dict = field(init=False, default_factory=dict)
@@ -58,12 +57,16 @@ class Worker:
         TODO: This method should be updated so that it uses the value from the
            environment as default.
         """
-        local_files = self.local_connector.base_filter_sub_method(self.extension, **kwargs)
+        local_files = self.local_connector.base_filter_sub_method(
+            self.extension, **kwargs
+        )
         self.file_names = local_files
         return local_files
 
     def filter_external(self, **kwargs):
-        external_files = self.external_connector.base_filter_sub_method(self.extension, **kwargs)
+        external_files = self.external_connector.base_filter_sub_method(
+            self.extension, **kwargs
+        )
         return external_files
 
     def check(self, update_db=False, **kwargs):
@@ -75,7 +78,9 @@ class Worker:
             sent to the filter functions.
         """
         # PLEASE, REFACTOR ME!
-        print(f"Comparing {self.local_connector.directory} <=> {self.external_connector.directory}")
+        print(
+            f"Comparing {self.local_connector.directory} <=> {self.external_connector.directory}"
+        )
         local_files = self.filter_local(**kwargs)
         external_files = self.filter_external(**kwargs)
 
@@ -142,7 +147,8 @@ class Worker:
             if self.bookkeeper.is_changed(**checks):
                 self.status = ("changed", True)
                 if self.external_connector.move_func(
-                    f, self.external_name,
+                    f,
+                    self.external_name,
                 ):
                     self.status = ("moved", True)
                     self.bookkeeper.update_record(self.external_name, **checks)
@@ -249,7 +255,7 @@ def ssh_worker(
     extension: str = None,
     use_password: bool = False,
     dry_run: bool = False,
-    is_posix: bool = True
+    is_posix: bool = True,
 ):
     """Create a Worker with SSHConnector.
 
@@ -272,13 +278,16 @@ def ssh_worker(
     extension = extension or os.environ["OELEO_FILTER_EXTENSION"]
 
     local_connector = LocalConnector(directory=base_directory_from)
-    external_connector = SSHConnector(directory=base_directory_to, use_password=use_password, is_posix=is_posix)
+    external_connector = SSHConnector(
+        directory=base_directory_to, use_password=use_password, is_posix=is_posix
+    )
 
     bookkeeper = SimpleDbHandler(db_name)
     checker = ChecksumChecker()
 
     log.info(
-        f"[bold]from:[/] [bold green]{local_connector.directory}[/]", extra={"markup": True}
+        f"[bold]from:[/] [bold green]{local_connector.directory}[/]",
+        extra={"markup": True},
     )
     log.info(
         f"[bold]to  :[/] [bold blue]{external_connector.host}:{external_connector.directory}[/]",

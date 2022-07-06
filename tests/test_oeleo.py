@@ -41,10 +41,9 @@ def test_simple_worker():
         db_name=db_name,
         base_directory_from=base_directory_from,
         base_directory_to=base_directory_to,
-        extension=filter_extension
+        extension=filter_extension,
     )
     worker.connect_to_db()
     worker.filter_local()
     worker.check()
     worker.run()
-

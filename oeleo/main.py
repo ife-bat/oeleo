@@ -38,7 +38,7 @@ def example_check_with_ssh_connection():
         db_name=r"C:\scripting\oeleo\test_databases\test_ssh_to_odin.db",
         base_directory_from=Path(r"C:\scripting\processing_cellpy\raw"),
         base_directory_to=external_dir,
-        extension=filter_extension
+        extension=filter_extension,
     )
     worker.connect_to_db()
     try:
@@ -72,7 +72,7 @@ def example_check_first_then_run():
     )
     worker.connect_to_db()
     worker.filter_local(additional_filters=my_filters)
-    worker.check( additional_filters=my_filters)
+    worker.check(additional_filters=my_filters)
     run_oeleo = input("\n Continue ([y]/n)? ") or "y"
     if run_oeleo.lower() in ["y", "yes"]:
         worker.run()

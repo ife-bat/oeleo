@@ -3,11 +3,10 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Any, Protocol, Generator, Union
+from typing import Any, Generator, Protocol, Union
 
 import dotenv
 from fabric import Connection
-
 from filters import base_filter
 from movers import simple_mover
 from utils import calculate_checksum
@@ -35,7 +34,9 @@ class Connector(Protocol):
     def close(self) -> None:
         ...
 
-    def base_filter_sub_method(self, glob_pattern: str = "*", **kwargs) -> Union[list, Generator]:
+    def base_filter_sub_method(
+        self, glob_pattern: str = "*", **kwargs
+    ) -> Union[list, Generator]:
         ...
 
     def calculate_checksum(self, f: Path, hide: bool = True) -> Hash:
@@ -46,7 +47,6 @@ class Connector(Protocol):
 
 
 class LocalConnector(Connector):
-
     def __init__(self, directory=None):
         self.directory = directory or os.environ["OELEO_BASE_DIR_TO"]
 
@@ -61,7 +61,9 @@ class LocalConnector(Connector):
     def close(self):
         pass
 
-    def base_filter_sub_method(self, glob_pattern: str = "*", **kwargs) -> Generator[Path, None, None]:  # RENAME TO enquire
+    def base_filter_sub_method(
+        self, glob_pattern: str = "*", **kwargs
+    ) -> Generator[Path, None, None]:  # RENAME TO enquire
         return base_filter(self.directory, glob_pattern)
 
     def calculate_checksum(self, f: Path, hide: bool = True) -> Hash:
@@ -72,7 +74,14 @@ class LocalConnector(Connector):
 
 
 class SSHConnector(Connector):
-    def __init__(self, username=None, host=None, directory=None, is_posix=True, use_password=False):
+    def __init__(
+        self,
+        username=None,
+        host=None,
+        directory=None,
+        is_posix=True,
+        use_password=False,
+    ):
         self.session_password = os.environ["OELEO_PASSWORD"]
         self.username = username or os.environ["OELEO_USERNAME"]
         self.host = host or os.environ["OELEO_EXTERNAL_HOST"]
@@ -184,4 +193,3 @@ def register_password(pwd: str = None) -> None:
         session_password = getpass.getpass(prompt="Password: ")
         os.environ["OELEO_PASSWORD"] = session_password
     print(" Done ".center(80, "="))
-
