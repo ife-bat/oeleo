@@ -12,7 +12,7 @@ class Checker:
         pass
 
 
-class ConnectedChecker(Checker):  # RENAME -> ChecksumChecker
+class ChecksumChecker(Checker):  # RENAME -> ChecksumChecker
     @staticmethod
     def check(f: Path, connector: Any = None, **kwargs) -> Dict[str, str]:
         """Calculates checksum using method provided by the connector"""

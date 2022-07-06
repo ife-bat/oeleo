@@ -43,46 +43,48 @@ import time
 
 import dotenv
 
-from oeleo.checkers import  ConnectedChecker
+from oeleo.checkers import ChecksumChecker
 from oeleo.models import SimpleDbHandler
 from oeleo.connectors import LocalConnector
 from oeleo.workers import Worker
 from oeleo.utils import logger
 
+
 def main():
-    log = logger()
-    # assuming you have made a .env file:
-    dotenv.load_dotenv()
-    
-    db_name = os.environ["OELEO_DB_NAME"]
-    base_directory_from = Path(os.environ["OELEO_BASE_DIR_FROM"])
-    base_directory_to = Path(os.environ["OELEO_BASE_DIR_TO"])
-    filter_extension = os.environ["OELEO_FILTER_EXTENSION"]
-    
-    # Making a worker using the Worker class.
-    # You can also use the `factory` functions in `oeleo.worker`
-    # (e.g. `ssh_worker` and `simple_worker`)
-    bookkeeper = SimpleDbHandler(db_name)
-    checker = ConnectedChecker()
-    local_connector = LocalConnector(directory=base_directory_from)
-    external_connector = LocalConnector(directory=base_directory_to)
-    
-    worker = Worker(
-        checker=checker,
-        local_connector=local_connector,
-        external_connector=external_connector,
-        bookkeeper=bookkeeper,
-        extension=filter_extension
-    )
-    
-    worker.connect_to_db()
-    while True:
-        worker.filter_local()
-        worker.run()
-        time.sleep(300)
+  log = logger()
+  # assuming you have made a .env file:
+  dotenv.load_dotenv()
+
+  db_name = os.environ["OELEO_DB_NAME"]
+  base_directory_from = Path(os.environ["OELEO_BASE_DIR_FROM"])
+  base_directory_to = Path(os.environ["OELEO_BASE_DIR_TO"])
+  filter_extension = os.environ["OELEO_FILTER_EXTENSION"]
+
+  # Making a worker using the Worker class.
+  # You can also use the `factory` functions in `oeleo.worker`
+  # (e.g. `ssh_worker` and `simple_worker`)
+  bookkeeper = SimpleDbHandler(db_name)
+  checker = ChecksumChecker()
+  local_connector = LocalConnector(directory=base_directory_from)
+  external_connector = LocalConnector(directory=base_directory_to)
+
+  worker = Worker(
+    checker=checker,
+    local_connector=local_connector,
+    external_connector=external_connector,
+    bookkeeper=bookkeeper,
+    extension=filter_extension
+  )
+
+  worker.connect_to_db()
+  while True:
+    worker.filter_local()
+    worker.run()
+    time.sleep(300)
+
 
 if __name__ == "__main__":
-    main()
+  main()
 ```
 
 #### Example .env file

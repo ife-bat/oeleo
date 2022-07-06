@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Generator, Union
 
-from oeleo.checkers import ConnectedChecker
+from oeleo.checkers import ChecksumChecker
 from oeleo.connectors import Connector, SSHConnector, LocalConnector
 from oeleo.models import DbHandler, MockDbHandler, SimpleDbHandler
 from oeleo.movers import mock_mover, connected_mover
@@ -220,7 +220,7 @@ def simple_worker(
     base_directory_to = base_directory_to or Path(os.environ["OELEO_BASE_DIR_TO"])
     extension = extension or os.environ["OELEO_FILTER_EXTENSION"]
     bookkeeper = SimpleDbHandler(db_name)
-    checker = ConnectedChecker()
+    checker = ChecksumChecker()
     local_connector = LocalConnector(directory=base_directory_from)
     external_connector = LocalConnector(directory=base_directory_to)
 
@@ -275,7 +275,7 @@ def ssh_worker(
     external_connector = SSHConnector(directory=base_directory_to, use_password=use_password, is_posix=is_posix)
 
     bookkeeper = SimpleDbHandler(db_name)
-    checker = ConnectedChecker()
+    checker = ChecksumChecker()
 
     log.info(
         f"[bold]from:[/] [bold green]{local_connector.directory}[/]", extra={"markup": True}
