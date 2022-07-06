@@ -1,6 +1,9 @@
+import logging
 import random
 import shutil
 from pathlib import Path
+
+log = logging.getLogger("oeleo")
 
 
 def mock_mover(path: Path, to: Path, *args, **kwargs):

@@ -1,9 +1,11 @@
+import logging
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Protocol, Union
 
 from oeleo.workers import WorkerBase
-from oeleo.console import console
+
+log = logging.getLogger("oeleo")
 
 
 class SchedulerBase(Protocol):

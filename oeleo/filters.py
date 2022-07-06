@@ -4,7 +4,7 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Generator, Iterable
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("oeleo")
 
 
 def filter_on_not_before(path: Path, value: datetime):

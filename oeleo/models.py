@@ -1,4 +1,5 @@
 import datetime
+import logging
 import random
 from pathlib import Path
 from typing import Any, Protocol
@@ -14,6 +15,7 @@ CODES = [
 ]
 
 database_proxy = peewee.DatabaseProxy()
+log = logging.getLogger("oeleo")
 
 
 class FileList(peewee.Model):
