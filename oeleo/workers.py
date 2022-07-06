@@ -1,9 +1,11 @@
 import logging
 import os
+from asyncio import Protocol
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Generator, Union
 
+from oeleo.console import console
 from oeleo.checkers import ChecksumChecker
 from oeleo.connectors import Connector, LocalConnector, SSHConnector
 from oeleo.models import DbHandler, MockDbHandler, SimpleDbHandler
@@ -11,8 +13,65 @@ from oeleo.models import DbHandler, MockDbHandler, SimpleDbHandler
 log = logging.getLogger("oeleo")
 
 
+class WorkerBase(Protocol):
+    checker: Any
+    bookkeeper: DbHandler
+    local_connector: Connector = None
+    external_connector: Connector = None
+
+    def connect_to_db(self):
+        ...
+
+    def filter_local(self, **kwargs):
+        ...
+
+    def filter_external(self, **kwargs):
+        ...
+
+    def check(self, update_db=False, **kwargs):
+        ...
+
+    def run(self):
+        ...
+
+    def report(self):
+        ...
+
+    def close(self):
+        ...
+
+
+class MockWorker(WorkerBase):
+
+    def connect_to_db(self):
+        console.log("Connecting to database")
+
+    def filter_local(self, **kwargs):
+        console.log("Filtering local directory")
+
+    def filter_external(self, **kwargs):
+        console.log("Filtering external directory")
+
+    def check(self, update_db=False, **kwargs):
+        console.log(
+            "Performing a comparison between local and "
+            "external directory"
+        )
+        console.log(f" - update-db:  {update_db}")
+        console.log(f" - kwargs:  {kwargs}")
+
+    def run(self):
+        console.log("Running...")
+
+    def report(self):
+        console.log("Showing report after run")
+
+    def close(self):
+        console.log("Closing all connections")
+
+
 @dataclass
-class Worker:
+class Worker(WorkerBase):
     """The worker class is responsible for orchestrating the transfers.
 
     A typical transfer consists of the following steps:
@@ -199,6 +258,9 @@ class Worker:
     @external_name.setter
     def external_name(self, name):
         self._external_name = name
+
+    def close(self):
+        self.external_connector.close()
 
 
 def simple_worker(

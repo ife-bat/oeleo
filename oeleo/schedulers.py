@@ -2,11 +2,12 @@ import time
 from datetime import datetime, timedelta
 from typing import Protocol, Union
 
-from oeleo.workers import Worker
+from oeleo.workers import WorkerBase
+from oeleo.console import console
 
 
-class Scheduler(Protocol):
-    worker: Union[Worker, None] = None
+class SchedulerBase(Protocol):
+    worker: Union[WorkerBase, None] = None
 
     def _setup(self):
         ...
@@ -17,15 +18,17 @@ class Scheduler(Protocol):
     def _update_db(self):
         ...
 
+    # consider adding a close_all or clean_up method
 
-class SimpleScheduler(Scheduler):
-    def __init__(self, worker: Worker, run_interval=43_200, max_run_intervals=1000):
+
+class SimpleScheduler(SchedulerBase):
+    def __init__(self, worker: WorkerBase, run_interval_time=43_200, max_run_intervals=1000):
         self.worker = worker
         # self.update_interval = 3_600  # not used
-        self.run_interval = timedelta(seconds=run_interval)
+        self.run_interval_time = run_interval_time
         self.max_run_intervals = max_run_intervals
         # self._last_update = None
-        self._sleep_interval = run_interval / 10
+        self._sleep_interval = max(run_interval_time / 10, 1)
         self._last_run = None
         self._run_counter = 0
 
@@ -36,19 +39,21 @@ class SimpleScheduler(Scheduler):
 
     def start(self):
         self._setup()
-
         while True:
             self.worker.filter_local()
             self.worker.run()
             self._last_run = datetime.now()
             self._run_counter += 1
+
             if self._run_counter >= self.max_run_intervals:
                 break
 
-            used_time = 0
-            while used_time < self.run_interval:
+            used_time = 0.0
+
+            while used_time < self.run_interval_time:
                 time.sleep(self._sleep_interval)
-                used_time = self._last_run - datetime.now()
+                used_time = (datetime.now() - self._last_run).total_seconds()
+        self.worker.close()
 
     def _update_db(self):
         pass
