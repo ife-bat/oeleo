@@ -21,7 +21,7 @@ class Worker:
     >>> worker.connect_to_db()
     2. Collect (and filter) the files in the local directory that are candidates for copying to
        the external directory (server).
-    >>> worker.filter_local("*.res", additional_filters=my_filters)
+    >>> worker.filter_local(additional_filters=my_filters)
     3. Calculate checksum for each file collected and check copy if they have changed.
     >>> worker.run()
 
@@ -39,7 +39,7 @@ class Worker:
     external_connector: Connector = None
     extension: str = None,
     file_names: Generator[Path, None, None] = field(init=False, default=None)
-    _external_name: str = field(init=False, default="")
+    _external_name: Union[Path, str] = field(init=False, default="")
     _status: dict = field(init=False, default_factory=dict)
 
     def __post_init__(self):

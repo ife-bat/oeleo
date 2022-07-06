@@ -185,31 +185,3 @@ def register_password(pwd: str = None) -> None:
         os.environ["OELEO_PASSWORD"] = session_password
     print(" Done ".center(80, "="))
 
-
-def main():
-    dotenv.load_dotenv()
-    local_dir = Path(r"C:\scripting\processing_cellpy\raw")
-
-    external_dir = PurePosixPath("/home/jepe@ad.ife.no/Temp")
-    external_host = os.environ["EXTERNAL_TEST_HOST"]
-    username = os.environ["OELEO_USERNAME"]
-    keyname = os.environ["OELEO_KEY_FILENAME"]
-    password = os.environ["OELEO_PASSWORD"]
-
-    register_password()
-    session_password = os.environ["OELEO_PASSWORD"]
-    c = Connection(
-        host=external_host,
-        user=username,
-        connect_kwargs={
-            "password": session_password,
-            # "key_filename": [keyname],
-        },
-    )
-
-    result = c.run(f"ls {external_dir}")
-    print(result)
-
-
-if __name__ == "__main__":
-    main()
