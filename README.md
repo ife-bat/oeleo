@@ -74,6 +74,7 @@ def main():
     extension=filter_extension
   )
 
+  # Running the worker with 5 minutes intervals.
   # You can also use an oeleo scheduler for this.
   worker.connect_to_db()
   while True:
