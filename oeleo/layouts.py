@@ -69,7 +69,7 @@ def update_body_panel(s):
     return p
 
 
-def main():
+def example_body_that_scrolls():
     layout = create_layout()
     with Live(layout, refresh_per_second=20, screen=True):
         txt = ""
@@ -124,4 +124,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    example_body_that_scrolls()
