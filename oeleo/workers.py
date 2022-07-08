@@ -2,9 +2,14 @@ import logging
 import os
 from asyncio import Protocol
 from dataclasses import dataclass, field
+from math import ceil
 from pathlib import Path
 from typing import Any, Generator, Union
 
+from rich.panel import Panel
+from rich.text import Text
+
+from oeleo.layouts import N_ROWS_NOT_BODY, N_COLS_NOT_BODY
 from oeleo.checkers import ChecksumChecker
 from oeleo.connectors import Connector, LocalConnector, SSHConnector
 from oeleo.console import console
@@ -13,11 +18,65 @@ from oeleo.models import DbHandler, MockDbHandler, SimpleDbHandler
 log = logging.getLogger("oeleo")
 
 
+class ReporterBase(Protocol):
+
+    def report(self, status):
+        pass
+
+
+class Reporter:
+
+    @staticmethod
+    def report(status):
+        log.debug(status)
+
+
+class LayoutReporter:
+
+    def __init__(self, layout):
+        self.layout = layout
+        self.lines = []
+        self.max_lines = 200
+        self.min_lines = 100
+
+    def report(self, status):
+        self.lines.append(status)
+        self._trim_if_needed()
+        body_panel = self._update_body_panel()
+        self.layout["body"].update(body_panel)
+
+    def _trim_if_needed(self):
+        if len(self.lines) > self.max_lines:
+            self.lines = self.lines[-self.min_lines:]
+
+    def _update_body_panel(self):
+        number_of_columns, number_of_rows = os.get_terminal_size()
+        number_of_rows -= N_ROWS_NOT_BODY
+        number_of_columns -= N_COLS_NOT_BODY
+
+        _lines = self.lines[-number_of_rows:]
+        needed_rows_due_to_wrapping = 0
+        _new_lines = []
+        for _line in reversed(_lines):
+            needed_rows_due_to_wrapping += ceil(Text(_line).cell_len / number_of_columns)
+            if needed_rows_due_to_wrapping < number_of_rows:
+                _new_lines.append(_line)
+            else:
+                break
+        _lines = reversed(_new_lines)
+
+        s = "\n".join(_lines)
+
+        p = Panel(s)
+        return p
+
+
 class WorkerBase(Protocol):
     checker: Any
     bookkeeper: DbHandler
     local_connector: Connector = None
     external_connector: Connector = None
+    reporter: ReporterBase = None
 
     def connect_to_db(self):
         ...
@@ -34,7 +93,7 @@ class WorkerBase(Protocol):
     def run(self):
         ...
 
-    def report(self):
+    def run_statistics(self):
         ...
 
     def close(self):
@@ -59,7 +118,7 @@ class MockWorker(WorkerBase):
     def run(self):
         console.log("Running...")
 
-    def report(self):
+    def run_statistics(self):
         console.log("Showing report after run")
 
     def close(self):
@@ -91,7 +150,8 @@ class Worker(WorkerBase):
     dry_run: bool = False
     local_connector: Connector = None
     external_connector: Connector = None
-    extension: str = (None,)
+    extension: str = None
+    reporter: ReporterBase = Reporter()
     file_names: Generator[Path, None, None] = field(init=False, default=None)
     _external_name: Union[Path, str] = field(init=False, default="")
     _status: dict = field(init=False, default_factory=dict)
@@ -133,7 +193,7 @@ class Worker(WorkerBase):
             sent to the filter functions.
         """
         log.debug("****** CHECK:")
-        log.debug(
+        self.reporter.report(
             f"Comparing {self.local_connector.directory} <=> {self.external_connector.directory}"
         )
         local_files = self.filter_local(**kwargs)
@@ -146,12 +206,12 @@ class Worker(WorkerBase):
         number_of_duplicates_out_of_sync = 0
 
         for f in local_files:
-            log.debug(f"Iterating: {f}")
+            self.reporter.report(f"Iterating: {f}")
             number_of_local_files += 1
             self.make_external_name(f)
             external_name = self.external_name
-            log.debug(f"{f.name} -> {self.external_name}")
-            log.debug(f" (*) {f.name}")
+            self.reporter.report(f"{f.name} -> {self.external_name}")
+            self.reporter.report(f" (*) {f.name}")
             local_vals = self.checker.check(
                 f,
                 connector=self.local_connector,
@@ -170,8 +230,8 @@ class Worker(WorkerBase):
 
                 same = True
                 for k in local_vals:
-                    log.debug(f"(L) {k}: {local_vals[k]}")
-                    log.debug(f"(E) {k}: {external_vals[k]}")
+                    self.reporter.report(f"(L) {k}: {local_vals[k]}")
+                    self.reporter.report(f"(E) {k}: {external_vals[k]}")
                     if local_vals[k] != external_vals[k]:
                         same = False
                         number_of_duplicates_out_of_sync += 1
@@ -195,10 +255,10 @@ class Worker(WorkerBase):
                         external_name, code=code, **local_vals
                     )
 
-        log.debug("REPORT (CHECK):")
-        log.debug(f"-Total number of local files:    {number_of_local_files}")
-        log.debug(f"-Files with external duplicates: {number_of_external_duplicates}")
-        log.debug(
+        self.reporter.report("REPORT (CHECK):")
+        self.reporter.report(f"-Total number of local files:    {number_of_local_files}")
+        self.reporter.report(f"-Files with external duplicates: {number_of_external_duplicates}")
+        self.reporter.report(
             f"-Files out of sync:              {number_of_duplicates_out_of_sync}"
         )
 
@@ -209,7 +269,7 @@ class Worker(WorkerBase):
         for f in self.file_names:
             del self.status
             self.make_external_name(f)
-            log.debug(f"{f.name} -> {self.external_name}")
+            self.reporter.report(f"{f.name} -> {self.external_name}")
             self.bookkeeper.register(f)
             checks = self.checker.check(f)
 
@@ -225,9 +285,9 @@ class Worker(WorkerBase):
                     self.status = ("moved", True)
                     self.bookkeeper.update_record(self.external_name, **checks)
 
-            self.report()
+            self.run_statistics()
 
-    def report(self):
+    def run_statistics(self):
         status = self.status
         f1 = status["name"]
         f2 = status["external_name"]
@@ -242,6 +302,7 @@ class Worker(WorkerBase):
             txt = f"[bold green]{f1} == {f2}[/]"
 
         log.debug(txt, extra={"markup": True})
+        return txt
 
     def _create_external_name(self, f):
         return self.external_connector.directory / f.name

@@ -7,9 +7,9 @@ import dotenv
 
 from oeleo.connectors import register_password
 from oeleo.console import console
-from oeleo.schedulers import SimpleScheduler
+from oeleo.schedulers import SimpleScheduler, RichScheduler
 from oeleo.utils import logger
-from oeleo.workers import MockWorker, simple_worker, ssh_worker
+from oeleo.workers import simple_worker, ssh_worker
 
 log = logger()
 
@@ -37,6 +37,19 @@ def example_with_simple_scheduler():
         worker,
         run_interval_time=2,
         max_run_intervals=2,
+    )
+    s.start()
+
+
+def example_with_rich_scheduler():
+    log.setLevel(logging.CRITICAL)
+    dotenv.load_dotenv()
+    worker = simple_worker()
+
+    s = RichScheduler(
+        worker,
+        run_interval_time=10,
+        max_run_intervals=10,
     )
     s.start()
 
@@ -100,4 +113,5 @@ if __name__ == "__main__":
     # main()
     # example_check_with_ssh_connection()
     # example_check_first_then_run()
-    example_with_simple_scheduler()
+    # example_with_simple_scheduler()
+    example_with_rich_scheduler()
