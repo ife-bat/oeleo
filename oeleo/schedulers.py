@@ -1,7 +1,7 @@
 import logging
 import time
 from datetime import datetime
-from typing import Protocol, Union
+from typing import Protocol
 
 from oeleo.workers import WorkerBase
 
@@ -29,7 +29,7 @@ class SimpleScheduler(SchedulerBase):
         self, worker: WorkerBase, run_interval_time=43_200, max_run_intervals=1000
     ):
         self.worker = worker
-        self.state = {}
+        self.state = {"iterations": 0}
         # self.update_interval = 3_600  # not used
         self.run_interval_time = run_interval_time
         self.max_run_intervals = max_run_intervals
@@ -39,19 +39,25 @@ class SimpleScheduler(SchedulerBase):
         self._run_counter = 0
 
     def _setup(self):
+        log.debug("setting up scheduler")
         self.worker.connect_to_db()
         self.worker.check(update_db=True)
         # self._last_update = datetime.now()
 
     def start(self):
+        log.debug("***** START:")
         self._setup()
         while True:
+            self.state["iterations"] += 1
+            log.debug(f"ITERATING ({self.state['iterations']})")
+
             self.worker.filter_local()
             self.worker.run()
             self._last_run = datetime.now()
             self._run_counter += 1
 
             if self._run_counter >= self.max_run_intervals:
+                log.debug("-> BREAK")
                 break
 
             used_time = 0.0

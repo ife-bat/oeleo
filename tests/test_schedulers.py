@@ -3,9 +3,9 @@ from pathlib import Path
 
 import dotenv
 
-from oeleo.utils import logger
-from oeleo.workers import simple_worker, MockWorker
 from oeleo.schedulers import SimpleScheduler
+from oeleo.utils import logger
+from oeleo.workers import MockWorker, simple_worker
 
 log = logger()
 

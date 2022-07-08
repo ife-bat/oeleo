@@ -6,9 +6,10 @@ from pathlib import Path
 import dotenv
 
 from oeleo.connectors import register_password
-from oeleo.utils import logger
-from oeleo.workers import simple_worker, ssh_worker
 from oeleo.console import console
+from oeleo.schedulers import SimpleScheduler
+from oeleo.utils import logger
+from oeleo.workers import MockWorker, simple_worker, ssh_worker
 
 log = logger()
 
@@ -24,6 +25,20 @@ def main():
     worker.check(update_db=True)
     worker.filter_local()
     worker.run()
+
+
+def example_with_simple_scheduler():
+    log.setLevel(logging.DEBUG)
+    log.debug(f"Starting oeleo!")
+    dotenv.load_dotenv()
+    worker = simple_worker()
+
+    s = SimpleScheduler(
+        worker,
+        run_interval_time=2,
+        max_run_intervals=2,
+    )
+    s.start()
 
 
 def example_check_with_ssh_connection():
@@ -82,6 +97,7 @@ def example_check_first_then_run():
 
 
 if __name__ == "__main__":
-    main()
-    example_check_with_ssh_connection()
-    example_check_first_then_run()
+    # main()
+    # example_check_with_ssh_connection()
+    # example_check_first_then_run()
+    example_with_simple_scheduler()

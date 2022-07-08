@@ -5,9 +5,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Generator, Union
 
-from oeleo.console import console
 from oeleo.checkers import ChecksumChecker
 from oeleo.connectors import Connector, LocalConnector, SSHConnector
+from oeleo.console import console
 from oeleo.models import DbHandler, MockDbHandler, SimpleDbHandler
 
 log = logging.getLogger("oeleo")
@@ -83,7 +83,8 @@ class Worker(WorkerBase):
         checker: Checker object
         bookkeeper: DbHandler to interact with the db
         local_connector: Connector = None
-        external_connector: Connector = None"""
+        external_connector: Connector = None
+    """
 
     checker: Any
     bookkeeper: DbHandler
@@ -197,7 +198,9 @@ class Worker(WorkerBase):
         log.debug("REPORT (CHECK):")
         log.debug(f"-Total number of local files:    {number_of_local_files}")
         log.debug(f"-Files with external duplicates: {number_of_external_duplicates}")
-        log.debug(f"-Files out of sync:              {number_of_duplicates_out_of_sync}")
+        log.debug(
+            f"-Files out of sync:              {number_of_duplicates_out_of_sync}"
+        )
 
     def run(self):
         """Copy the files that needs to be copied and update the db."""

@@ -18,7 +18,7 @@ def simple_mover(path: Path, to: Path, *args, **kwargs):
         shutil.copyfile(path, to)
         return True
     except OSError:
-        print("Could not copy this file - destination most likely not writable!")
+        log.debug("Could not copy this file - destination most likely not writable!")
         return False
 
 
@@ -32,5 +32,5 @@ def connected_mover(path: Path, to: Path, connector=None, *args, **kwargs):
         success = move_func(path, to)
         return success
     except OSError:
-        print("Could not copy this file - destination most likely not writable!")
+        log.debug("Could not copy this file - destination most likely not writable!")
         return False
