@@ -14,7 +14,7 @@ from oeleo.workers import simple_worker, ssh_worker
 log = logger()
 
 
-def main():
+def example_bare_minimum():
     log.setLevel(logging.DEBUG)
     log.debug(f"Starting oeleo!")
     console.print(f"Starting oeleo!")
@@ -48,8 +48,8 @@ def example_with_rich_scheduler():
 
     s = RichScheduler(
         worker,
-        run_interval_time=10,
-        max_run_intervals=10,
+        run_interval_time=4,
+        max_run_intervals=4,
     )
     s.start()
 
@@ -109,9 +109,7 @@ def example_check_first_then_run():
         worker.run()
 
 
+main = example_with_rich_scheduler
+
 if __name__ == "__main__":
-    # main()
-    # example_check_with_ssh_connection()
-    # example_check_first_then_run()
-    # example_with_simple_scheduler()
-    example_with_rich_scheduler()
+    main()

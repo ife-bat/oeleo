@@ -19,35 +19,57 @@ log = logging.getLogger("oeleo")
 
 
 class ReporterBase(Protocol):
+    layout = None
+    lines: list = None
 
-    def report(self, status):
-        pass
+    def report(self, status, events=None, same_line=False, replace_line=False):
+        ...
+
+    def clear(self):
+        ...
 
 
 class Reporter:
+    layout = None
+    lines = []
 
     @staticmethod
-    def report(status):
+    def report(status, events=None, same_line=False, replace_line=False):
         log.debug(status)
+
+    def clear(self):
+        pass
 
 
 class LayoutReporter:
-
     def __init__(self, layout):
         self.layout = layout
         self.lines = []
         self.max_lines = 200
         self.min_lines = 100
 
-    def report(self, status):
-        self.lines.append(status)
+    def report(self, status, events=None, same_line=False, replace_line=False):
+        if same_line and len(self.lines):
+            self.lines[-1] = f"{self.lines[-1]}{status}"
+        elif replace_line and len(self.lines):
+            self.lines[-1] = f"{status}"
+        else:
+            self.lines.append(status)
+        if events:
+            log.debug(
+                f"Events ({events}) given - however, events are not implemented yet."
+            )
+
         self._trim_if_needed()
         body_panel = self._update_body_panel()
         self.layout["body"].update(body_panel)
 
+    def clear(self):
+        self.lines = []
+
     def _trim_if_needed(self):
         if len(self.lines) > self.max_lines:
-            self.lines = self.lines[-self.min_lines:]
+            self.lines = self.lines[-self.min_lines :]
 
     def _update_body_panel(self):
         number_of_columns, number_of_rows = os.get_terminal_size()
@@ -58,7 +80,9 @@ class LayoutReporter:
         needed_rows_due_to_wrapping = 0
         _new_lines = []
         for _line in reversed(_lines):
-            needed_rows_due_to_wrapping += ceil(Text(_line).cell_len / number_of_columns)
+            needed_rows_due_to_wrapping += ceil(
+                Text(_line).cell_len / number_of_columns
+            )
             if needed_rows_due_to_wrapping < number_of_rows:
                 _new_lines.append(_line)
             else:
@@ -163,11 +187,12 @@ class Worker(WorkerBase):
         self.external_connector.connect()
 
     def connect_to_db(self):
+        self.status = ("state", "filter")
         self.bookkeeper.initialize_db()
         log.debug(f"Connecting to db -> '{self.bookkeeper.db_name}' DONE")
 
     def filter_local(self, **kwargs):
-        """Selects the files that should be processed.txt"""
+        """Selects the files that should be processed."""
 
         local_files = self.local_connector.base_filter_sub_method(
             self.extension, **kwargs
@@ -176,6 +201,8 @@ class Worker(WorkerBase):
         return local_files
 
     def filter_external(self, **kwargs):
+        """Filter for external files that correspond to local ones."""
+        self.status = ("state", "filter")
         external_files = self.external_connector.base_filter_sub_method(
             self.extension, **kwargs
         )
@@ -192,6 +219,8 @@ class Worker(WorkerBase):
         Additional keyword arguments:
             sent to the filter functions.
         """
+
+        self.status = ("state", "check")
         log.debug("****** CHECK:")
         self.reporter.report(
             f"Comparing {self.local_connector.directory} <=> {self.external_connector.directory}"
@@ -206,17 +235,18 @@ class Worker(WorkerBase):
         number_of_duplicates_out_of_sync = 0
 
         for f in local_files:
-            self.reporter.report(f"Iterating: {f}")
+            # self.reporter.report(f"Iterating: {f}")
             number_of_local_files += 1
             self.make_external_name(f)
             external_name = self.external_name
-            self.reporter.report(f"{f.name} -> {self.external_name}")
-            self.reporter.report(f" (*) {f.name}")
             local_vals = self.checker.check(
                 f,
                 connector=self.local_connector,
             )
             if external_name in external_files:
+                self.reporter.report(
+                    f"[cyan]{f.name}[/cyan] -> [cyan]{self.external_name}[/cyan]"
+                )
                 code = 1
                 exists = True
 
@@ -230,15 +260,25 @@ class Worker(WorkerBase):
 
                 same = True
                 for k in local_vals:
-                    self.reporter.report(f"(L) {k}: {local_vals[k]}")
-                    self.reporter.report(f"(E) {k}: {external_vals[k]}")
+                    self.reporter.report(f"    (L) {k}: {local_vals[k]}")
+
                     if local_vals[k] != external_vals[k]:
                         same = False
                         number_of_duplicates_out_of_sync += 1
                         code = 0
+                        self.reporter.report(
+                            f"    (E) {k}: [red]{external_vals[k]}[/red]"
+                        )
+                    else:
+                        self.reporter.report(
+                            f"    (E) {k}: [green]{external_vals[k]}[/green]"
+                        )
                 log.debug(f"In sync: {same}")
 
             else:
+                self.reporter.report(
+                    f"[cyan]{f.name}[/cyan] -> [red]{self.external_name}[/red]"
+                )
                 exists = False
                 code = 0
                 log.debug("[ONLY LOCAL]")
@@ -255,28 +295,39 @@ class Worker(WorkerBase):
                         external_name, code=code, **local_vals
                     )
 
-        self.reporter.report("REPORT (CHECK):")
-        self.reporter.report(f"-Total number of local files:    {number_of_local_files}")
-        self.reporter.report(f"-Files with external duplicates: {number_of_external_duplicates}")
+        self.reporter.report("\n[green bold]REPORT (CHECK):[/green bold]")
+        self.reporter.report(
+            f"-Total number of local files:    {number_of_local_files}"
+        )
+        self.reporter.report(
+            f"-Files with external duplicates: {number_of_external_duplicates}"
+        )
         self.reporter.report(
             f"-Files out of sync:              {number_of_duplicates_out_of_sync}"
         )
 
     def run(self):
         """Copy the files that needs to be copied and update the db."""
+
+        self.status = ("state", "run")
         log.debug("****** RUN:")
 
         for f in self.file_names:
             del self.status
             self.make_external_name(f)
-            self.reporter.report(f"{f.name} -> {self.external_name}")
             self.bookkeeper.register(f)
             checks = self.checker.check(f)
 
             if not self.bookkeeper.is_changed(**checks):
                 log.debug(f"{f} not changed")
+                self.reporter.report(
+                    f":smiley: [green]{f.name}[/green] == [green]{self.external_name}[/green]"
+                )
 
             else:
+                self.reporter.report(
+                    f":arrow_forward: [green]{f.name}[/green] -> [blue]{self.external_name}[/blue]"
+                )
                 self.status = ("changed", True)
                 if self.external_connector.move_func(
                     f,
@@ -284,10 +335,18 @@ class Worker(WorkerBase):
                 ):
                     self.status = ("moved", True)
                     self.bookkeeper.update_record(self.external_name, **checks)
+                    self.reporter.report(" :smiley:", same_line=True)
+                else:
+                    self.reporter.report(
+                        f":warning: [green]{f.name}[/green] -> "
+                        f"[red]{self.external_name}[/red] :slightly_frowning_face: failed copy!",
+                        replace_line=True,
+                    )
 
             self.run_statistics()
 
     def run_statistics(self):
+        log.warning("deprecated")
         status = self.status
         f1 = status["name"]
         f2 = status["external_name"]

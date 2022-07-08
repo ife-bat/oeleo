@@ -6,7 +6,7 @@ from typing import Protocol
 from rich.live import Live
 from rich.panel import Panel
 
-from oeleo.layouts import create_layout
+from oeleo.layouts import create_layout, confirm
 from oeleo.workers import WorkerBase, LayoutReporter
 
 log = logging.getLogger("oeleo")
@@ -94,43 +94,63 @@ class RichScheduler(SchedulerBase):
         log.debug("setting up scheduler")
         self.layout = create_layout()
         self.worker.reporter = LayoutReporter(self.layout)
-        self.worker.connect_to_db()
-        self.worker.check(update_db=True)
-        # self._last_update = datetime.now()
 
     def start(self):
         log.debug("***** START:")
         self._setup()
 
         with Live(self.layout, refresh_per_second=20, screen=True):
+            self.layout["middle_header"].update(
+                Panel(f"(L) {self.worker.local_connector.directory}")
+            )
+            self.layout["right_header"].update(
+                Panel(f"(E) {self.worker.external_connector.directory}")
+            )
+            self.worker.connect_to_db()
+            self.layout["left_footer"].update(Panel(f"CHECK..."))
+            self.worker.check(update_db=True)
+            if not confirm(self.layout):
+                return
+            self.worker.reporter.clear()
             while True:
                 time.sleep(0.2)
                 self.state["iterations"] += 1
                 log.debug(f"ITERATING ({self.state['iterations']})")
-                self.layout["left_footer"].update(Panel(f"I:{self.state['iterations']:06}"))
+                self.layout["left_footer"].update(
+                    Panel(f"I:{self.state['iterations']:06}")
+                )
                 self.worker.reporter.report(
-                    f"NEW ITERATION: {self.state['iterations']:06}/{self.max_run_intervals:06}"
+                    f"\n[cyan bold]NEW ITERATION:[/cyan bold] {self.state['iterations']:06}/{self.max_run_intervals:06}"
                 )
                 self.layout["middle_footer"].update(Panel("filter local"))
-                self.worker.reporter.report("Filtering...")
                 self.worker.filter_local()
                 self.layout["middle_footer"].update(Panel("run"))
-                self.worker.reporter.report("Running...")
                 self.worker.run()
                 self._last_run = datetime.now()
                 self._run_counter += 1
 
+                if self._run_counter == self.max_run_intervals -2:
+                    self.layout["status_footer"].update(Panel(":old_man_medium_skin_tone:"))
+
                 if self._run_counter >= self.max_run_intervals:
                     self.layout["middle_footer"].update(Panel("done"))
+                    self.layout["status_footer"].update(Panel(":skull:"))
                     log.debug("-> BREAK")
+                    time.sleep(0.2)
                     break
 
                 used_time = 0.0
-                self.layout["middle_footer"].update(Panel(f"Idle for {round(used_time, 0)}/{self.run_interval_time} s"))
+                self.layout["middle_footer"].update(
+                    Panel(f"Idle for {round(used_time)}/{self.run_interval_time} s")
+                )
+                self.worker.reporter.report(".")
                 while used_time < self.run_interval_time:
                     time.sleep(self._sleep_interval)
+                    self.worker.reporter.report(".", same_line=True)
                     used_time = (datetime.now() - self._last_run).total_seconds()
-                    self.layout["middle_footer"].update(Panel(f"Idle for {round(used_time, 0)}/{self.run_interval_time} s"))
+                    self.layout["middle_footer"].update(
+                        Panel(f"Idle for {round(used_time)}/{self.run_interval_time} s")
+                    )
         self.worker.close()
 
         for line in self.worker.reporter.lines:

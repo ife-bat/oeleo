@@ -30,7 +30,7 @@ $ pip install oeleo
 4. Run to copy files.
 5. Repeat from step 3.
 
-### Examples
+### Examples and descriptions
 
 #### Simple script for copying between local folders
 
@@ -75,7 +75,7 @@ def main():
   )
 
   # Running the worker with 5 minutes intervals.
-  # You can also use an oeleo scheduler for this.
+  # You can also use an oeleo scheduler for this. The RichScheduler is kind-of cool.
   worker.connect_to_db()
   while True:
     worker.filter_local()
@@ -87,7 +87,7 @@ if __name__ == "__main__":
   main()
 ```
 
-#### Example .env file
+#### Environment `.env` file
 ```.env
 OELEO_BASE_DIR_FROM=C:\data\local
 OELEO_BASE_DIR_TO=C:\data\pub
@@ -101,7 +101,7 @@ OELEO_DB_NAME=local2pub.db
 # OELEO_KEY_FILENAME=<ssh key-pair filename>
 ```
 
-#### The database
+#### Database
 
 The database contains one table called `filelist`:
 
@@ -123,12 +123,73 @@ The table below shows what the different values of `code` mean:
 
 Hint! You can **lock** (chose to never copy) a file by editing the `code` manually to 2. 
 
+
+#### Using an `oeleo` scheduler
+
+```python
+import dotenv
+
+from oeleo.schedulers import RichScheduler
+from oeleo.workers import simple_worker
+
+# assuming you have created an appropriate .env file
+dotenv.load_dotenv()
+worker = simple_worker()
+s = RichScheduler(
+        worker,
+        run_interval_time=4,  # seconds
+        max_run_intervals=4,
+    )
+s.start()
+```
+
+
+#### Copy files from a Windows PC to a Linux server through ssh
+
+```python
+import logging
+import os
+from pathlib import Path
+
+import dotenv
+
+from oeleo.connectors import register_password
+from oeleo.utils import logger
+from oeleo.workers import ssh_worker
+
+log = logger()
+
+print(" ssh ".center(80, "-"))
+log.setLevel(logging.DEBUG)
+log.info(f"Starting oeleo!")
+dotenv.load_dotenv()
+
+external_dir = "/srv/data"
+filter_extension = ".res"
+
+register_password(os.environ["OELEO_PASSWORD"])
+
+worker = ssh_worker(
+    db_name="ssh_to_server.db",
+    base_directory_from=Path(r"data\raw"),
+    base_directory_to=external_dir,
+    extension=filter_extension,
+)
+worker.connect_to_db()
+try:
+    worker.check(update_db=True)
+    worker.filter_local()
+    worker.run()
+finally:
+    worker.close()
+```
+
 ## Future planned improvements
 
 Just plans, no promises given.
 
 - implement a `SharePointConnector`.
-- make much nicer printing and logging.
+- make even nicer printing and logging.
 - create CLI.
 - create an executable.
 - create a web-app.
@@ -146,7 +207,8 @@ Just plans, no promises given.
 - [x] On testpypi
 - [x] On pypi
 - [x] Code understandable for others
-- [ ] Looking good
+- [x] Looking good
+- [x] Fairly easy to use
 - [ ] Easy to use
 
 ## Licence
@@ -154,7 +216,8 @@ MIT
 
 ## Development
 
-Developed using `poetry` on `python 3.10`.
+- Developed using `poetry` on `python 3.10`.
+- Must also run on `python 3.8` for Windows 7 support.
 
 ### Some useful commands
 
@@ -181,7 +244,7 @@ poetry publish
 ```
 
 ### Next
-- publish to pypi.
+- Take some time off and enjoy the summer.
 
 ### Development lead
 - Jan Petter Maehlen, IFE
