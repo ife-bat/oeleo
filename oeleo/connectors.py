@@ -1,6 +1,7 @@
 import getpass
 import logging
 import os
+import sys
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Generator, Protocol, Union
 
@@ -119,6 +120,13 @@ class SSHConnector(Connector):
             host=self.host, user=self.username, connect_kwargs=connect_kwargs
         )
 
+    def __check_connection_and_exit(self):
+        log.debug("Connected?")
+        cmd = f"find {self.directory} -maxdepth 1 -name '*'"
+        log.debug(cmd)
+        self.c.run(cmd)
+        sys.exit()
+
     def close(self):
         self.c.close()
 
@@ -126,7 +134,7 @@ class SSHConnector(Connector):
         if self.c is not None:
             self.c.close()
 
-    def base_filter_sub_method(self, glob_pattern: str = "*", **kwargs: Any) -> list:
+    def base_filter_sub_method(self, glob_pattern: str = "", **kwargs: Any) -> list:
         log.debug("base filter function for SSHConnector")
         log.debug("got this glob pattern:")
         log.debug(f"{glob_pattern}")
@@ -135,12 +143,13 @@ class SSHConnector(Connector):
             log.debug("Connecting ...")
             self.connect()
 
-        result = self._list_content(glob_pattern, hide=True)
+        result = self._list_content(f"*{glob_pattern}", hide=True)
         file_list = result.stdout.strip().split("\n")
         if self.is_posix:
             file_list = [PurePosixPath(f) for f in file_list]
         else:
             file_list = [Path(f) for f in file_list]  # OBS Linux -> Win not supported!
+
         return file_list
 
     def _list_content(self, glob_pattern="*", max_depth=1, hide=False):

@@ -54,6 +54,31 @@ def example_with_rich_scheduler():
     s.start()
 
 
+def example_with_ssh_connection_and_rich_scheduler():
+    log.setLevel(logging.CRITICAL)
+    dotenv.load_dotenv()
+
+    external_dir = "/home/jepe@ad.ife.no/Temp"
+    filter_extension = ".res"
+
+    register_password(os.environ["OELEO_PASSWORD"])
+
+    worker = ssh_worker(
+        db_name=r"C:\scripting\oeleo\test_databases\test_ssh_to_odin.db",
+        base_directory_from=Path(r"C:\scripting\processing_cellpy\raw"),
+        base_directory_to=external_dir,
+        extension=filter_extension,
+    )
+
+    s = RichScheduler(
+        worker,
+        run_interval_time=4,
+        max_run_intervals=4,
+        force=True,
+    )
+    s.start()
+
+
 def example_check_with_ssh_connection():
     print(" example_check_with_ssh_connection ".center(80, "-"))
     log.setLevel(logging.DEBUG)
@@ -109,7 +134,7 @@ def example_check_first_then_run():
         worker.run()
 
 
-main = example_with_rich_scheduler
+main = example_with_ssh_connection_and_rich_scheduler
 
 if __name__ == "__main__":
     main()

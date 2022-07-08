@@ -229,6 +229,7 @@ class Worker(WorkerBase):
 
         # cannot be a generator since we need to do a `if in` lookup:
         external_files = list(self.filter_external(**kwargs))
+        log.debug(external_files)
 
         number_of_local_files = 0
         number_of_external_duplicates = 0
