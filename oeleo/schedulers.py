@@ -9,7 +9,8 @@ log = logging.getLogger("oeleo")
 
 
 class SchedulerBase(Protocol):
-    worker: Union[WorkerBase, None] = None
+    worker: WorkerBase = None
+    state: dict = None
 
     def _setup(self):
         ...
@@ -24,8 +25,11 @@ class SchedulerBase(Protocol):
 
 
 class SimpleScheduler(SchedulerBase):
-    def __init__(self, worker: WorkerBase, run_interval_time=43_200, max_run_intervals=1000):
+    def __init__(
+        self, worker: WorkerBase, run_interval_time=43_200, max_run_intervals=1000
+    ):
         self.worker = worker
+        self.state = {}
         # self.update_interval = 3_600  # not used
         self.run_interval_time = run_interval_time
         self.max_run_intervals = max_run_intervals
@@ -59,4 +63,3 @@ class SimpleScheduler(SchedulerBase):
 
     def _update_db(self):
         pass
-

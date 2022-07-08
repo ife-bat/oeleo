@@ -2,7 +2,7 @@ import datetime
 import logging
 import random
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Protocol, Union
 
 import peewee
 
@@ -30,6 +30,8 @@ class FileList(peewee.Model):
 
 
 class DbHandler(Protocol):
+    db_name: Union[Path, str] = None
+
     def initialize_db(self):
         ...
 

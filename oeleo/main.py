@@ -14,20 +14,21 @@ log = logger()
 
 
 def main():
-    log.setLevel(logging.INFO)
+    log.setLevel(logging.DEBUG)
     log.debug(f"Starting oeleo!")
     console.print(f"Starting oeleo!")
     dotenv.load_dotenv()
     worker = simple_worker()
     worker.connect_to_db()
+
+    worker.check(update_db=True)
     worker.filter_local()
-    worker.check()
     worker.run()
 
 
 def example_check_with_ssh_connection():
     print(" example_check_with_ssh_connection ".center(80, "-"))
-    log.setLevel(logging.INFO)
+    log.setLevel(logging.DEBUG)
     log.info(f"Starting oeleo!")
     dotenv.load_dotenv()
 
@@ -53,17 +54,17 @@ def example_check_with_ssh_connection():
 
 def example_check_first_then_run():
     print(" example_check_first_then_run ".center(80, "-"))
+    log.setLevel(logging.DEBUG)
+    log.info(f"Starting oeleo!")
+
     not_before = datetime(year=2021, month=3, day=1, hour=1, minute=0, second=0)
     not_after = datetime(year=2022, month=7, day=1, hour=1, minute=0, second=0)
-    print("Starting...")
 
     my_filters = [
         ("not_before", not_before),
         ("not_after", not_after),
     ]
 
-    log.setLevel(logging.INFO)
-    log.info(f"Starting oeleo!")
     dotenv.load_dotenv()
     filter_extension = "res"
     worker = simple_worker(
@@ -82,5 +83,5 @@ def example_check_first_then_run():
 
 if __name__ == "__main__":
     main()
-    # example_check_with_ssh_connection()
-    # example_check_first_then_run()
+    example_check_with_ssh_connection()
+    example_check_first_then_run()

@@ -1,13 +1,14 @@
 import getpass
 import logging
 import os
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Generator, Protocol, Union
 
 from fabric import Connection
-from filters import base_filter
-from movers import simple_mover
-from utils import calculate_checksum
+
+from oeleo.filters import base_filter
+from oeleo.movers import simple_mover
+from oeleo.utils import calculate_checksum
 
 log = logging.getLogger("oeleo")
 
@@ -103,7 +104,7 @@ class SSHConnector(Connector):
         if self.is_posix:
             self.directory = PurePosixPath(self.directory)
         else:
-            self.directory = Path(self.directory)
+            self.directory = PureWindowsPath(self.directory)
 
     def connect(self, **kwargs) -> None:
         if self.use_password:
@@ -126,9 +127,9 @@ class SSHConnector(Connector):
             self.c.close()
 
     def base_filter_sub_method(self, glob_pattern: str = "*", **kwargs: Any) -> list:
-        log.info("base filter function for SSHConnector")
-        log.info("got this glob pattern:")
-        log.info(f"{glob_pattern}")
+        log.debug("base filter function for SSHConnector")
+        log.debug("got this glob pattern:")
+        log.debug(f"{glob_pattern}")
 
         if self.c is None:  # make this as a decorator ("@connected")
             log.debug("Connecting ...")
@@ -152,7 +153,7 @@ class SSHConnector(Connector):
         log.debug(cmd)
         result = self.c.run(cmd, hide=hide)
         if not result.ok:
-            log.info("it failed - should raise an exception her (future work)")
+            log.debug("it failed - should raise an exception her (future work)")
         return result
 
     def calculate_checksum(self, f, hide=True):
@@ -163,7 +164,7 @@ class SSHConnector(Connector):
         cmd = f"md5sum {self.directory/f}"
         result = self.c.run(cmd, hide=hide)
         if not result.ok:
-            log.info("it failed - should raise an exception her (future work)")
+            log.debug("it failed - should raise an exception her (future work)")
         checksum = result.stdout.strip().split()[0]
         return checksum
 
@@ -176,18 +177,19 @@ class SSHConnector(Connector):
             log.debug(f"Copying {path} to {to}")
             self.c.put(str(path), remote=str(to))
         except Exception as e:
-            print("GOT AN EXCEPTION DURING COPYING FILE")
-            print(f"FROM     : {path}")
-            print(f"TO       : {to}")
-            print(f"EXCEPTION:")
-            print(e)
+            log.debug("GOT AN EXCEPTION DURING COPYING FILE")
+            log.debug(f"FROM     : {path}")
+            log.debug(f"TO       : {to}")
+            log.debug(f"EXCEPTION:")
+            log.debug(e)
             return False
         return True
 
 
 def register_password(pwd: str = None) -> None:
-    print(" Register password ".center(80, "="))
+    log.debug(" -> Register password ")
     if pwd is None:
+
         session_password = getpass.getpass(prompt="Password: ")
         os.environ["OELEO_PASSWORD"] = session_password
-    print(" Done ".center(80, "="))
+    log.debug(" Password registered!")

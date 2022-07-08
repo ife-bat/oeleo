@@ -28,7 +28,7 @@ class WorkerBase(Protocol):
     def filter_external(self, **kwargs):
         ...
 
-    def check(self, update_db=False, **kwargs):
+    def check(self, update_db=False, force=False, **kwargs):
         ...
 
     def run(self):
@@ -42,7 +42,6 @@ class WorkerBase(Protocol):
 
 
 class MockWorker(WorkerBase):
-
     def connect_to_db(self):
         console.log("Connecting to database")
 
@@ -52,11 +51,8 @@ class MockWorker(WorkerBase):
     def filter_external(self, **kwargs):
         console.log("Filtering external directory")
 
-    def check(self, update_db=False, **kwargs):
-        console.log(
-            "Performing a comparison between local and "
-            "external directory"
-        )
+    def check(self, update_db=False, force=False, **kwargs):
+        console.log("Performing a comparison between local and " "external directory")
         console.log(f" - update-db:  {update_db}")
         console.log(f" - kwargs:  {kwargs}")
 
@@ -101,20 +97,17 @@ class Worker(WorkerBase):
 
     def __post_init__(self):
         if self.dry_run:
-            log.info("[bold red blink]DRY RUN[/]", extra={"markup": True})
+            log.debug("[bold red blink]DRY RUN[/]", extra={"markup": True})
             self.bookkeeper = MockDbHandler()
         self.external_connector.connect()
 
     def connect_to_db(self):
         self.bookkeeper.initialize_db()
-        log.info(f"Connecting to db -> '{self.bookkeeper.db_name}' DONE")
+        log.debug(f"Connecting to db -> '{self.bookkeeper.db_name}' DONE")
 
     def filter_local(self, **kwargs):
-        """Selects the files that should be processed.txt
+        """Selects the files that should be processed.txt"""
 
-        TODO: This method should be updated so that it uses the value from the
-           environment as default.
-        """
         local_files = self.local_connector.base_filter_sub_method(
             self.extension, **kwargs
         )
@@ -127,41 +120,48 @@ class Worker(WorkerBase):
         )
         return external_files
 
-    def check(self, update_db=False, **kwargs):
+    def check(self, update_db=False, force=False, **kwargs):
         """Check for differences between the two directories.
 
         Arguments:
             update_db: set to True if you want the check to also update the db.
+            force: set to True if you want to update db to also copy missing files (code=0) as
+                long as the file is not set to a frozen state.
+
         Additional keyword arguments:
             sent to the filter functions.
         """
-        # PLEASE, REFACTOR ME!
-        print(
+        log.debug("****** CHECK:")
+        log.debug(
             f"Comparing {self.local_connector.directory} <=> {self.external_connector.directory}"
         )
         local_files = self.filter_local(**kwargs)
-        external_files = self.filter_external(**kwargs)
+
+        # cannot be a generator since we need to do a `if in` lookup:
+        external_files = list(self.filter_external(**kwargs))
 
         number_of_local_files = 0
         number_of_external_duplicates = 0
         number_of_duplicates_out_of_sync = 0
 
         for f in local_files:
-            print(f"Iterating: {f}")
+            log.debug(f"Iterating: {f}")
             number_of_local_files += 1
-
             self.make_external_name(f)
             external_name = self.external_name
             log.debug(f"{f.name} -> {self.external_name}")
-            print(f" (*) {f.name}", end=" ")
+            log.debug(f" (*) {f.name}")
+            local_vals = self.checker.check(
+                f,
+                connector=self.local_connector,
+            )
             if external_name in external_files:
                 code = 1
-                print(f"[FOUND EXTERNAL]")
+                exists = True
+
+                log.debug(f"[FOUND EXTERNAL]")
                 number_of_external_duplicates += 1
-                local_vals = self.checker.check(
-                    f,
-                    connector=self.local_connector,
-                )
+
                 external_vals = self.checker.check(
                     external_name,
                     connector=self.external_connector,
@@ -169,32 +169,40 @@ class Worker(WorkerBase):
 
                 same = True
                 for k in local_vals:
-                    print(f"     (L) {k}: {local_vals[k]}")
-                    print(f"     (E) {k}: {external_vals[k]}")
+                    log.debug(f"(L) {k}: {local_vals[k]}")
+                    log.debug(f"(E) {k}: {external_vals[k]}")
                     if local_vals[k] != external_vals[k]:
                         same = False
                         number_of_duplicates_out_of_sync += 1
-                print(f"     In sync: {same}")
+                        code = 0
+                log.debug(f"In sync: {same}")
+
             else:
+                exists = False
                 code = 0
-                print("[ONLY LOCAL]")
+                log.debug("[ONLY LOCAL]")
+
             if update_db:
-                print("     ! UPDATING DB")
+                log.debug("Updating db")
                 self.bookkeeper.register(f)
                 if self.bookkeeper.code < 2:
-                    self.bookkeeper.code = code
-                if self.bookkeeper.code == 1:
-                    self.bookkeeper.update_record(external_name, **local_vals)
-            else:
-                print()
-        print()
-        print(f" Total number of local files:    {number_of_local_files}")
-        print(f" Files with external duplicates: {number_of_external_duplicates}")
-        print(f" Files out of sync:              {number_of_duplicates_out_of_sync}")
+
+                    if not force and not exists:
+                        code = self.bookkeeper.code
+
+                    self.bookkeeper.update_record(
+                        external_name, code=code, **local_vals
+                    )
+
+        log.debug("REPORT (CHECK):")
+        log.debug(f"-Total number of local files:    {number_of_local_files}")
+        log.debug(f"-Files with external duplicates: {number_of_external_duplicates}")
+        log.debug(f"-Files out of sync:              {number_of_duplicates_out_of_sync}")
 
     def run(self):
         """Copy the files that needs to be copied and update the db."""
-        log.info("Running...")
+        log.debug("****** RUN:")
+
         for f in self.file_names:
             del self.status
             self.make_external_name(f)
@@ -202,7 +210,10 @@ class Worker(WorkerBase):
             self.bookkeeper.register(f)
             checks = self.checker.check(f)
 
-            if self.bookkeeper.is_changed(**checks):
+            if not self.bookkeeper.is_changed(**checks):
+                log.debug(f"{f} not changed")
+
+            else:
                 self.status = ("changed", True)
                 if self.external_connector.move_func(
                     f,
@@ -227,7 +238,7 @@ class Worker(WorkerBase):
         else:
             txt = f"[bold green]{f1} == {f2}[/]"
 
-        log.info(txt, extra={"markup": True})
+        log.debug(txt, extra={"markup": True})
 
     def _create_external_name(self, f):
         return self.external_connector.directory / f.name
@@ -291,10 +302,10 @@ def simple_worker(
     local_connector = LocalConnector(directory=base_directory_from)
     external_connector = LocalConnector(directory=base_directory_to)
 
-    log.info(
+    log.debug(
         f"[bold]from:[/] [bold green]{base_directory_from}[/]", extra={"markup": True}
     )
-    log.info(
+    log.debug(
         f"[bold]to  :[/] [bold blue]{base_directory_to}[/]", extra={"markup": True}
     )
 
@@ -346,11 +357,11 @@ def ssh_worker(
     bookkeeper = SimpleDbHandler(db_name)
     checker = ChecksumChecker()
 
-    log.info(
+    log.debug(
         f"[bold]from:[/] [bold green]{local_connector.directory}[/]",
         extra={"markup": True},
     )
-    log.info(
+    log.debug(
         f"[bold]to  :[/] [bold blue]{external_connector.host}:{external_connector.directory}[/]",
         extra={"markup": True},
     )
