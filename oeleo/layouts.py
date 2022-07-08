@@ -80,7 +80,10 @@ def main():
             i += 1
             iteration += 1
             time.sleep(0.2)
-            new_txt = f"{i}: grunningr unningr unning grunningr unningr unning grunningr unningr unning grunningr unningr unning grunningr unningr unning grunningr unningr unning grunningr unningr unning grunningr unningr unning grunningr unningr unning "
+            new_txt = f"{i}: grunningr unningr unning grunningr unningr unning grunningr " \
+                      f"unningr unning grunningr unningr unning grunningr unningr unning " \
+                      f"grunningr unningr unning grunningr unningr unning grunningr unningr " \
+                      f"unning grunningr unningr unning "
             txt = add_and_trim_text_if_needed(new_txt, old_text=txt)
             body_panel = update_body_panel(
                 txt,
