@@ -2,11 +2,11 @@ import logging
 import os
 from asyncio import Protocol
 from math import ceil
+
 from rich.panel import Panel
 from rich.text import Text
 
-from oeleo.layouts import N_ROWS_NOT_BODY, N_COLS_NOT_BODY
-
+from oeleo.layouts import N_COLS_NOT_BODY, N_ROWS_NOT_BODY
 
 log = logging.getLogger("oeleo")
 

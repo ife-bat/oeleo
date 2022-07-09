@@ -9,12 +9,12 @@ from typing import Any, Generator, Union
 from rich.panel import Panel
 from rich.text import Text
 
-from oeleo.layouts import N_ROWS_NOT_BODY, N_COLS_NOT_BODY
 from oeleo.checkers import ChecksumChecker
 from oeleo.connectors import Connector, LocalConnector, SSHConnector
 from oeleo.console import console
+from oeleo.layouts import N_COLS_NOT_BODY, N_ROWS_NOT_BODY
 from oeleo.models import DbHandler, MockDbHandler, SimpleDbHandler
-from oeleo.reporters import ReporterBase, Reporter
+from oeleo.reporters import Reporter, ReporterBase
 
 log = logging.getLogger("oeleo")
 

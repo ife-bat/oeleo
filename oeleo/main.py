@@ -7,7 +7,7 @@ import dotenv
 
 from oeleo.connectors import register_password
 from oeleo.console import console
-from oeleo.schedulers import SimpleScheduler, RichScheduler
+from oeleo.schedulers import RichScheduler, SimpleScheduler
 from oeleo.utils import logger
 from oeleo.workers import simple_worker, ssh_worker
 

@@ -9,7 +9,6 @@ from rich.live import Live
 from rich.panel import Panel
 from rich.text import Text
 
-
 N_ROWS_NOT_BODY = 9
 N_COLS_NOT_BODY = 4
 
@@ -106,6 +105,7 @@ def confirm(
 
 # The functions below are not used by oeleo. I made them to figure out how to make the
 # layout "resize the text" properly:
+
 
 def add_and_trim_text_if_needed(text, old_text=""):
     if old_text:

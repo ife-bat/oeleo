@@ -4,13 +4,13 @@ import time
 from datetime import datetime
 from typing import Protocol, Union
 
+from rich import print
 from rich.live import Live
 from rich.panel import Panel
-from rich import print
 
-from oeleo.layouts import create_layout, confirm
-from oeleo.workers import WorkerBase
+from oeleo.layouts import confirm, create_layout
 from oeleo.reporters import LayoutReporter
+from oeleo.workers import WorkerBase
 
 log = logging.getLogger("oeleo")
 
@@ -142,9 +142,7 @@ class RichScheduler(SchedulerBase):
                 self.worker.reporter.clear()
 
                 status_symbol = ":smiley:"
-                self.layout["status_footer"].update(
-                    Panel(status_symbol)
-                )
+                self.layout["status_footer"].update(Panel(status_symbol))
                 while True:
 
                     time.sleep(0.2)
@@ -165,16 +163,12 @@ class RichScheduler(SchedulerBase):
 
                     if self._run_counter == self.max_run_intervals - 2:
                         status_symbol = ":old_man_medium_skin_tone:"
-                        self.layout["status_footer"].update(
-                            Panel(status_symbol)
-                        )
+                        self.layout["status_footer"].update(Panel(status_symbol))
 
                     if self._run_counter >= self.max_run_intervals:
                         self.layout["middle_footer"].update(Panel("done"))
                         status_symbol = ":skull:"
-                        self.layout["status_footer"].update(
-                            Panel(status_symbol)
-                        )
+                        self.layout["status_footer"].update(Panel(status_symbol))
 
                         log.debug("-> BREAK")
                         time.sleep(0.2)
@@ -186,9 +180,7 @@ class RichScheduler(SchedulerBase):
                     )
                     self.worker.reporter.report(".")
 
-                    self.layout["status_footer"].update(
-                        Panel(":sleeping:")
-                    )
+                    self.layout["status_footer"].update(Panel(":sleeping:"))
                     while used_time < self.run_interval_time:
                         time.sleep(self._sleep_interval)
                         self.worker.reporter.report(".", same_line=True)
@@ -198,9 +190,7 @@ class RichScheduler(SchedulerBase):
                                 f"Idle for {round(used_time)}/{self.run_interval_time} s"
                             )
                         )
-                    self.layout["status_footer"].update(
-                        Panel(status_symbol)
-                    )
+                    self.layout["status_footer"].update(Panel(status_symbol))
         except (KeyboardInterrupt, ScheduleAborted):
             print("[bold red]Interrupted by user ...exiting")
 
