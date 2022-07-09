@@ -36,17 +36,13 @@ def create_layout(parent: str = "rich_scheduler"):
     e_layout = Layout()
     e_layout.split_column(
         Layout(name="header", size=4),
-        Layout(Panel("...idle..."), name="main_body"),
+        Layout(Panel("...idle..."), name="body"),
         Layout(name="footer", size=3),
     )
     e_layout["header"].split_row(
-        Layout(Panel("oeleo\n-----"), name="left_header", minimum_size=14),
+        Layout(Panel("oeleo\n-----"), name="left_header", size=10),
         Layout(Panel(""), name="middle_header", ratio=3),
         Layout(Panel(""), name="right_header", ratio=3),
-    )
-    e_layout["main_body"].split_row(
-        Layout(Panel("...idle..."), name="body"),
-        Layout(Panel(""), name="right_body", size=24),
     )
     e_layout["footer"].split_row(
         Layout(Panel(""), name="left_footer", minimum_size=14),
