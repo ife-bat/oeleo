@@ -134,7 +134,7 @@ def example_check_first_then_run():
         worker.run()
 
 
-main = example_with_ssh_connection_and_rich_scheduler
+main = example_with_rich_scheduler
 
 if __name__ == "__main__":
     main()

@@ -14,85 +14,9 @@ from oeleo.checkers import ChecksumChecker
 from oeleo.connectors import Connector, LocalConnector, SSHConnector
 from oeleo.console import console
 from oeleo.models import DbHandler, MockDbHandler, SimpleDbHandler
+from oeleo.reporters import ReporterBase, Reporter
 
 log = logging.getLogger("oeleo")
-
-
-class ReporterBase(Protocol):
-    layout = None
-    lines: list = None
-
-    def report(self, status, events=None, same_line=False, replace_line=False):
-        ...
-
-    def clear(self):
-        ...
-
-
-class Reporter:
-    layout = None
-    lines = []
-
-    @staticmethod
-    def report(status, events=None, same_line=False, replace_line=False):
-        log.debug(status)
-
-    def clear(self):
-        pass
-
-
-class LayoutReporter:
-    def __init__(self, layout):
-        self.layout = layout
-        self.lines = []
-        self.max_lines = 200
-        self.min_lines = 100
-
-    def report(self, status, events=None, same_line=False, replace_line=False):
-        if same_line and len(self.lines):
-            self.lines[-1] = f"{self.lines[-1]}{status}"
-        elif replace_line and len(self.lines):
-            self.lines[-1] = f"{status}"
-        else:
-            self.lines.append(status)
-        if events:
-            log.debug(
-                f"Events ({events}) given - however, events are not implemented yet."
-            )
-
-        self._trim_if_needed()
-        body_panel = self._update_body_panel()
-        self.layout["body"].update(body_panel)
-
-    def clear(self):
-        self.lines = []
-
-    def _trim_if_needed(self):
-        if len(self.lines) > self.max_lines:
-            self.lines = self.lines[-self.min_lines :]
-
-    def _update_body_panel(self):
-        number_of_columns, number_of_rows = os.get_terminal_size()
-        number_of_rows -= N_ROWS_NOT_BODY
-        number_of_columns -= N_COLS_NOT_BODY
-
-        _lines = self.lines[-number_of_rows:]
-        needed_rows_due_to_wrapping = 0
-        _new_lines = []
-        for _line in reversed(_lines):
-            needed_rows_due_to_wrapping += ceil(
-                Text(_line).cell_len / number_of_columns
-            )
-            if needed_rows_due_to_wrapping < number_of_rows:
-                _new_lines.append(_line)
-            else:
-                break
-        _lines = reversed(_new_lines)
-
-        s = "\n".join(_lines)
-
-        p = Panel(s)
-        return p
 
 
 class WorkerBase(Protocol):

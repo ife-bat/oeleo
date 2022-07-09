@@ -5,11 +5,18 @@ from typing import Protocol, Union
 
 from rich.live import Live
 from rich.panel import Panel
+from rich import print
 
 from oeleo.layouts import create_layout, confirm
-from oeleo.workers import WorkerBase, LayoutReporter
+from oeleo.workers import WorkerBase
+from oeleo.reporters import LayoutReporter
 
 log = logging.getLogger("oeleo")
+
+
+class ScheduleAborted(Exception):
+    """Raised when the user aborts the run."""
+    pass
 
 
 class SchedulerBase(Protocol):
@@ -114,10 +121,12 @@ class RichScheduler(SchedulerBase):
                     Panel(f"(E) {self.worker.external_connector.directory}")
                 )
                 self.worker.connect_to_db()
+
                 self.layout["left_footer"].update(Panel(f"CHECK..."))
                 self.worker.check(update_db=self.update_db, force=self.force)
                 if not confirm(self.layout):
-                    return
+                    raise ScheduleAborted
+
                 self.worker.reporter.clear()
                 while True:
                     time.sleep(0.2)
@@ -153,16 +162,24 @@ class RichScheduler(SchedulerBase):
                     self.worker.reporter.report(".")
                     while used_time < self.run_interval_time:
                         time.sleep(self._sleep_interval)
+
+                        # async sleep here
                         self.worker.reporter.report(".", same_line=True)
                         used_time = (datetime.now() - self._last_run).total_seconds()
                         self.layout["middle_footer"].update(
                             Panel(f"Idle for {round(used_time)}/{self.run_interval_time} s")
                         )
+        except (KeyboardInterrupt, ScheduleAborted):
+            print("[bold red]Interrupted by user ...exiting")
+
+        else:
+            print("[bold green]Finished ...exiting")
+
         finally:
             self.worker.close()
 
-        for line in self.worker.reporter.lines:
-            print(line)
+        for i, line in enumerate(self.worker.reporter.lines):
+            print(f"[{i:03}] {line}")
 
     def _update_db(self):
         pass
