@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "oeleo"
-version = "0.4.2-alpha.0"
+version = "0.4.2"
 description = "A one-eyed tool to copy files with."
 authors = ["jepegit <jepe@ife.no>"]
 license = "MIT"
