@@ -1,6 +1,7 @@
 import os
 import random
 import time
+import warnings
 from math import ceil
 
 from rich.layout import Layout
@@ -8,15 +9,34 @@ from rich.live import Live
 from rich.panel import Panel
 from rich.text import Text
 
+
 N_ROWS_NOT_BODY = 9
 N_COLS_NOT_BODY = 4
 
 
-def create_layout():
+def create_layout(parent: str = "rich_scheduler"):
+    """Creates a Rich.layout.Layout.
+
+    Note! the sub-pane names are hard-coded as strings (check the code for more info).
+
+    Args:
+        parent: only 'rich_scheduler' supported so far.
+
+    Returns: Rich.layout.Layout
+    """
+
+    if parent not in [
+        "rich_scheduler",
+    ]:
+        warnings.warn(
+            f"{parent} is not explicitly supported yet. Returning layout for rich_scheduler. "
+            f"Check the code to get the correct names for the different panes."
+        )
+
     e_layout = Layout()
     e_layout.split_column(
         Layout(name="header", size=4),
-        Layout(Panel("...idle..."), name="body"),
+        Layout(Panel("...idle..."), name="main_body"),
         Layout(name="footer", size=3),
     )
     e_layout["header"].split_row(
@@ -24,16 +44,38 @@ def create_layout():
         Layout(Panel(""), name="middle_header", ratio=3),
         Layout(Panel(""), name="right_header", ratio=3),
     )
+    e_layout["main_body"].split_row(
+        Layout(Panel("...idle..."), name="body"),
+        Layout(Panel(""), name="right_body", size=24),
+    )
     e_layout["footer"].split_row(
         Layout(Panel(""), name="left_footer", minimum_size=14),
         Layout(Panel(""), name="middle_footer", ratio=3),
-        Layout(Panel("q: CTRL+C"), name="right_footer", minimum_size=14),
+        Layout(Panel("q: CTRL+C"), name="right_footer", size=14),
         Layout(Panel(":smiley:"), name="status_footer", size=10),
     )
     return e_layout
 
 
-def confirm(layout, q="Press ENTER to continue", a=":smiley:", pause=0.2):
+def confirm(
+    layout: Layout,
+    sub_pane: str = "middle_footer",
+    q: str = "Press ENTER to continue",
+    a: str = ":smiley:",
+    pause: float = 0.2,
+):
+    """Returns True if ENTER is pressed. Other values will return False.
+
+    Args:
+        layout: the layout.
+        sub_pane: name of the layout's sub-pane.
+        q: question or statement to put in the sub-pane.
+        a: emoji to show after pressing ENTER.
+        pause: sleep before returning (to allow the user to see the funny comment).
+
+    Returns: True (only ENTER pressed) or False
+    """
+
     whoops = random.choice(
         [
             "earthquake",
@@ -55,16 +97,19 @@ def confirm(layout, q="Press ENTER to continue", a=":smiley:", pause=0.2):
         ]
     )
 
-    layout["middle_footer"].update(Panel(q))
+    layout[sub_pane].update(Panel(q))
     button = input()
     if button:
         return False
 
-    layout["middle_footer"].update(Panel(f"{smiley} whoops... {whoops}..."))
+    layout[sub_pane].update(Panel(f"{smiley} whoops... {whoops}..."))
     time.sleep(pause)
-    layout["middle_footer"].update(Panel(a))
+    layout[sub_pane].update(Panel(a))
     return True
 
+
+# The functions below are not used by oeleo. I made them to figure out how to make the
+# layout "resize the text" properly:
 
 def add_and_trim_text_if_needed(text, old_text=""):
     if old_text:

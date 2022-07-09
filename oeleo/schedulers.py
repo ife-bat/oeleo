@@ -16,6 +16,7 @@ log = logging.getLogger("oeleo")
 
 class ScheduleAborted(Exception):
     """Raised when the user aborts the run."""
+
     pass
 
 
@@ -39,7 +40,12 @@ class SchedulerBase(Protocol):
 
 class SimpleScheduler(SchedulerBase):
     def __init__(
-        self, worker: WorkerBase, run_interval_time=43_200, max_run_intervals=1000, update_db=True, force=False
+        self,
+        worker: WorkerBase,
+        run_interval_time=43_200,
+        max_run_intervals=1000,
+        update_db=True,
+        force=False,
     ):
         self.worker = worker
         self.state = {"iterations": 0}
@@ -88,7 +94,12 @@ class SimpleScheduler(SchedulerBase):
 
 class RichScheduler(SchedulerBase):
     def __init__(
-        self, worker: WorkerBase, run_interval_time=43_200, max_run_intervals=1000, update_db=True, force=False
+        self,
+        worker: WorkerBase,
+        run_interval_time=43_200,
+        max_run_intervals=1000,
+        update_db=True,
+        force=False,
     ):
         self.worker = worker
         self.state = {"iterations": 0}
@@ -105,7 +116,7 @@ class RichScheduler(SchedulerBase):
 
     def _setup(self):
         log.debug("setting up scheduler")
-        self.layout = create_layout()
+        self.layout = create_layout("rich_scheduler")
         self.worker.reporter = LayoutReporter(self.layout)
 
     def start(self):
@@ -145,8 +156,10 @@ class RichScheduler(SchedulerBase):
                     self._last_run = datetime.now()
                     self._run_counter += 1
 
-                    if self._run_counter == self.max_run_intervals -2:
-                        self.layout["status_footer"].update(Panel(":old_man_medium_skin_tone:"))
+                    if self._run_counter == self.max_run_intervals - 2:
+                        self.layout["status_footer"].update(
+                            Panel(":old_man_medium_skin_tone:")
+                        )
 
                     if self._run_counter >= self.max_run_intervals:
                         self.layout["middle_footer"].update(Panel("done"))
@@ -167,7 +180,9 @@ class RichScheduler(SchedulerBase):
                         self.worker.reporter.report(".", same_line=True)
                         used_time = (datetime.now() - self._last_run).total_seconds()
                         self.layout["middle_footer"].update(
-                            Panel(f"Idle for {round(used_time)}/{self.run_interval_time} s")
+                            Panel(
+                                f"Idle for {round(used_time)}/{self.run_interval_time} s"
+                            )
                         )
         except (KeyboardInterrupt, ScheduleAborted):
             print("[bold red]Interrupted by user ...exiting")

@@ -51,9 +51,14 @@ class LayoutReporter:
     """
 
     def __init__(
-            self, layout, max_lines=1000, min_lines=500, sub_pane: str = "body",
-            n_rows_not_body: int = N_ROWS_NOT_BODY, n_cols_not_body: int = N_COLS_NOT_BODY
-        ):
+        self,
+        layout,
+        max_lines=1000,
+        min_lines=500,
+        sub_pane: str = "body",
+        n_rows_not_body: int = N_ROWS_NOT_BODY,
+        n_cols_not_body: int = N_COLS_NOT_BODY,
+    ):
         """Reporter using a layout.
 
         This reporter is used by `oeleo.schedulers.RichScheduler`.
