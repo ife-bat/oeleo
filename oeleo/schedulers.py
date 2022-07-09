@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 from datetime import datetime
@@ -139,7 +140,13 @@ class RichScheduler(SchedulerBase):
                     raise ScheduleAborted
 
                 self.worker.reporter.clear()
+
+                status_symbol = ":smiley:"
+                self.layout["status_footer"].update(
+                    Panel(status_symbol)
+                )
                 while True:
+
                     time.sleep(0.2)
                     self.state["iterations"] += 1
                     log.debug(f"ITERATING ({self.state['iterations']})")
@@ -157,13 +164,18 @@ class RichScheduler(SchedulerBase):
                     self._run_counter += 1
 
                     if self._run_counter == self.max_run_intervals - 2:
+                        status_symbol = ":old_man_medium_skin_tone:"
                         self.layout["status_footer"].update(
-                            Panel(":old_man_medium_skin_tone:")
+                            Panel(status_symbol)
                         )
 
                     if self._run_counter >= self.max_run_intervals:
                         self.layout["middle_footer"].update(Panel("done"))
-                        self.layout["status_footer"].update(Panel(":skull:"))
+                        status_symbol = ":skull:"
+                        self.layout["status_footer"].update(
+                            Panel(status_symbol)
+                        )
+
                         log.debug("-> BREAK")
                         time.sleep(0.2)
                         break
@@ -173,10 +185,12 @@ class RichScheduler(SchedulerBase):
                         Panel(f"Idle for {round(used_time)}/{self.run_interval_time} s")
                     )
                     self.worker.reporter.report(".")
+
+                    self.layout["status_footer"].update(
+                        Panel(":sleeping:")
+                    )
                     while used_time < self.run_interval_time:
                         time.sleep(self._sleep_interval)
-
-                        # async sleep here
                         self.worker.reporter.report(".", same_line=True)
                         used_time = (datetime.now() - self._last_run).total_seconds()
                         self.layout["middle_footer"].update(
@@ -184,6 +198,9 @@ class RichScheduler(SchedulerBase):
                                 f"Idle for {round(used_time)}/{self.run_interval_time} s"
                             )
                         )
+                    self.layout["status_footer"].update(
+                        Panel(status_symbol)
+                    )
         except (KeyboardInterrupt, ScheduleAborted):
             print("[bold red]Interrupted by user ...exiting")
 
