@@ -18,12 +18,8 @@ Hash = str
 
 
 class Connector(Protocol):
-    """Connectors are used to establish a connection to the server and
+    """Connectors are used to establish a connection to the directory and
     provide the functions and methods needed for the movers and checkers.
-
-    Connectors are typically only needed for transactions between computers.
-    If no connector is given to the oeleo worker, the worker will use the
-    same methods for local and external files.
     """
 
     directory = None
@@ -196,9 +192,10 @@ class SSHConnector(Connector):
 
 
 def register_password(pwd: str = None) -> None:
+    """Helper function to export the password as an environmental variable"""
     log.debug(" -> Register password ")
     if pwd is None:
-
+        # Consider replacing this with the Rich prompt.
         session_password = getpass.getpass(prompt="Password: ")
         os.environ["OELEO_PASSWORD"] = session_password
     log.debug(" Password registered!")

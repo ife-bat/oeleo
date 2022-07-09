@@ -41,7 +41,7 @@ def base_filter(
     base_filter_func: Any = None,
 ) -> Generator[Path, None, None]:
 
-    """Simple directory content filter - cannot be used for ssh (yet)?"""
+    """Simple directory content filter - cannot be used for ssh"""
 
     if base_filter_func is None:
         base_filter_func = path.glob
