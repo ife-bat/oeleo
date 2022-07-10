@@ -105,8 +105,17 @@ class LayoutReporter:
         if len(self.lines) > self.max_lines:
             self.lines = self.lines[-self.min_lines :]
 
+    @staticmethod
+    def _get_terminal_size():
+        try:
+            nc, nr = os.get_terminal_size()
+        except OSError:
+            nc, nr = 300, 300
+            log.debug("Could not get terminal size, setting it to 300 x 300")
+        return nc, nr
+
     def _update_body_panel(self):
-        number_of_columns, number_of_rows = os.get_terminal_size()
+        number_of_columns, number_of_rows = self._get_terminal_size()
         number_of_rows -= self.n_rows_not_body
         number_of_columns -= self.n_cols_not_body
 

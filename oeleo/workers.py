@@ -111,13 +111,14 @@ class Worker(WorkerBase):
         self.external_connector.connect()
 
     def connect_to_db(self):
-        self.status = ("state", "filter")
+        self.status = ("state", "connect-to-db")
         self.bookkeeper.initialize_db()
         log.debug(f"Connecting to db -> '{self.bookkeeper.db_name}' DONE")
 
     def filter_local(self, **kwargs):
         """Selects the files that should be processed."""
-
+        self.status = ("state", "filter-local")
+        self.status = ("filtered_once", True)
         local_files = self.local_connector.base_filter_sub_method(
             self.extension, **kwargs
         )
@@ -126,7 +127,7 @@ class Worker(WorkerBase):
 
     def filter_external(self, **kwargs):
         """Filter for external files that correspond to local ones."""
-        self.status = ("state", "filter")
+        self.status = ("state", "filter-external")
         external_files = self.external_connector.base_filter_sub_method(
             self.extension, **kwargs
         )
@@ -234,10 +235,12 @@ class Worker(WorkerBase):
     def run(self):
         """Copy the files that needs to be copied and update the db."""
 
-        self.status = ("state", "run")
         log.debug("****** RUN:")
 
+        _minimum_one_file = False
+        self.status = ("state", "run")
         for f in self.file_names:
+            _minimum_one_file = True
             del self.status
             self.make_external_name(f)
             self.bookkeeper.register(f)
@@ -269,6 +272,8 @@ class Worker(WorkerBase):
                     )
 
             self.run_statistics()
+        if not _minimum_one_file:
+            self.reporter.report("No files to handle. Did you forget to run `worker.filter_local()`?")
 
     def run_statistics(self):
         log.warning("deprecated")
@@ -308,7 +313,9 @@ class Worker(WorkerBase):
 
     @status.deleter
     def status(self):
-        self._status = {}
+        for k in self._status:
+            if k != "state":  # protected member
+                self._status[k] = None
 
     @property
     def external_name(self):

@@ -138,3 +138,4 @@ main = example_with_rich_scheduler
 
 if __name__ == "__main__":
     main()
+    # example_with_ssh_connection_and_rich_scheduler()

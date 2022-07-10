@@ -1,10 +1,8 @@
 import os
-from pathlib import Path
-
 import dotenv
 
 from oeleo.utils import logger
-from oeleo.workers import simple_worker
+from oeleo.schedulers import RichScheduler, SimpleScheduler
 
 log = logger()
 
@@ -20,30 +18,66 @@ def test_dotenv():
     assert "OELEO_BASE_DIR_FROM" in os.environ.keys()
 
 
-def test_simple_worker():
-    dotenv.load_dotenv(".testenv")
-    log.info(f"Starting oeleo!")
+def test_simple_worker(simple_worker_with_two_matching_and_one_not_matching):
+
     filter_extension = os.environ["OELEO_FILTER_EXTENSION"]
 
-    db_name = str(Path(os.environ["OELEO_DB_NAME"]).resolve())
-    base_directory_from = Path(os.environ["OELEO_BASE_DIR_FROM"]).resolve()
-    base_directory_to = Path(os.environ["OELEO_BASE_DIR_TO"]).resolve()
+    log.info(f"{filter_extension=}")
 
-    log.info(f"pytest running in {Path(os.environ['OELEO_BASE_DIR_FROM']).resolve()}")
-    log.info(f"{db_name=}")
-    log.info(f"{base_directory_from=}")
-    log.info(f"{base_directory_to=}")
+    worker = simple_worker_with_two_matching_and_one_not_matching
+    from_directory = worker.local_connector.directory
+    to_directory = worker.external_connector.directory
 
-    assert base_directory_to.is_dir()
-    assert base_directory_from.is_dir()
+    assert from_directory.is_dir()
+    assert to_directory.is_dir()
+    assert len(os.listdir(to_directory)) == 0
 
-    worker = simple_worker(
-        db_name=db_name,
-        base_directory_from=base_directory_from,
-        base_directory_to=base_directory_to,
-        extension=filter_extension,
-    )
+    log.info(f"connecting to db: {worker.bookkeeper.db_name}")
     worker.connect_to_db()
     worker.filter_local()
     worker.check()
+    worker.filter_local()
     worker.run()
+
+    assert len(os.listdir(from_directory)) == 3
+    assert len(os.listdir(to_directory)) == 2
+
+
+def test_ssh_worker():
+    # NOT IMPLEMENTED YET
+    # Currently tested "manually" by the developer.
+    pass
+
+
+def test_worker_with_simple_scheduler(simple_worker_with_two_matching_and_one_not_matching):
+    worker = simple_worker_with_two_matching_and_one_not_matching
+    from_directory = worker.local_connector.directory
+    to_directory = worker.external_connector.directory
+
+    s = SimpleScheduler(
+        simple_worker_with_two_matching_and_one_not_matching,
+        run_interval_time=0.1,
+        max_run_intervals=2,
+    )
+    s.start()
+
+    assert len(os.listdir(from_directory)) == 3
+    assert len(os.listdir(to_directory)) == 2
+
+
+def test_worker_with_rich_scheduler(simple_worker_with_two_matching_and_one_not_matching):
+
+    worker = simple_worker_with_two_matching_and_one_not_matching
+    from_directory = worker.local_connector.directory
+    to_directory = worker.external_connector.directory
+
+    s = RichScheduler(
+        worker,
+        run_interval_time=0.1,
+        max_run_intervals=2,
+        auto_accept_check=True,
+    )
+    s.start()
+
+    assert len(os.listdir(from_directory)) == 3
+    assert len(os.listdir(to_directory)) == 2
