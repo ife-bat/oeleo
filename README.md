@@ -126,6 +126,12 @@ Hint! You can **lock** (chose to never copy) a file by editing the `code` manual
 
 #### Using an `oeleo` scheduler
 
+Instead of for example using a while loop to keep `oeleo` running continuously or at selected intervals, 
+you can use a scheduler (e.g. `rocketry`, `watchdog`, `schedule`, or more advanced options such as `AirFlow`).
+
+`oeleo` also includes its own schedulers. This is an example of how to use the `oeleo.RichScheduler`:
+
+
 ```python
 import dotenv
 
