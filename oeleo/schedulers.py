@@ -112,7 +112,7 @@ class RichScheduler(SchedulerBase):
         self.force: bool = force
         self.auto_accept_check: bool = auto_accept_check  # nice to have when testing with pytest
         # self._last_update = None
-        self._sleep_interval = max(run_interval_time / 10, 1)
+        self._sleep_interval = 1  # second
         self._last_run = None
         self._run_counter = 0
         self.layout = None
