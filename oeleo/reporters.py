@@ -1,6 +1,6 @@
 import logging
 import os
-from asyncio import Protocol
+from typing import Protocol
 from math import ceil
 
 from rich.panel import Panel
