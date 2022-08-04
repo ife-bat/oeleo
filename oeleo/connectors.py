@@ -238,8 +238,8 @@ class SharePointConnector(Connector):
             "password": os.environ["OELEO_PASSWORD"],
         }
 
-        # replace this fabric connection with the sharepoint connection:
         self.connection = SharePointConnection(
+            # replace this fabric connection kwargs with the proper sharepoint connection kwargs:
             host=self.host, user=self.username, connect_kwargs=connect_kwargs
         )
 
