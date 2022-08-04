@@ -1,4 +1,5 @@
 import getpass
+import hashlib
 import logging
 import os
 import sys
@@ -6,6 +7,11 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Generator, Protocol, Union
 
 from fabric import Connection
+
+from shareplum import Site
+from shareplum import Office365
+from shareplum.site import Version
+from shareplum.errors import ShareplumRequestError
 
 from oeleo.filters import base_filter
 from oeleo.movers import simple_mover
@@ -203,7 +209,15 @@ class SSHConnector(Connector):
 
 # Connector to SharePoint (and Teams) - under development:
 class SharePointConnection:
-    ...
+    def __init__(self, url, site_name, username, password, doc_library):
+        self.site_url = "/".join([url, "sites", site_name])
+        self.authcookie = Office365(url, username=username, password=password).GetCookies()
+        self.site = Site(self.site_url, version=Version.v365, authcookie=self.authcookie)
+        self.folder = self.site.Folder(doc_library)
+
+    @staticmethod
+    def close(self):
+        pass
 
 
 class SharePointConnector(Connector):
@@ -211,21 +225,24 @@ class SharePointConnector(Connector):
             self,
             username=None,
             host=None,
+            url=None,
             directory=None,
     ):
-        self.session_password = os.environ["OELEO_PASSWORD"]
         self.username = username or os.environ["OELEO_USERNAME"]
-        self.host = host or os.environ["OELEO_EXTERNAL_HOST"]
-        self.directory = directory or os.environ["OELEO_BASE_DIR_TO"]
+        self.session_password = os.environ["OELEO_PASSWORD"]
+        self.url = url or os.environ["OELEO_SHAREPOINT_URL"]
+
+        self.site_name = host or os.environ["OELEO_EXTERNAL_HOST"]
+        self.directory = directory or os.environ["OELEO_SHAREPOINT_DOC_LIBRARY"]
         self.connection = None
 
     def __str__(self):
-        text = "SSHConnector"
+        text = "SharePointConnector"
         text += f"{self.username=}\n"
-        text += f"{self.host=}\n"
+        text += f"{self.url=}\n"
+        text += f"{self.site_name=}\n"
         text += f"{self.directory=}\n"
-        text += f"{self.is_posix=}\n"
-        text += f"{self.c=}\n"
+        text += f"{self.connection=}\n"
 
         return text
 
@@ -234,28 +251,56 @@ class SharePointConnector(Connector):
             self.connection.close()
 
     def connect(self, **kwargs) -> None:
-        connect_kwargs = {
-            "password": os.environ["OELEO_PASSWORD"],
-        }
-
         self.connection = SharePointConnection(
-            # replace this fabric connection kwargs with the proper sharepoint connection kwargs:
-            host=self.host, user=self.username, connect_kwargs=connect_kwargs
+            url=self.url,
+            site_name=self.site_name,
+            username=self.username,
+            password=self.session_password,
+            doc_library=self.directory
         )
 
     def close(self):
         self.connection.close()
 
-    def base_filter_sub_method(self, glob_pattern: str = "", **kwargs: Any) -> list:
-        ...
-
-    def _list_content(self, glob_pattern="*", max_depth=1, hide=False):
-        ...
+    def base_filter_sub_method(self, glob_pattern: str = "", **kwargs: Any) -> Generator[Path, None, None]:
+        file_list = []
+        # TODO: implement a way to list files in the SharePoint folder satisfying globbing
+        file_list_search_output = self.connection.folder.files
+        print(file_list_search_output)
+        # continue from here with searching through the file_list_search_output vs the glob_pattern
+        return file_list
 
     def calculate_checksum(self, f, hide=True):
-        ...
+        try:
+            b = self.connection.folder.get_file(f.name)
+        except ShareplumRequestError:
+            return False
+
+        file_hash = hashlib.md5(b)
+        return file_hash.hexdigest()
 
     def move_func(self, path: Path, to: Path, *args, **kwargs) -> bool:
-        ...
+        try:
+            log.debug(f"Copying {path} to {to}")
+            file_content = path.read_bytes()
+            self.connection.folder.upload_file(file_content, path.name)
+
+        except ShareplumRequestError as e:
+            log.debug("GOT A ShareplumRequestError EXCEPTION DURING COPYING FILE")
+            log.debug(f"FROM     : {path}")
+            log.debug(f"TO       : {to}")
+            log.debug(f"EXCEPTION:")
+            log.debug(e)
+            return False
+
+        except Exception as e:
+            log.debug("GOT AN EXCEPTION DURING COPYING FILE")
+            log.debug(f"FROM     : {path}")
+            log.debug(f"TO       : {to}")
+            log.debug(f"EXCEPTION:")
+            log.debug(e)
+            return False
+
+        return True
 
 
