@@ -17,6 +17,16 @@ FabricRunResult = Any
 Hash = str
 
 
+def register_password(pwd: str = None) -> None:
+    """Helper function to export the password as an environmental variable"""
+    log.debug(" -> Register password ")
+    if pwd is None:
+        # Consider replacing this with the Rich prompt.
+        session_password = getpass.getpass(prompt="Password: ")
+        os.environ["OELEO_PASSWORD"] = session_password
+    log.debug(" Password registered!")
+
+
 class Connector(Protocol):
     """Connectors are used to establish a connection to the directory and
     provide the functions and methods needed for the movers and checkers.
@@ -191,11 +201,61 @@ class SSHConnector(Connector):
         return True
 
 
-def register_password(pwd: str = None) -> None:
-    """Helper function to export the password as an environmental variable"""
-    log.debug(" -> Register password ")
-    if pwd is None:
-        # Consider replacing this with the Rich prompt.
-        session_password = getpass.getpass(prompt="Password: ")
-        os.environ["OELEO_PASSWORD"] = session_password
-    log.debug(" Password registered!")
+# Connector to SharePoint (and Teams) - under development:
+class SharePointConnection:
+    ...
+
+
+class SharePointConnector(Connector):
+    def __init__(
+            self,
+            username=None,
+            host=None,
+            directory=None,
+    ):
+        self.session_password = os.environ["OELEO_PASSWORD"]
+        self.username = username or os.environ["OELEO_USERNAME"]
+        self.host = host or os.environ["OELEO_EXTERNAL_HOST"]
+        self.directory = directory or os.environ["OELEO_BASE_DIR_TO"]
+        self.connection = None
+
+    def __str__(self):
+        text = "SSHConnector"
+        text += f"{self.username=}\n"
+        text += f"{self.host=}\n"
+        text += f"{self.directory=}\n"
+        text += f"{self.is_posix=}\n"
+        text += f"{self.c=}\n"
+
+        return text
+
+    def __delete__(self, instance):
+        if self.connection is not None:
+            self.connection.close()
+
+    def connect(self, **kwargs) -> None:
+        connect_kwargs = {
+            "password": os.environ["OELEO_PASSWORD"],
+        }
+
+        # replace this fabric connection with the sharepoint connection:
+        self.connection = SharePointConnection(
+            host=self.host, user=self.username, connect_kwargs=connect_kwargs
+        )
+
+    def close(self):
+        self.connection.close()
+
+    def base_filter_sub_method(self, glob_pattern: str = "", **kwargs: Any) -> list:
+        ...
+
+    def _list_content(self, glob_pattern="*", max_depth=1, hide=False):
+        ...
+
+    def calculate_checksum(self, f, hide=True):
+        ...
+
+    def move_func(self, path: Path, to: Path, *args, **kwargs) -> bool:
+        ...
+
+
