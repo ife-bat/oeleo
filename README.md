@@ -194,6 +194,7 @@ finally:
 
 Just plans, no promises given.
 
+- add `worker.add_local(something)` for updating the db (can be used instead of `worker.filter_local()`)
 - make even nicer printing and logging.
 - create CLI.
 - create an executable.
