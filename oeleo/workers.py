@@ -4,7 +4,7 @@ from asyncio import Protocol
 from dataclasses import dataclass, field
 from math import ceil
 from pathlib import Path
-from typing import Any, Generator, Union, Callable
+from typing import Any, Generator, Union, Callable, Iterable
 
 from rich.panel import Panel
 from rich.text import Text
@@ -34,6 +34,9 @@ class WorkerBase(Protocol):
     def connect_to_db(self):
         ...
 
+    def add_local(self, **kwargs):
+        ...
+
     def filter_local(self, **kwargs):
         ...
 
@@ -56,6 +59,9 @@ class WorkerBase(Protocol):
 class MockWorker(WorkerBase):
     def connect_to_db(self):
         console.log("Connecting to database")
+
+    def add_local(self, **kwargs):
+        console.log("Adding local files directly for transfer")
 
     def filter_local(self, **kwargs):
         console.log("Filtering local directory")
@@ -113,7 +119,7 @@ class Worker(WorkerBase):
     reporter: ReporterBase = Reporter()
     external_name_generator: Callable[[Any, Path], Path] = field(default=None)
 
-    file_names: Generator[Path, None, None] = field(init=False, default=None)
+    file_names: Iterable[Path] = field(init=False, default=None)
 
     _external_name: Union[Path, str] = field(init=False, default="")
     _status: dict = field(init=False, default_factory=dict)
@@ -129,8 +135,15 @@ class Worker(WorkerBase):
         self.bookkeeper.initialize_db()
         log.debug(f"Connecting to db -> '{self.bookkeeper.db_name}' DONE")
 
+    def add_local(self, local_files: Iterable):
+        """Add the files that should be processed."""
+        self.status = ("state", "filter-local")
+        self.status = ("filtered_once", False)
+        self.file_names = local_files
+        return local_files
+
     def filter_local(self, **kwargs):
-        """Selects the files that should be processed."""
+        """Selects the files that should be processed through filtering."""
         self.status = ("state", "filter-local")
         self.status = ("filtered_once", True)
         local_files = self.local_connector.base_filter_sub_method(
@@ -164,7 +177,7 @@ class Worker(WorkerBase):
         self.reporter.report(
             f"Comparing {self.local_connector.directory} <=> {self.external_connector.directory}"
         )
-        local_files = self.filter_local(**kwargs)
+        local_files = self.file_names or self.filter_local(**kwargs)
 
         # cannot be a generator since we need to do a `if in` lookup:
         external_files = list(self.filter_external(**kwargs))
