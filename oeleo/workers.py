@@ -10,7 +10,12 @@ from rich.panel import Panel
 from rich.text import Text
 
 from oeleo.checkers import ChecksumChecker
-from oeleo.connectors import Connector, LocalConnector, SSHConnector
+from oeleo.connectors import (
+    Connector,
+    LocalConnector,
+    SSHConnector,
+    SharePointConnector,
+)
 from oeleo.console import console
 from oeleo.layouts import N_COLS_NOT_BODY, N_ROWS_NOT_BODY
 from oeleo.models import DbHandler, MockDbHandler, SimpleDbHandler
@@ -106,7 +111,7 @@ class Worker(WorkerBase):
     external_connector: Connector = None
     extension: str = None
     reporter: ReporterBase = Reporter()
-    external_name_generator: Callable[[Connector, str], str] = field(default=None)
+    external_name_generator: Callable[[Any, Path], Path] = field(default=None)
 
     file_names: Generator[Path, None, None] = field(init=False, default=None)
 
@@ -163,7 +168,6 @@ class Worker(WorkerBase):
 
         # cannot be a generator since we need to do a `if in` lookup:
         external_files = list(self.filter_external(**kwargs))
-        log.debug(external_files)
 
         number_of_local_files = 0
         number_of_external_duplicates = 0
@@ -287,7 +291,7 @@ class Worker(WorkerBase):
             )
 
     def run_statistics(self):
-        log.warning("deprecated very soon")
+        log.warning("The method worker.run_statistic method is going to be deprecated")
         status = self.status
         f1 = status["name"]
         f2 = status["external_name"]
@@ -441,6 +445,80 @@ def ssh_worker(
         external_connector=external_connector,
         bookkeeper=bookkeeper,
         extension=extension,
+        dry_run=dry_run,
+    )
+    return worker
+
+
+def sharepoint_worker(
+    base_directory_from: Union[Path, None] = None,
+    url: Union[Path, None] = None,
+    sitename: Union[str, None] = None,
+    doc_library_to: Union[str, None] = None,
+    db_name: Union[str, None] = None,
+    extension: str = None,
+    dry_run: bool = False,
+):
+    """Create a Worker with SharePointConnector.
+
+    Args:
+        base_directory_from: directory to copy from.
+        url: sharepoint url (e.g. https://yourcompany.sharepoint.com).
+        sitename: name of the specific SharePoint site.
+        doc_library_to: folder within the SharePoint site to copy to.
+        db_name: name of the database.
+        extension: file extension to filter on (for example '.csv').
+        dry_run: set to True if you would like to run without updating or moving anything.
+
+    Returns:
+        worker with SharePoint attached to it.
+    """
+
+    def external_name_generator(con, name):
+        return Path(name.name)
+
+    log.setLevel(logging.DEBUG)
+    log.debug(f"Starting oeleo!")
+    console.print(f"Starting oeleo!")
+
+    db_name = db_name or os.environ["OELEO_DB_NAME"]
+
+    base_directory_from = base_directory_from or Path(os.environ["OELEO_BASE_DIR_FROM"])
+    doc_library_to = doc_library_to or os.environ["OELEO_SHAREPOINT_DOC_LIBRARY"]
+    url = url or os.getenv("OELEO_SHAREPOINT_URL")
+    sitename = sitename or os.getenv("OELEO_SHAREPOINT_SITENAME")
+
+    extension = extension or os.environ["OELEO_FILTER_EXTENSION"]
+    username = os.getenv("OELEO_SHAREPOINT_USERNAME", None)
+
+    local_connector = LocalConnector(directory=base_directory_from)
+
+    external_connector = SharePointConnector(
+        username=username,
+        host=sitename,
+        url=url,
+        directory=doc_library_to,
+    )
+
+    bookkeeper = SimpleDbHandler(db_name)
+    checker = ChecksumChecker()
+
+    log.debug(
+        f"[bold]from:[/] [bold green]{local_connector.directory}[/]",
+        extra={"markup": True},
+    )
+    log.debug(
+        f"[bold]to  :[/] [bold blue]{external_connector.url}:{external_connector.directory}[/]",
+        extra={"markup": True},
+    )
+
+    worker = Worker(
+        checker=checker,
+        local_connector=local_connector,
+        external_connector=external_connector,
+        bookkeeper=bookkeeper,
+        extension=extension,
+        external_name_generator=external_name_generator,
         dry_run=dry_run,
     )
     return worker

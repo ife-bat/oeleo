@@ -194,7 +194,6 @@ finally:
 
 Just plans, no promises given.
 
-- implement a `SharePointConnector`.
 - make even nicer printing and logging.
 - create CLI.
 - create an executable.

@@ -208,7 +208,6 @@ class SSHConnector(Connector):
         return True
 
 
-# Connector to SharePoint (and Teams) - under development:
 class SharePointConnection:
     def __init__(self, url, site_name, username, password, doc_library):
         self.site_url = "/".join([url, "sites", site_name])
@@ -238,7 +237,7 @@ class SharePointConnector(Connector):
         self.session_password = os.environ["OELEO_PASSWORD"]
         self.url = url or os.environ["OELEO_SHAREPOINT_URL"]
 
-        self.site_name = host or os.environ["OELEO_EXTERNAL_HOST"]
+        self.site_name = host or os.environ["OELEO_SHAREPOINT_SITENAME"]
         self.directory = directory or os.environ["OELEO_SHAREPOINT_DOC_LIBRARY"]
         self.connection = None
 
