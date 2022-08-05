@@ -4,7 +4,7 @@ from asyncio import Protocol
 from dataclasses import dataclass, field
 from math import ceil
 from pathlib import Path
-from typing import Any, Generator, Union
+from typing import Any, Generator, Union, Callable
 
 from rich.panel import Panel
 from rich.text import Text
@@ -91,6 +91,12 @@ class Worker(WorkerBase):
         bookkeeper: DbHandler to interact with the db
         local_connector: Connector = None
         external_connector: Connector = None
+
+    Additional optinal arguments:
+        dry_run: Bool
+        extension: str (with the .)
+        reporter: Reporter
+        external_name_generator: Callable that accepts the class instance and a string
     """
 
     checker: Any
@@ -100,7 +106,10 @@ class Worker(WorkerBase):
     external_connector: Connector = None
     extension: str = None
     reporter: ReporterBase = Reporter()
+    external_name_generator: Callable[[Connector, str], str] = field(default=None)
+
     file_names: Generator[Path, None, None] = field(init=False, default=None)
+
     _external_name: Union[Path, str] = field(init=False, default="")
     _status: dict = field(init=False, default_factory=dict)
 
@@ -273,10 +282,12 @@ class Worker(WorkerBase):
 
             self.run_statistics()
         if not _minimum_one_file:
-            self.reporter.report("No files to handle. Did you forget to run `worker.filter_local()`?")
+            self.reporter.report(
+                "No files to handle. Did you forget to run `worker.filter_local()`?"
+            )
 
     def run_statistics(self):
-        log.warning("deprecated")
+        log.warning("deprecated very soon")
         status = self.status
         f1 = status["name"]
         f2 = status["external_name"]
@@ -293,11 +304,14 @@ class Worker(WorkerBase):
         log.debug(txt, extra={"markup": True})
         return txt
 
-    def _create_external_name(self, f):
+    def _default_external_name_generator(self, f):
         return self.external_connector.directory / f.name
 
     def make_external_name(self, f):
-        name = self._create_external_name(f)
+        if self.external_name_generator is not None:
+            name = self.external_name_generator(self.external_connector, f)
+        else:
+            name = self._default_external_name_generator(f)
         self.external_name = name
         self.status = ("name", f.name)
         self.status = ("external_name", str(self.external_name))

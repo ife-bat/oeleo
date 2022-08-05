@@ -6,6 +6,7 @@ import sys
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Generator, Protocol, Union
 
+import dotenv
 from fabric import Connection
 
 from shareplum import Site
@@ -211,8 +212,13 @@ class SSHConnector(Connector):
 class SharePointConnection:
     def __init__(self, url, site_name, username, password, doc_library):
         self.site_url = "/".join([url, "sites", site_name])
-        self.authcookie = Office365(url, username=username, password=password).GetCookies()
-        self.site = Site(self.site_url, version=Version.v365, authcookie=self.authcookie)
+        self.authcookie = Office365(
+            url, username=username, password=password
+        ).GetCookies()
+
+        self.site = Site(
+            self.site_url, version=Version.v365, authcookie=self.authcookie
+        )
         self.folder = self.site.Folder(doc_library)
 
     @staticmethod
@@ -222,11 +228,11 @@ class SharePointConnection:
 
 class SharePointConnector(Connector):
     def __init__(
-            self,
-            username=None,
-            host=None,
-            url=None,
-            directory=None,
+        self,
+        username=None,
+        host=None,
+        url=None,
+        directory=None,
     ):
         self.username = username or os.environ["OELEO_USERNAME"]
         self.session_password = os.environ["OELEO_PASSWORD"]
@@ -256,23 +262,27 @@ class SharePointConnector(Connector):
             site_name=self.site_name,
             username=self.username,
             password=self.session_password,
-            doc_library=self.directory
+            doc_library=self.directory,
         )
 
     def close(self):
         self.connection.close()
 
-    def base_filter_sub_method(self, glob_pattern: str = "", **kwargs: Any) -> Generator[Path, None, None]:
+    def base_filter_sub_method(
+        self, glob_pattern: str = "", **kwargs: Any
+    ) -> Generator[Path, None, None]:
         file_list = []
-        # TODO: implement a way to list files in the SharePoint folder satisfying globbing
-        file_list_search_output = self.connection.folder.files
-        print(file_list_search_output)
-        # continue from here with searching through the file_list_search_output vs the glob_pattern
+        request = self.connection.folder.files
+        for f in request:
+            filename = f.get("Name", "")
+            if filename and glob_pattern in filename:
+                file_list.append(Path(filename))
         return file_list
 
-    def calculate_checksum(self, f, hide=True):
+    def calculate_checksum(self, f: Path, hide=True):
         try:
             b = self.connection.folder.get_file(f.name)
+
         except ShareplumRequestError:
             return False
 
@@ -302,5 +312,3 @@ class SharePointConnector(Connector):
             return False
 
         return True
-
-

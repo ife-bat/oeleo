@@ -5,11 +5,13 @@ from pathlib import Path
 
 import dotenv
 
-from oeleo.connectors import register_password
+from checkers import ChecksumChecker
+from models import SimpleDbHandler
+from oeleo.connectors import register_password, LocalConnector, SharePointConnector
 from oeleo.console import console
 from oeleo.schedulers import RichScheduler, SimpleScheduler
 from oeleo.utils import logger
-from oeleo.workers import simple_worker, ssh_worker
+from oeleo.workers import simple_worker, ssh_worker, Worker
 
 log = logger()
 
@@ -111,7 +113,7 @@ def example_check_first_then_run():
     log.info(f"Starting oeleo!")
 
     not_before = datetime(year=2021, month=3, day=1, hour=1, minute=0, second=0)
-    not_after = datetime(year=2022, month=7, day=1, hour=1, minute=0, second=0)
+    not_after = datetime(year=2022, month=8, day=30, hour=1, minute=0, second=0)
 
     my_filters = [
         ("not_before", not_before),
@@ -134,7 +136,71 @@ def example_check_first_then_run():
         worker.run()
 
 
-main = example_with_rich_scheduler
+def example_with_sharepoint_connector():
+
+    def external_name_generator(con, name):
+        return Path(name.name)
+
+    log.setLevel(logging.DEBUG)
+    log.debug(f"Starting oeleo!")
+    console.print(f"Starting oeleo!")
+    dotenv.load_dotenv()
+    db_name = os.environ["OELEO_DB_NAME"]
+    username = os.environ["OELEO_SHAREPOINT_USERNAME"]
+    sitename = os.environ["OELEO_SHAREPOINT_SITENAME"]
+    base_directory_from = Path(os.environ["OELEO_BASE_DIR_FROM"])
+    base_directory_to = os.environ["OELEO_SHAREPOINT_DOC_LIBRARY"]
+    extension = os.environ["OELEO_FILTER_EXTENSION"]
+
+    local_connector = LocalConnector(directory=base_directory_from)
+    external_connector = SharePointConnector(
+        username=username,
+        host=sitename,
+        directory=base_directory_to,
+    )
+    print("created sharepoint connector")
+    bookkeeper = SimpleDbHandler(db_name)
+    checker = ChecksumChecker()
+
+    log.debug(
+        f"[bold]from:[/] [bold green]{local_connector.directory}[/]",
+        extra={"markup": True},
+    )
+    log.debug(
+        f"[bold]to  :[/] [bold blue]{external_connector.url}:{external_connector.directory}[/]",
+        extra={"markup": True},
+    )
+
+    worker = Worker(
+        checker=checker,
+        local_connector=local_connector,
+        external_connector=external_connector,
+        bookkeeper=bookkeeper,
+        extension=extension,
+        external_name_generator=external_name_generator,
+    )
+
+    # TODO: Find out why nothing is copied over (probably to do with either that the db is pre-populated from
+    #  other runs or that the check method has an error)
+    log.debug(
+        f"[bold]to  :[/] [bold blue] created worker [/]",
+        extra={"markup": True},
+    )
+    worker.connect_to_db()
+    log.debug(
+        f"[bold]to  :[/] [bold blue] connected to db [/]",
+        extra={"markup": True},
+    )
+    worker.check(update_db=True)
+    log.debug(
+        f"[bold]to  :[/] [bold blue] checked [/]",
+        extra={"markup": True},
+    )
+    worker.filter_local()
+    worker.run()
+
+
+main = example_with_sharepoint_connector
 
 if __name__ == "__main__":
     main()

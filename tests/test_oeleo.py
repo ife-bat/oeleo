@@ -49,7 +49,9 @@ def test_ssh_worker():
     pass
 
 
-def test_worker_with_simple_scheduler(simple_worker_with_two_matching_and_one_not_matching):
+def test_worker_with_simple_scheduler(
+    simple_worker_with_two_matching_and_one_not_matching,
+):
     worker = simple_worker_with_two_matching_and_one_not_matching
     from_directory = worker.local_connector.directory
     to_directory = worker.external_connector.directory
@@ -65,7 +67,9 @@ def test_worker_with_simple_scheduler(simple_worker_with_two_matching_and_one_no
     assert len(os.listdir(to_directory)) == 2
 
 
-def test_worker_with_rich_scheduler(simple_worker_with_two_matching_and_one_not_matching):
+def test_worker_with_rich_scheduler(
+    simple_worker_with_two_matching_and_one_not_matching,
+):
 
     worker = simple_worker_with_two_matching_and_one_not_matching
     from_directory = worker.local_connector.directory

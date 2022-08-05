@@ -100,7 +100,7 @@ class RichScheduler(SchedulerBase):
         max_run_intervals=1000,
         update_db=True,
         force=False,
-        auto_accept_check=False
+        auto_accept_check=False,
     ):
         self.worker = worker
         self.state = {"iterations": 0}
@@ -109,7 +109,9 @@ class RichScheduler(SchedulerBase):
         self.max_run_intervals: int = max_run_intervals
         self.update_db: bool = update_db
         self.force: bool = force
-        self.auto_accept_check: bool = auto_accept_check  # nice to have when testing with pytest
+        self.auto_accept_check: bool = (
+            auto_accept_check  # nice to have when testing with pytest
+        )
         # self._last_update = None
         self._sleep_interval = 1  # second
         self._last_run = None
