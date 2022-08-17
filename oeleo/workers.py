@@ -4,7 +4,7 @@ from asyncio import Protocol
 from dataclasses import dataclass, field
 from math import ceil
 from pathlib import Path
-from typing import Any, Generator, Union, Callable, Iterable
+from typing import Any, Generator, Union, Callable, Iterable, List
 
 from rich.panel import Panel
 from rich.text import Text
@@ -119,7 +119,7 @@ class Worker(WorkerBase):
     reporter: ReporterBase = Reporter()
     external_name_generator: Callable[[Any, Path], Path] = field(default=None)
 
-    file_names: Iterable[Path] = field(init=False, default=None)
+    file_names: Iterable[Path] = field(init=False, default_factory=list)
 
     _external_name: Union[Path, str] = field(init=False, default="")
     _status: dict = field(init=False, default_factory=dict)
@@ -135,8 +135,13 @@ class Worker(WorkerBase):
         self.bookkeeper.initialize_db()
         log.debug(f"Connecting to db -> '{self.bookkeeper.db_name}' DONE")
 
-    def add_local(self, local_files: Iterable):
+    def add_local(self, local_files: Iterable) -> List:
         """Add the files that should be processed."""
+        if not isinstance(local_files, list):
+            logging.warning("Please provide a list for local files when using add_local. "
+                            "If it is a generator, you will have to re-run "
+                            "add_local before each call to check or run.")
+            local_files = list(local_files)
         self.status = ("state", "filter-local")
         self.status = ("filtered_once", False)
         self.file_names = local_files
