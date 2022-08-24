@@ -91,7 +91,7 @@ if __name__ == "__main__":
 ```.env
 OELEO_BASE_DIR_FROM=C:\data\local
 OELEO_BASE_DIR_TO=C:\data\pub
-OELEO_FILTER_EXTENSION=csv
+OELEO_FILTER_EXTENSION=.csv
 OELEO_DB_NAME=local2pub.db
 
 ## only needed for advanced connectors:
