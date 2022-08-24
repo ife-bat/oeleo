@@ -94,11 +94,20 @@ OELEO_BASE_DIR_TO=C:\data\pub
 OELEO_FILTER_EXTENSION=csv
 OELEO_DB_NAME=local2pub.db
 
-## only needed for SSHConnector:
-# OELEO_EXTERNAL_HOST=<ssh hostname>
+## only needed for advanced connectors:
+# OELEO_DB_HOST=<db host>
+# OELEO_DB_PORT=<db port>
+# OELEO_DB_USER=<db user>
+# OELEO_DB_PASSWORD=<db user>
+# OELEO_EXTERNAL_HOST<ssh hostname>
 # OELEO_USERNAME=<ssh username>
 # OELEO_PASSWORD=<ssh password>
 # OELEO_KEY_FILENAME=<ssh key-pair filename>
+## only needed for SharePointConnector:
+# OELEO_SHAREPOINT_USERNAME=<sharepoint username (fallbacks to ssh username if missing)>
+# OELEO_SHAREPOINT_URL=<url to sharepoint>
+# OELEO_SHAREPOINT_SITENAME=<name of sharepoint site>
+# OELEO_SHAREPOINT_DOC_LIBRARY=<name of sharepoint library>
 ```
 
 #### Database
