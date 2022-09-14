@@ -197,7 +197,7 @@ class SSHConnector(Connector):
 
         try:
             log.debug(f"Copying {path} to {to}")
-            self.c.put(str(path), remote=str(to))
+            self.c.put(str(path), remote=str(to)[1:])
         except Exception as e:
             log.debug("GOT AN EXCEPTION DURING COPYING FILE")
             log.debug(f"FROM     : {path}")

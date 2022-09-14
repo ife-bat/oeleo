@@ -76,7 +76,8 @@ def confirm(
             "earthquake",
             "car crash ",
             "mother in law ",
-            "farted (sorry) " "Uncle Bob ",
+            "farted (sorry)",
+            "Uncle Bob ",
             "thunderstorm",
             "lost my pants ",
         ]

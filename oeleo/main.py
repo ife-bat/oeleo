@@ -149,8 +149,8 @@ def example_with_sharepoint_connector():
     worker.run()
 
 
-main = example_with_sharepoint_connector
+main = example_with_rich_scheduler
 
 if __name__ == "__main__":
-    main()
-    # example_with_ssh_connection_and_rich_scheduler()
+    # main()
+    example_with_ssh_connection_and_rich_scheduler()

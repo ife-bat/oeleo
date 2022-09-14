@@ -159,7 +159,7 @@ class RichScheduler(SchedulerBase):
                         f"\n[cyan bold]NEW ITERATION:[/cyan bold] {self.state['iterations']:06}/{self.max_run_intervals:06}"
                     )
                     self.layout["middle_footer"].update(Panel("filter local"))
-                    self.worker.filter_local()
+                    self.worker.filter_local()  # TODO: allow for keywords
                     self.layout["middle_footer"].update(Panel("run"))
                     self.worker.run()
                     self._last_run = datetime.now()
