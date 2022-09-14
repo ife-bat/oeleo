@@ -117,8 +117,13 @@ class SSHConnector(Connector):
     def _validate(self):
         if self.is_posix:
             self.directory = PurePosixPath(self.directory)
+            log.debug("On posix")
+            if str(self.directory).startswith(r"\\"):
+                log.warning("YOUR PATH STARTS WITH WINDOWS TYPE SEPARATOR")
         else:
             self.directory = PureWindowsPath(self.directory)
+            log.debug("Not on posix")
+        log.debug(f"The ssh directory is: {self.directory}")
 
     def connect(self, **kwargs) -> None:
         if self.use_password:
