@@ -437,7 +437,7 @@ def ssh_worker(
 
     db_name = db_name or os.environ["OELEO_DB_NAME"]
     base_directory_from = base_directory_from or Path(os.environ["OELEO_BASE_DIR_FROM"])
-    base_directory_to = base_directory_to or Path(os.environ["OELEO_BASE_DIR_TO"])
+    base_directory_to = base_directory_to or os.environ["OELEO_BASE_DIR_TO"]
     extension = extension or os.environ["OELEO_FILTER_EXTENSION"]
 
     local_connector = LocalConnector(directory=base_directory_from)
