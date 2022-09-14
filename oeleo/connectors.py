@@ -61,6 +61,7 @@ class Connector(Protocol):
 
 class LocalConnector(Connector):
     def __init__(self, directory=None):
+        # TODO: check if it is best to default to TO DIR or FROM DIR or if it should break instead
         self.directory = directory or os.environ["OELEO_BASE_DIR_TO"]
         self.directory = Path(self.directory)
 
