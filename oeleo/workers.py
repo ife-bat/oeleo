@@ -49,9 +49,6 @@ class WorkerBase(Protocol):
     def run(self):
         ...
 
-    def run_statistics(self):
-        ...
-
     def close(self):
         ...
 
@@ -76,9 +73,6 @@ class MockWorker(WorkerBase):
 
     def run(self):
         console.log("Running...")
-
-    def run_statistics(self):
-        console.log("Showing report after run")
 
     def close(self):
         console.log("Closing all connections")
@@ -138,9 +132,11 @@ class Worker(WorkerBase):
     def add_local(self, local_files: Iterable) -> List:
         """Add the files that should be processed."""
         if not isinstance(local_files, list):
-            logging.warning("Please provide a list for local files when using add_local. "
-                            "If it is a generator, you will have to re-run "
-                            "add_local before each call to check or run.")
+            logging.warning(
+                "Please provide a list for local files when using add_local. "
+                "If it is a generator, you will have to re-run "
+                "add_local before each call to check or run."
+            )
             local_files = list(local_files)
         self.status = ("state", "filter-local")
         self.status = ("filtered_once", False)
@@ -192,7 +188,6 @@ class Worker(WorkerBase):
         number_of_duplicates_out_of_sync = 0
 
         for f in local_files:
-            # self.reporter.report(f"Iterating: {f}")
             number_of_local_files += 1
             self.make_external_name(f)
             external_name = self.external_name
@@ -267,64 +262,45 @@ class Worker(WorkerBase):
         """Copy the files that needs to be copied and update the db."""
 
         log.debug("****** RUN:")
-
-        _minimum_one_file = False
         self.status = ("state", "run")
+        local_files_found = False
         for f in self.file_names:
-            _minimum_one_file = True
-            del self.status
-            self.make_external_name(f)
-            self.bookkeeper.register(f)
-            checks = self.checker.check(f)
-
-            if not self.bookkeeper.is_changed(**checks):
-                log.debug(f"{f} not changed")
-                self.reporter.report(
-                    f":smiley: [green]{f.name}[/green] == [green]{self.external_name}[/green]"
-                )
-
-            else:
-                self.reporter.report(
-                    f":arrow_forward: [green]{f.name}[/green] -> [blue]{self.external_name}[/blue]"
-                )
-                self.status = ("changed", True)
-                if self.external_connector.move_func(
-                    f,
-                    self.external_name,
-                ):
-                    self.status = ("moved", True)
-                    self.bookkeeper.update_record(self.external_name, **checks)
-                    self.reporter.report(" :smiley:", same_line=True)
-                else:
-                    self.reporter.report(
-                        f":warning: [green]{f.name}[/green] -> "
-                        f"[red]{self.external_name}[/red] :slightly_frowning_face: failed copy!",
-                        replace_line=True,
-                    )
-
-            self.run_statistics()
-        if not _minimum_one_file:
+            local_files_found = True
+            self._process_file(f)
+        if not local_files_found:
             self.reporter.report(
                 "No files to handle. Did you forget to run `worker.filter_local()`?"
             )
 
-    def run_statistics(self):
-        log.warning("The method worker.run_statistic method is going to be deprecated")
-        status = self.status
-        f1 = status["name"]
-        f2 = status["external_name"]
+    def _process_file(self, f):
+        del self.status
+        self.make_external_name(f)
+        self.bookkeeper.register(f)
+        checks = self.checker.check(f)
+        if not self.bookkeeper.is_changed(**checks):
+            log.debug(f"{f} not changed")
+            self.reporter.report(
+                f":smiley: [green]{f.name}[/green] == [green]{self.external_name}[/green]"
+            )
 
-        if status.get("changed", False):
-            txt = f"[bold blue]{f1}"
-            if status.get("moved", False):
-                txt += f" -> {f2}[/]"
-            else:
-                txt += f"[/] -> [bold red blink]{f2} FAILED![/]"
         else:
-            txt = f"[bold green]{f1} == {f2}[/]"
-
-        log.debug(txt, extra={"markup": True})
-        return txt
+            self.reporter.report(
+                f":arrow_forward: [green]{f.name}[/green] -> [blue]{self.external_name}[/blue]"
+            )
+            self.status = ("changed", True)
+            if self.external_connector.move_func(
+                f,
+                self.external_name,
+            ):
+                self.status = ("moved", True)
+                self.bookkeeper.update_record(self.external_name, **checks)
+                self.reporter.report(" :smiley:", same_line=True)
+            else:
+                self.reporter.report(
+                    f":warning: [green]{f.name}[/green] -> "
+                    f"[red]{self.external_name}[/red] :slightly_frowning_face: failed copy!",
+                    replace_line=True,
+                )
 
     def _default_external_name_generator(self, f):
         return self.external_connector.directory / f.name

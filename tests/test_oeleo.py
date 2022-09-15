@@ -1,6 +1,7 @@
 import os
 import dotenv
 
+from connectors import LocalConnector
 from oeleo.utils import logger
 from oeleo.schedulers import RichScheduler, SimpleScheduler
 
@@ -47,6 +48,26 @@ def test_ssh_worker():
     # NOT IMPLEMENTED YET
     # Currently tested "manually" by the developer.
     pass
+
+
+def test_local_connector_filter(local_tmp_path):
+    local_connector = LocalConnector(local_tmp_path)
+    assert local_connector.directory.is_dir()
+    base_filter = local_connector.base_filter_sub_method(".xyz")
+    assert len(list(base_filter)) == 2
+    base_filter = local_connector.base_filter_sub_method(".txt")
+    assert len(list(base_filter)) == 1
+    base_filter = local_connector.base_filter_sub_method(".*")
+    assert len(list(base_filter)) == 3
+    base_filter = local_connector.base_filter_sub_method(".kollargoll")
+    assert len(list(base_filter)) == 0
+
+
+def test_local_connector_calc_checksum(local_file_tmp_path):
+    local_connector = LocalConnector(local_file_tmp_path.parent)
+    assert local_connector.directory.is_dir()
+    checksum = local_connector.calculate_checksum(local_file_tmp_path)
+    assert checksum == "7920697396c631989f51a80df0813e86"
 
 
 def test_worker_with_simple_scheduler(

@@ -4,9 +4,8 @@ import logging
 import os
 import sys
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import Any, Generator, Protocol, Union
+from typing import Any, Protocol, Iterator, List
 
-import dotenv
 from fabric import Connection
 
 from shareplum import Site
@@ -49,7 +48,7 @@ class Connector(Protocol):
 
     def base_filter_sub_method(
         self, glob_pattern: str = "*", **kwargs
-    ) -> Union[list, Generator]:
+    ) -> Iterator[Path]:
         ...
 
     def calculate_checksum(self, f: Path, hide: bool = True) -> Hash:
@@ -66,7 +65,10 @@ class LocalConnector(Connector):
             self.directory = directory
         else:
             self.directory = os.environ["OELEO_BASE_DIR_FROM"]
-            log.debug("No directory passed to LocalConnector, defaulting to OELEO_BASE_DIR_FROM:", self.directory)
+            log.debug(
+                "No directory passed to LocalConnector, defaulting to OELEO_BASE_DIR_FROM:",
+                self.directory,
+            )
 
         self.directory = Path(self.directory)
 
@@ -83,8 +85,8 @@ class LocalConnector(Connector):
 
     def base_filter_sub_method(
         self, glob_pattern: str = "*", **kwargs
-    ) -> Generator[Path, None, None]:  # RENAME TO enquire
-        return base_filter(self.directory, glob_pattern)
+    ) -> Iterator[Path]:  # RENAME TO enquire
+        return base_filter(self.directory, extension=glob_pattern)
 
     def calculate_checksum(self, f: Path, hide: bool = True) -> Hash:
         return calculate_checksum(f)
@@ -110,7 +112,10 @@ class SSHConnector(Connector):
             self.directory = directory
         else:
             self.directory = os.environ["OELEO_BASE_DIR_TO"]
-            log.debug("No directory passed to SSHConnector, defaulting to OELEO_BASE_DIR_TO:", self.directory)
+            log.debug(
+                "No directory passed to SSHConnector, defaulting to OELEO_BASE_DIR_TO:",
+                self.directory,
+            )
 
         self.is_posix = is_posix
         self.use_password = use_password
@@ -287,7 +292,7 @@ class SharePointConnector(Connector):
 
     def base_filter_sub_method(
         self, glob_pattern: str = "", **kwargs: Any
-    ) -> Generator[Path, None, None]:
+    ) -> List[Path]:
         file_list = []
         request = self.connection.folder.files
         for f in request:
