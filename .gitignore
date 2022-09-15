@@ -164,4 +164,4 @@ cython_debug/
 /local/
 /external/
 transfer.py
-/.env_odin
+/.env

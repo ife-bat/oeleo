@@ -148,10 +148,10 @@ def example_with_sharepoint_connector():
 
 
 def example_with_ssh_and_env():
-    print(" example_check_first_then_run ".center(80, "-"))
+    print(" Single run SSH with env parameters ".center(80, "-"))
     log.setLevel(logging.DEBUG)
     log.info(f"Starting oeleo!")
-    dotenv.load_dotenv(f"..\.env_odin")
+    dotenv.load_dotenv()
     worker = ssh_worker()
     worker.connect_to_db()
     worker.check(update_db=True)
