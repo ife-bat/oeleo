@@ -2,3 +2,4 @@ fabric
 peewee
 python-dotenv
 rich
+shareplum

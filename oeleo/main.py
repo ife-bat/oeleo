@@ -5,13 +5,11 @@ from pathlib import Path
 
 import dotenv
 
-from checkers import ChecksumChecker
-from models import SimpleDbHandler
-from oeleo.connectors import register_password, LocalConnector, SharePointConnector
+from oeleo.connectors import register_password
 from oeleo.console import console
 from oeleo.schedulers import RichScheduler, SimpleScheduler
 from oeleo.utils import logger
-from oeleo.workers import simple_worker, ssh_worker, Worker, sharepoint_worker
+from oeleo.workers import simple_worker, ssh_worker, sharepoint_worker
 
 log = logger()
 
@@ -149,8 +147,20 @@ def example_with_sharepoint_connector():
     worker.run()
 
 
-main = example_with_rich_scheduler
+def example_with_ssh_and_env():
+    print(" example_check_first_then_run ".center(80, "-"))
+    log.setLevel(logging.DEBUG)
+    log.info(f"Starting oeleo!")
+    dotenv.load_dotenv(f"..\.env_odin")
+    worker = ssh_worker()
+    worker.connect_to_db()
+    worker.check(update_db=True)
+    worker.filter_local()
+    worker.run()
+
+
+main = example_with_ssh_and_env
 
 if __name__ == "__main__":
-    # main()
-    example_with_ssh_connection_and_rich_scheduler()
+    main()
+    # example_with_ssh_connection_and_rich_scheduler()
