@@ -385,8 +385,8 @@ def simple_worker(
         simple worker that can copy files between two local folder.
     """
     db_name = db_name or os.environ["OELEO_DB_NAME"]
-    base_directory_from = base_directory_from or Path(os.environ["OELEO_BASE_DIR_FROM"])
-    base_directory_to = base_directory_to or Path(os.environ["OELEO_BASE_DIR_TO"])
+    base_directory_from = base_directory_from or os.environ["OELEO_BASE_DIR_FROM"]
+    base_directory_to = base_directory_to or os.environ["OELEO_BASE_DIR_TO"]
     extension = extension or os.environ["OELEO_FILTER_EXTENSION"]
     bookkeeper = SimpleDbHandler(db_name)
     checker = ChecksumChecker()
@@ -412,8 +412,8 @@ def simple_worker(
 
 
 def ssh_worker(
-    base_directory_from: Union[Path, None] = None,
-    base_directory_to: Union[Path, str, None] = None,
+    base_directory_from: Union[str, None] = None,
+    base_directory_to: Union[str, None] = None,
     db_name: Union[str, None] = None,
     extension: str = None,
     use_password: bool = False,
@@ -436,7 +436,7 @@ def ssh_worker(
     """
 
     db_name = db_name or os.environ["OELEO_DB_NAME"]
-    base_directory_from = base_directory_from or Path(os.environ["OELEO_BASE_DIR_FROM"])
+    base_directory_from = base_directory_from or os.environ["OELEO_BASE_DIR_FROM"]
     base_directory_to = base_directory_to or os.environ["OELEO_BASE_DIR_TO"]
     extension = extension or os.environ["OELEO_FILTER_EXTENSION"]
 
@@ -501,7 +501,7 @@ def sharepoint_worker(
 
     db_name = db_name or os.environ["OELEO_DB_NAME"]
 
-    base_directory_from = base_directory_from or Path(os.environ["OELEO_BASE_DIR_FROM"])
+    base_directory_from = base_directory_from or os.environ["OELEO_BASE_DIR_FROM"]
     doc_library_to = doc_library_to or os.environ["OELEO_SHAREPOINT_DOC_LIBRARY"]
     url = url or os.getenv("OELEO_SHAREPOINT_URL")
     sitename = sitename or os.getenv("OELEO_SHAREPOINT_SITENAME")

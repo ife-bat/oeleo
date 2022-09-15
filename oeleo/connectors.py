@@ -62,7 +62,12 @@ class Connector(Protocol):
 class LocalConnector(Connector):
     def __init__(self, directory=None):
         # TODO: check if it is best to default to TO DIR or FROM DIR or if it should break instead
-        self.directory = directory or os.environ["OELEO_BASE_DIR_TO"]
+        if directory is not None:
+            self.directory = directory
+        else:
+            self.directory = os.environ["OELEO_BASE_DIR_FROM"]
+            log.debug("No directory passed to LocalConnector, defaulting to OELEO_BASE_DIR_FROM:", self.directory)
+
         self.directory = Path(self.directory)
 
     def __str__(self):
@@ -100,7 +105,13 @@ class SSHConnector(Connector):
         self.session_password = os.environ["OELEO_PASSWORD"]
         self.username = username or os.environ["OELEO_USERNAME"]
         self.host = host or os.environ["OELEO_EXTERNAL_HOST"]
-        self.directory = directory or os.environ["OELEO_BASE_DIR_TO"]
+
+        if directory is not None:
+            self.directory = directory
+        else:
+            self.directory = os.environ["OELEO_BASE_DIR_TO"]
+            log.debug("No directory passed to SSHConnector, defaulting to OELEO_BASE_DIR_TO:", self.directory)
+
         self.is_posix = is_posix
         self.use_password = use_password
         self.c = None
@@ -204,7 +215,7 @@ class SSHConnector(Connector):
 
         try:
             log.debug(f"Copying {path} to {to}")
-            self.c.put(str(path), remote=str(to)[1:])
+            self.c.put(str(path), remote=str(to))
         except Exception as e:
             log.debug("GOT AN EXCEPTION DURING COPYING FILE")
             log.debug(f"FROM     : {path}")
