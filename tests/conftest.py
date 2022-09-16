@@ -9,6 +9,10 @@ from oeleo.workers import simple_worker
 log = logger()
 
 
+def pytest_configure():
+    pytest.checksum_local_file_tmp_path = "7920697396c631989f51a80df0813e86"
+
+
 @pytest.fixture
 def local_tmp_path(tmp_path):
     """create tmp dir with two .xyz files and one .txt file"""

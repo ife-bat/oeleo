@@ -157,6 +157,7 @@ class SSHConnector(Connector):
         )
 
     def __check_connection_and_exit(self):
+        # used only when developing oeleo
         log.debug("Connected?")
         cmd = f"find {self.directory} -maxdepth 1 -name '*'"
         log.debug(cmd)

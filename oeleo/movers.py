@@ -13,7 +13,7 @@ def mock_mover(path: Path, to: Path, *args, **kwargs):
     return success
 
 
-def simple_mover(path: Path, to: Path, *args, **kwargs):
+def simple_mover(path: Path, to: Path, *args, **kwargs) -> bool:
     try:
         shutil.copyfile(path, to)
         return True
