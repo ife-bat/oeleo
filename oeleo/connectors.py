@@ -207,7 +207,7 @@ class SSHConnector(Connector):
             log.debug("Connecting ...")
             self.connect()
 
-        cmd = f"md5sum {self.directory/f}"
+        cmd = f"md5sum \"{self.directory/f}\""
         result = self.c.run(cmd, hide=hide)
         if not result.ok:
             log.debug("it failed - should raise an exception her (future work)")
