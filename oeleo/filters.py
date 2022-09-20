@@ -47,6 +47,7 @@ def base_filter(
         base_filter_func = path.glob
 
     file_list = base_filter_func(f"*{extension}")
+
     if additional_filters is not None:
         for filter_name, filter_val in additional_filters:
             filter_func = FILTERS[filter_name]
@@ -56,10 +57,10 @@ def base_filter(
 
 
 def main():
-    directory = Path(r"/check/from")
-    extension = "*"
-    not_before = datetime(year=2022, month=7, day=1, hour=1, minute=0, second=0)
-    not_after = datetime(year=2022, month=7, day=4, hour=1, minute=0, second=0)
+    directory = Path("../check/from").resolve()
+    extension = ".xyz"
+    not_before = datetime(year=2021, month=7, day=1, hour=1, minute=0, second=0)
+    not_after = datetime(year=2023, month=7, day=4, hour=1, minute=0, second=0)
     print("Starting...")
 
     my_filters = [
@@ -68,8 +69,9 @@ def main():
     ]
 
     g = base_filter(directory, extension, additional_filters=my_filters)
-    for i in g:
-        print(i)
+    print("Should contain 10 files. This is what I got after filtering:")
+    for n, f in enumerate(g):
+        print(f"{n+1}: {f}")
 
 
 if __name__ == "__main__":
