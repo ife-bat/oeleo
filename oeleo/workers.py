@@ -120,7 +120,7 @@ class Worker(WorkerBase):
 
     def __post_init__(self):
         if self.dry_run:
-            log.debug("[bold red blink]DRY RUN[/]", extra={"markup": True})
+            log.debug("DRY RUN")
             self.bookkeeper = MockDbHandler()
         self.external_connector.connect()
 
@@ -161,7 +161,7 @@ class Worker(WorkerBase):
         )
         return external_files
 
-    def check(self, update_db=False, force=False, **kwargs):
+    def check(self, update_db=False, force=True, **kwargs):
         """Check for differences between the two directories.
 
         Arguments:
@@ -197,7 +197,7 @@ class Worker(WorkerBase):
             )
             if external_name in external_files:
                 self.reporter.report(
-                    f"[cyan]{f.name}[/cyan] -> [cyan]{self.external_name}[/cyan]"
+                    f"{f.name} -> {self.external_name}"
                 )
                 code = 1
                 exists = True
@@ -219,17 +219,18 @@ class Worker(WorkerBase):
                         number_of_duplicates_out_of_sync += 1
                         code = 0
                         self.reporter.report(
-                            f"    (E) {k}: [red]{external_vals[k]}[/red]"
+                            f"    (E) {k}: {external_vals[k]}"
                         )
                     else:
                         self.reporter.report(
-                            f"    (E) {k}: [green]{external_vals[k]}[/green]"
+                            f"    (E) {k}: {external_vals[k]}"
                         )
                 log.debug(f"In sync: {same}")
 
             else:
+                number_of_duplicates_out_of_sync += 1
                 self.reporter.report(
-                    f"[cyan]{f.name}[/cyan] -> [red]{self.external_name}[/red]"
+                    f"{f.name} -> {self.external_name}"
                 )
                 exists = False
                 code = 0
@@ -242,12 +243,11 @@ class Worker(WorkerBase):
 
                     if not force and not exists:
                         code = self.bookkeeper.code
-
                     self.bookkeeper.update_record(
                         external_name, code=code, **local_vals
                     )
 
-        self.reporter.report("\n[green bold]REPORT (CHECK):[/green bold]")
+        self.reporter.report("\nREPORT (CHECK):")
         self.reporter.report(
             f"-Total number of local files:    {number_of_local_files}"
         )
@@ -280,12 +280,12 @@ class Worker(WorkerBase):
         if not self.bookkeeper.is_changed(**checks):
             log.debug(f"{f} not changed")
             self.reporter.report(
-                f":smiley: [green]{f.name}[/green] == [green]{self.external_name}[/green]"
+                f"{f.name} == {self.external_name}"
             )
 
         else:
             self.reporter.report(
-                f":arrow_forward: [green]{f.name}[/green] -> [blue]{self.external_name}[/blue]"
+                f"{f.name} -> {self.external_name}"
             )
             self.status = ("changed", True)
             if self.external_connector.move_func(
@@ -297,8 +297,8 @@ class Worker(WorkerBase):
                 self.reporter.report(" :smiley:", same_line=True)
             else:
                 self.reporter.report(
-                    f":warning: [green]{f.name}[/green] -> "
-                    f"[red]{self.external_name}[/red] :slightly_frowning_face: failed copy!",
+                    f"{f.name} -> "
+                    f"{self.external_name} failed copy!",
                     replace_line=True,
                 )
 

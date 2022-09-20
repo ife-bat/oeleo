@@ -1,7 +1,7 @@
 import logging
 import time
 from datetime import datetime
-from typing import Protocol, Union
+from typing import Protocol, Union, Any
 
 from rich import print
 from rich.live import Live
@@ -46,6 +46,7 @@ class SimpleScheduler(SchedulerBase):
         max_run_intervals=1000,
         update_db=True,
         force=False,
+        additional_filters=None,
     ):
         self.worker = worker
         self.state = {"iterations": 0}
@@ -54,6 +55,7 @@ class SimpleScheduler(SchedulerBase):
         self.max_run_intervals = max_run_intervals
         self.update_db: bool = update_db
         self.force: bool = force
+        self.additional_filters: Any = additional_filters
         # self._last_update = None
         self._sleep_interval = max(run_interval_time / 10, 1)
         self._last_run = None
@@ -62,7 +64,7 @@ class SimpleScheduler(SchedulerBase):
     def _setup(self):
         log.debug("setting up scheduler")
         self.worker.connect_to_db()
-        self.worker.check(update_db=self.update_db, force=self.force)
+        self.worker.check(update_db=self.update_db, force=self.force, additional_filters=self.additional_filters)
         # self._last_update = datetime.now()
 
     def start(self):
@@ -72,7 +74,7 @@ class SimpleScheduler(SchedulerBase):
             self.state["iterations"] += 1
             log.debug(f"ITERATING ({self.state['iterations']})")
 
-            self.worker.filter_local()
+            self.worker.filter_local(additional_filters=self.additional_filters)
             self.worker.run()
             self._last_run = datetime.now()
             self._run_counter += 1
@@ -100,6 +102,7 @@ class RichScheduler(SchedulerBase):
         max_run_intervals=1000,
         update_db=True,
         force=False,
+        additional_filters=None,
         auto_accept_check=False,
     ):
         self.worker = worker
@@ -109,6 +112,7 @@ class RichScheduler(SchedulerBase):
         self.max_run_intervals: int = max_run_intervals
         self.update_db: bool = update_db
         self.force: bool = force
+        self.additional_filters = additional_filters
         self.auto_accept_check: bool = (
             auto_accept_check  # nice to have when testing with pytest
         )
@@ -138,7 +142,7 @@ class RichScheduler(SchedulerBase):
                 self.worker.connect_to_db()
 
                 self.layout["left_footer"].update(Panel(f"CHECK..."))
-                self.worker.check(update_db=self.update_db, force=self.force)
+                self.worker.check(update_db=self.update_db, force=self.force, additional_filters=self.additional_filters)
                 if not self.auto_accept_check:
                     if not confirm(self.layout):
                         raise ScheduleAborted
@@ -159,7 +163,7 @@ class RichScheduler(SchedulerBase):
                         f"\n[cyan bold]NEW ITERATION:[/cyan bold] {self.state['iterations']:06}/{self.max_run_intervals:06}"
                     )
                     self.layout["middle_footer"].update(Panel("filter local"))
-                    self.worker.filter_local()  # TODO: allow for keywords
+                    self.worker.filter_local(additional_filters=self.additional_filters)  # TODO: allow for keywords
                     self.layout["middle_footer"].update(Panel("run"))
                     self.worker.run()
                     self._last_run = datetime.now()

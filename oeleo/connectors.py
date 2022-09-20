@@ -13,7 +13,7 @@ from shareplum import Office365
 from shareplum.site import Version
 from shareplum.errors import ShareplumRequestError
 
-from oeleo.filters import base_filter
+from oeleo.filters import base_filter, additional_filtering
 from oeleo.movers import simple_mover
 from oeleo.utils import calculate_checksum
 
@@ -180,12 +180,20 @@ class SSHConnector(Connector):
             log.debug("Connecting ...")
             self.connect()
 
-        result = self._list_content(f"*{glob_pattern}", hide=True)
-        file_list = result.stdout.strip().split("\n")
+        file_list = self._list_content(f"*{glob_pattern}", hide=True)
+
+        # experimental feature:
+        if additional_filters := kwargs.get("additional_filters"):
+            logging.critical(
+                "Got additional_filters for SSHConnector. This is still an experimental feature!"
+            )
+
+            file_list = additional_filtering(file_list, additional_filters)
+
         if self.is_posix:
             file_list = [PurePosixPath(f) for f in file_list]
         else:
-            file_list = [Path(f) for f in file_list]  # OBS Linux -> Win not supported!
+            file_list = [Path(f) for f in file_list]  # OBS Linux -> Win not supported yet!
 
         return file_list
 
@@ -197,17 +205,24 @@ class SSHConnector(Connector):
 
         cmd = f"find {self.directory} -maxdepth {max_depth} -name '{glob_pattern}'"
         log.debug(cmd)
-        result = self.c.run(cmd, hide=hide)
-        if not result.ok:
-            log.debug("it failed - should raise an exception her (future work)")
-        return result
+        file_list = []
+        try:
+            result = self.c.run(cmd, hide=hide)
+            if not result.ok:
+                log.debug("Encountered an error from fabric")
+            else:
+                file_list = result.stdout.strip().split("\n")
+        except Exception as e:
+            print(f"Encountered an exception from fabric: {e}")
+
+        return file_list
 
     def calculate_checksum(self, f, hide=True):
         if self.c is None:  # make this as a decorator ("@connected")
             log.debug("Connecting ...")
             self.connect()
 
-        cmd = f"md5sum \"{self.directory/f}\""
+        cmd = f'md5sum "{self.directory/f}"'
         result = self.c.run(cmd, hide=hide)
         if not result.ok:
             log.debug("it failed - should raise an exception her (future work)")

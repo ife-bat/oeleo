@@ -7,8 +7,9 @@ from rich.panel import Panel
 from rich.text import Text
 
 from oeleo.layouts import N_COLS_NOT_BODY, N_ROWS_NOT_BODY
+from utils import logger
 
-log = logging.getLogger("oeleo")
+log = logger()
 
 
 class ReporterBase(Protocol):

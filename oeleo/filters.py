@@ -49,10 +49,17 @@ def base_filter(
     file_list = base_filter_func(f"*{extension}")
 
     if additional_filters is not None:
-        for filter_name, filter_val in additional_filters:
-            filter_func = FILTERS[filter_name]
-            file_list = filter(partial(filter_func, value=filter_val), file_list)
+        file_list = additional_filtering(file_list, additional_filters)
 
+    return file_list
+
+
+def additional_filtering(
+    file_list: Iterable, additional_filters: Iterable[FilterTuple] = None
+) -> Iterable:
+    for filter_name, filter_val in additional_filters:
+        filter_func = FILTERS[filter_name]
+        file_list = filter(partial(filter_func, value=filter_val), file_list)
     return file_list
 
 
