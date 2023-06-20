@@ -225,6 +225,7 @@ Just plans, no promises given.
 - [x] Looking good
 - [x] Fairly easy to use
 - [ ] Easy to use
+- [ ] Easy to debug runs (e.g. editing sql)
 
 ## Licence
 MIT

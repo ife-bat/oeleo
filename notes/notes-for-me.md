@@ -18,3 +18,9 @@
    > pip install --no-index --find-links=oeleo_wheels oeleo_wheels\oeleo-0.3.1-py3-none-any.whl
    ```
    
+## List of things to improve
+
+1. figure out how to make tests
+2. figure out how to make sure it restarts when stopped
+3. add some way of viewing the db easily
+   
