@@ -174,7 +174,7 @@ class Worker(WorkerBase):
         """
 
         self.status = ("state", "check")
-        log.debug("****** CHECK:")
+        log.debug("<CHECK>")
         self.reporter.report(
             f"Comparing {self.local_connector.directory} <=> {self.external_connector.directory}"
         )
@@ -257,6 +257,7 @@ class Worker(WorkerBase):
         self.reporter.report(
             f"-Files out of sync:              {number_of_duplicates_out_of_sync}"
         )
+        log.debug("<CHECK FINISHED>")
 
     def run(self):
         """Copy the files that needs to be copied and update the db."""
@@ -283,25 +284,25 @@ class Worker(WorkerBase):
             self.reporter.report(
                 f"{f.name} == {self.external_name}"
             )
+            return
 
+        self.reporter.report(
+            f"{f.name} -> {self.external_name}"
+        )
+        self.status = ("changed", True)
+        if self.external_connector.move_func(
+            f,
+            self.external_name,
+        ):
+            self.status = ("moved", True)
+            self.bookkeeper.update_record(self.external_name, **checks)
+            self.reporter.report(" :smiley:", same_line=True)
         else:
             self.reporter.report(
-                f"{f.name} -> {self.external_name}"
+                f"{f.name} -> "
+                f"{self.external_name} failed copy!",
+                replace_line=True,
             )
-            self.status = ("changed", True)
-            if self.external_connector.move_func(
-                f,
-                self.external_name,
-            ):
-                self.status = ("moved", True)
-                self.bookkeeper.update_record(self.external_name, **checks)
-                self.reporter.report(" :smiley:", same_line=True)
-            else:
-                self.reporter.report(
-                    f"{f.name} -> "
-                    f"{self.external_name} failed copy!",
-                    replace_line=True,
-                )
 
     def _default_external_name_generator(self, f):
         return self.external_connector.directory / f.name
@@ -360,6 +361,11 @@ def simple_worker(
 
     Returns:
         simple worker that can copy files between two local folder.
+
+    Usage:
+        >>> my_oeleo = simple_worker()  # reads necessary settings from .env or ENVs as default.
+        >>> my_oeleo.filter_local()  # or my_oeleo.add_local(["file1.csv", "file2.csv"])
+        >>> my_oeleo.run()
     """
     db_name = db_name or os.environ["OELEO_DB_NAME"]
     base_directory_from = base_directory_from or os.environ["OELEO_BASE_DIR_FROM"]
