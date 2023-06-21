@@ -2,6 +2,7 @@ OELEO_BASE_DIR_FROM=../check/from
 OELEO_BASE_DIR_TO=../check/to
 OELEO_FILTER_EXTENSION=.xyz
 OELEO_DB_NAME=../test_databases/testdb.db
+OELEO_LOG_DIR=../logs
 # OELEO_DB_HOST=<db host>
 # OELEO_DB_PORT=<db port>
 # OELEO_DB_USER=<db user>

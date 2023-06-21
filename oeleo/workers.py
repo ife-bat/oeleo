@@ -261,7 +261,7 @@ class Worker(WorkerBase):
     def run(self):
         """Copy the files that needs to be copied and update the db."""
 
-        log.debug("****** RUN:")
+        log.debug("<RUN>")
         self.status = ("state", "run")
         local_files_found = False
         for f in self.file_names:
@@ -271,6 +271,7 @@ class Worker(WorkerBase):
             self.reporter.report(
                 "No files to handle. Did you forget to run `worker.filter_local()`?"
             )
+        log.debug("<RUN FINISHED>")
 
     def _process_file(self, f):
         del self.status

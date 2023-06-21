@@ -22,7 +22,7 @@ def example_bare_minimum():
     worker = simple_worker()
     worker.connect_to_db()
 
-    worker.check(update_db=True)
+    # worker.check(update_db=True)
     worker.filter_local()
     worker.run()
 
@@ -159,7 +159,7 @@ def example_with_ssh_and_env():
     worker.run()
 
 
-main = example_with_ssh_and_env
+main = example_bare_minimum
 
 if __name__ == "__main__":
     main()

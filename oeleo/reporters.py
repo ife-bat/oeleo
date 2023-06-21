@@ -30,14 +30,14 @@ class ReporterBase(Protocol):
 
 
 class Reporter:
-    """Minimal reporter that uses `log.debug` for outputs."""
+    """Minimal reporter that uses `log.info` for outputs."""
 
     layout = None
     lines = []
 
     @staticmethod
     def report(status, events=None, same_line=False, replace_line=False):
-        log.debug(status)
+        log.info(status)
 
     def clear(self):
         pass
