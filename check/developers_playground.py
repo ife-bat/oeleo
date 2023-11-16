@@ -124,15 +124,21 @@ def check_01():
     3. Filter the database
 
     """
+    from oeleo.utils import dump_worker_db_table
     log.setLevel(logging.DEBUG)
     log.debug(f"Starting oeleo!")
     console.print(f"Starting oeleo!")
     dotenv.load_dotenv()
     worker = simple_worker()
     worker.connect_to_db()
-    dump_oeleo_db_table(worker, verbose=True)
+    dump_worker_db_table(worker, verbose=True)
     worker.filter_local()
 
 
+def check_db_dumper():
+    from oeleo.utils import dump_db
+    dump_db()
+
+
 if __name__ == "__main__":
-    example_ssh_worker_with_simple_scheduler()
+    check_01()

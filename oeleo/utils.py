@@ -8,6 +8,8 @@ import dotenv
 import peewee
 from rich.logging import RichHandler
 
+from oeleo.models import SimpleDbHandler
+
 
 # FILE_LOG_MESSAGE_FORMAT = "%(asctime)s - %(name)s (%(filename)s-%(funcName)s) - %(levelname)s - %(message)s"
 FILE_LOG_MESSAGE_FORMAT = "[%(asctime)s - %(name)s] || %(levelname)7s || %(message)s"
@@ -56,18 +58,38 @@ def logger(name="oeleo", log_level=logging.DEBUG, screen=False, log_message_form
     return log
 
 
-def dump_oeleo_db_table(worker, code=None, verbose=True):
+def dump_db(db_name=None, code=None, verbose=False, output_format="human"):
+    """Dump the contents of the database"""
+    dotenv.load_dotenv()
+    db_name = db_name or os.environ.get("OELEO_DB_NAME")
+    if db_name is None:
+        raise ValueError("db_name must be provided")
+    bookkeeper = SimpleDbHandler(db_name)
+    bookkeeper.initialize_db()
+    dump_bookkeeper(bookkeeper, code=code, verbose=verbose, output_format=output_format)
+
+
+def dump_worker_db_table(worker, code=None, verbose=True, output_format="human"):
+    """Dump the contents of the database"""
+    bookkeeper = worker.bookkeeper
+    dump_bookkeeper(bookkeeper, code=code, verbose=verbose, output_format=output_format)
+
+
+def dump_bookkeeper(bookkeeper, code=None, verbose=False, output_format="human"):
+    # currently only dumps to screen in a human-readable format
+    # TODO: option to dump as csv-table
+    # TODO: option to dump as json
+    # TODO: option to dump to log
+
     if verbose:
         print("... dumping 'filelist' table")
-        print(f"... file: {worker.bookkeeper.db_name}")
+        print(f"... file: {bookkeeper.db_name}")
         print(" records ".center(80, "="))
-
-    n_records = len(worker.bookkeeper.db_model)
+    n_records = len(bookkeeper.db_model)
     if code is None:
-        records = worker.bookkeeper.db_model.filter()
+        records = bookkeeper.db_model.filter()
     else:
-        records = worker.bookkeeper.db_model.filter(code=code)
-
+        records = bookkeeper.db_model.filter(code=code)
     if verbose:
         for i, record in enumerate(records):
             print(f" pk {record._pk:03} [{i:03}:{n_records:03}] ".center(80, "-"))
