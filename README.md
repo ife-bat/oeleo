@@ -93,6 +93,7 @@ OELEO_BASE_DIR_FROM=C:\data\local
 OELEO_BASE_DIR_TO=C:\data\pub
 OELEO_FILTER_EXTENSION=.csv
 OELEO_DB_NAME=local2pub.db
+OELEO_LOG_DIR=C:\oeleo\logs
 
 ## only needed for advanced connectors:
 # OELEO_DB_HOST=<db host>
@@ -254,6 +255,13 @@ poetry build
 ```
 
 #### Publish
+
+If you are using 2-factor authentication, you need to create a token on pypi.org and run:
+
+```bash
+poetry config pypi-token.pypi <token>
+```
+Then run:
 
 ```bash
 poetry publish

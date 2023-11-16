@@ -54,3 +54,31 @@ def logger(name="oeleo", log_level=logging.DEBUG, screen=False, log_message_form
     file_handler.setFormatter(logging.Formatter(FILE_LOG_MESSAGE_FORMAT))
     log.addHandler(file_handler)
     return log
+
+
+def dump_oeleo_db_table(worker, code=None, verbose=True):
+    if verbose:
+        print("... dumping 'filelist' table")
+        print(f"... file: {worker.bookkeeper.db_name}")
+        print(" records ".center(80, "="))
+
+    n_records = len(worker.bookkeeper.db_model)
+    if code is None:
+        records = worker.bookkeeper.db_model.filter()
+    else:
+        records = worker.bookkeeper.db_model.filter(code=code)
+
+    if verbose:
+        for i, record in enumerate(records):
+            print(f" pk {record._pk:03} [{i:03}:{n_records:03}] ".center(80, "-"))
+            print(f"local_name:     {record.local_name}")
+            print(f"external_name:  {record.external_name}")
+            print(f"code:           {record.code}")
+            print(f"processed_date: {record.processed_date}")
+            print(f"checksum:       {record.checksum}")
+
+        print(80 * "=")
+    else:
+        for record in records:
+            txt = f"{record._pk:05}\tc={record.code}\tlf={record.local_name}\tef={record.external_name}"
+            print(txt)
