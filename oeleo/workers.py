@@ -132,7 +132,7 @@ class Worker(WorkerBase):
     def add_local(self, local_files: Iterable) -> List:
         """Add the files that should be processed."""
         if not isinstance(local_files, list):
-            logging.warning(
+            log.warning(
                 "Please provide a list for local files when using add_local. "
                 "If it is a generator, you will have to re-run "
                 "add_local before each call to check or run."
@@ -141,6 +141,7 @@ class Worker(WorkerBase):
         self.status = ("state", "filter-local")
         self.status = ("filtered_once", False)
         self.file_names = local_files
+        log.debug(f"Adding {len(local_files)} files to the worker")
         return local_files
 
     def filter_local(self, **kwargs):
@@ -151,6 +152,7 @@ class Worker(WorkerBase):
             self.extension, **kwargs
         )
         self.file_names = local_files
+        log.debug(f"Filtering files to the worker")
         return local_files
 
     def filter_external(self, **kwargs):
@@ -159,6 +161,7 @@ class Worker(WorkerBase):
         external_files = self.external_connector.base_filter_sub_method(
             self.extension, **kwargs
         )
+        log.debug(f"Filtering external files to the worker")
         return external_files
 
     def check(self, update_db=False, force=True, **kwargs):
@@ -182,6 +185,7 @@ class Worker(WorkerBase):
 
         # cannot be a generator since we need to do a `if in` lookup:
         external_files = list(self.filter_external(**kwargs))
+        log.debug(f"Checking {len(external_files)} files")
 
         number_of_local_files = 0
         number_of_external_duplicates = 0
@@ -202,7 +206,7 @@ class Worker(WorkerBase):
                 code = 1
                 exists = True
 
-                log.debug(f"[FOUND EXTERNAL]")
+                log.debug(f"FOUND EXTERNAL")
                 number_of_external_duplicates += 1
 
                 external_vals = self.checker.check(
@@ -375,12 +379,12 @@ def simple_worker(
     checker = ChecksumChecker()
     local_connector = LocalConnector(directory=base_directory_from)
     external_connector = LocalConnector(directory=base_directory_to)
-
+    log.debug("<Simple Worker created>")
     log.debug(
-        f"[bold]from:[/] [bold green]{base_directory_from}[/]", extra={"markup": True}
+        f"from:{base_directory_from}"
     )
     log.debug(
-        f"[bold]to  :[/] [bold blue]{base_directory_to}[/]", extra={"markup": True}
+        f"to  :{base_directory_to}"
     )
 
     worker = Worker(
@@ -395,8 +399,8 @@ def simple_worker(
 
 
 def ssh_worker(
-    base_directory_from: Union[str, None] = None,
-    base_directory_to: Union[str, None] = None,
+    base_directory_from: Union[str, None, Path] = None,
+    base_directory_to: Union[str, None, Path] = None,
     db_name: Union[str, None] = None,
     extension: str = None,
     use_password: bool = False,
@@ -431,13 +435,13 @@ def ssh_worker(
     bookkeeper = SimpleDbHandler(db_name)
     checker = ChecksumChecker()
 
+    log.debug("<SSH Worker created>")
+
     log.debug(
-        f"[bold]from:[/] [bold green]{local_connector.directory}[/]",
-        extra={"markup": True},
+        f"from:{local_connector.directory}"
     )
     log.debug(
-        f"[bold]to  :[/] [bold blue]{external_connector.host}:{external_connector.directory}[/]",
-        extra={"markup": True},
+        f"to  :{external_connector.host}:{external_connector.directory}"
     )
 
     worker = Worker(

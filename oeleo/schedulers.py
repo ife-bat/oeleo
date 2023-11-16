@@ -46,6 +46,7 @@ class SimpleScheduler(SchedulerBase):
         max_run_intervals=1000,
         update_db=True,
         force=False,
+        add_check=False,
         additional_filters=None,
     ):
         self.worker = worker
@@ -56,6 +57,7 @@ class SimpleScheduler(SchedulerBase):
         self.update_db: bool = update_db
         self.force: bool = force
         self.additional_filters: Any = additional_filters
+        self.add_check: bool = add_check
         # self._last_update = None
         self._sleep_interval = max(run_interval_time / 10, 1)
         self._last_run = None
@@ -64,11 +66,12 @@ class SimpleScheduler(SchedulerBase):
     def _setup(self):
         log.debug("setting up scheduler")
         self.worker.connect_to_db()
-        self.worker.check(update_db=self.update_db, force=self.force, additional_filters=self.additional_filters)
+        if self.add_check:
+            self.worker.check(update_db=self.update_db, force=self.force, additional_filters=self.additional_filters)
         # self._last_update = datetime.now()
 
     def start(self):
-        log.debug("***** START:")
+        log.debug("SimpleScheduler *STARTED*")
         self._setup()
         while True:
             self.state["iterations"] += 1
@@ -128,7 +131,7 @@ class RichScheduler(SchedulerBase):
         self.worker.reporter = LayoutReporter(self.layout)
 
     def start(self):
-        log.debug("***** START:")
+        log.debug("RichScheduler *STARTED*")
         try:
             self._setup()
 

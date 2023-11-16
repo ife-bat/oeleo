@@ -65,9 +65,14 @@ def additional_filtering(
 
 def main():
     directory = Path("../check/from").resolve()
+    not_before = datetime(year=2022, month=7, day=1, hour=1, minute=0, second=0)
+    not_after = datetime(year=2022, month=8, day=4, hour=1, minute=0, second=0)
+    print(f"not_before: {not_before}")
+    print(f"not_after: {not_after}")
+    for f in directory.glob("*"):
+        print(f"file: {f}: {datetime.fromtimestamp(f.stat().st_mtime)}")
     extension = ".xyz"
-    not_before = datetime(year=2021, month=7, day=1, hour=1, minute=0, second=0)
-    not_after = datetime(year=2023, month=7, day=4, hour=1, minute=0, second=0)
+
     print("Starting...")
 
     my_filters = [
@@ -76,9 +81,10 @@ def main():
     ]
 
     g = base_filter(directory, extension, additional_filters=my_filters)
-    print("Should contain 10 files. This is what I got after filtering:")
+    print("This is what I got after filtering:")
     for n, f in enumerate(g):
-        print(f"{n+1}: {f}")
+        st_mtime = datetime.fromtimestamp(f.stat().st_mtime)
+        print(f"{n+1}: {f} {st_mtime} not-before: {st_mtime >= not_before} not-after: {st_mtime <= not_after}")
 
 
 if __name__ == "__main__":

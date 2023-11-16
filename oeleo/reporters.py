@@ -5,11 +5,13 @@ from math import ceil
 
 from rich.panel import Panel
 from rich.text import Text
+from rich.console import Console
 
 from oeleo.layouts import N_COLS_NOT_BODY, N_ROWS_NOT_BODY
 from utils import logger
 
 log = logger()
+simple_console = Console()
 
 
 class ReporterBase(Protocol):
@@ -30,13 +32,14 @@ class ReporterBase(Protocol):
 
 
 class Reporter:
-    """Minimal reporter that uses `log.info` for outputs."""
+    """Minimal reporter that uses console for outputs."""
 
     layout = None
     lines = []
 
     @staticmethod
     def report(status, events=None, same_line=False, replace_line=False):
+        simple_console.print(status)
         log.info(status)
 
     def clear(self):

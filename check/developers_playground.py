@@ -6,10 +6,11 @@ from pathlib import Path
 import dotenv
 
 from oeleo.console import console
-from oeleo.utils import logger
-from oeleo.workers import simple_worker
+from oeleo.workers import simple_worker, ssh_worker
+from oeleo.schedulers import SimpleScheduler
 
-log = logger()
+log = logging.getLogger("oeleo")
+# log.setLevel(logging.DEBUG)
 
 
 def example_bare_minimum():
@@ -20,9 +21,48 @@ def example_bare_minimum():
     worker = simple_worker()
     worker.connect_to_db()
 
-    # worker.check(update_db=True)
+    worker.check(update_db=True)
     worker.filter_local()
     worker.run()
+
+
+def example_with_simple_scheduler():
+    # log.setLevel(logging.DEBUG)
+    log.debug(f"Starting oeleo!")
+    dotenv.load_dotenv()
+    worker = simple_worker()
+    log.debug(f"{worker.bookkeeper=}")
+    log.debug(f"{worker.bookkeeper.db_name=}")
+    log.debug(f"{worker.local_connector=}")
+    log.debug(f"{worker.external_connector=}")
+    log.debug(f"{worker.reporter=}")
+    log.debug(f"{worker.file_names=}")
+    s = SimpleScheduler(
+        worker,
+        run_interval_time=2,
+        max_run_intervals=2,
+        add_check=False,
+    )
+    s.start()
+
+
+def example_ssh_worker_with_simple_scheduler():
+    log.setLevel(logging.DEBUG)
+    log.debug(f"Starting oeleo!")
+    dotenv.load_dotenv()
+    worker = ssh_worker(base_directory_to="/home/jepe@ad.ife.no/Temp")
+    log.info(f"{worker.bookkeeper=}")
+    log.info(f"{worker.bookkeeper.db_name=}")
+    log.info(f"{worker.local_connector=}")
+    log.info(f"{worker.external_connector=}")
+    log.info(f"{worker.reporter=}")
+    log.info(f"{worker.file_names=}")
+    s = SimpleScheduler(
+        worker,
+        run_interval_time=2,
+        max_run_intervals=10000,
+    )
+    s.start()
 
 
 def dump_oeleo_db_table(worker, code=None, verbose=True):
@@ -73,15 +113,22 @@ def inspect_db(worker, table="filelist"):
 
 
 def check_01():
+    """Check that the database is working correctly
+
+    1. Connect to the database
+    2. Dump the contents of the database
+    3. Filter the database
+
+    """
     log.setLevel(logging.DEBUG)
     log.debug(f"Starting oeleo!")
     console.print(f"Starting oeleo!")
     dotenv.load_dotenv()
     worker = simple_worker()
     worker.connect_to_db()
-    dump_oeleo_db_table(worker, verbose=False)
+    dump_oeleo_db_table(worker, verbose=True)
     worker.filter_local()
 
 
 if __name__ == "__main__":
-    check_01()
+    example_with_simple_scheduler()
