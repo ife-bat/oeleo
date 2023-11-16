@@ -2,6 +2,7 @@ import logging
 import time
 from datetime import datetime
 from typing import Protocol, Union, Any
+import warnings
 
 from rich import print
 from rich.live import Live
@@ -108,6 +109,7 @@ class RichScheduler(SchedulerBase):
         additional_filters=None,
         auto_accept_check=False,
     ):
+        warnings.warn("RichScheduler will be deprecated and is not maintained!", DeprecationWarning)
         self.worker = worker
         self.state = {"iterations": 0}
         # self.update_interval = 3_600  # not used

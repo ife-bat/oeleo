@@ -284,15 +284,16 @@ class Worker(WorkerBase):
         self.bookkeeper.register(f)
         checks = self.checker.check(f)
         if not self.bookkeeper.is_changed(**checks):
-            log.debug(f"{f} not changed")
-            self.reporter.report(
+            log.debug(
                 f"{f.name} == {self.external_name}"
             )
+            self.reporter.report(" .", same_line=True)
             return
 
-        self.reporter.report(
+        log.debug(
             f"{f.name} -> {self.external_name}"
         )
+
         self.status = ("changed", True)
         if self.external_connector.move_func(
             f,
@@ -300,12 +301,15 @@ class Worker(WorkerBase):
         ):
             self.status = ("moved", True)
             self.bookkeeper.update_record(self.external_name, **checks)
-            self.reporter.report(" :smiley:", same_line=True)
+            self.reporter.report("o", same_line=True)
+            log.debug(
+                f"{f.name} -> {self.external_name} copied"
+
+            )
         else:
-            self.reporter.report(
-                f"{f.name} -> "
-                f"{self.external_name} failed copy!",
-                replace_line=True,
+            self.reporter.report("!", same_line=True)
+            log.debug(
+                f"{f.name} -> {self.external_name} FAILED COPY!"
             )
 
     def _default_external_name_generator(self, f):
@@ -482,10 +486,6 @@ def sharepoint_worker(
     def external_name_generator(con, name):
         return Path(name.name)
 
-    log.setLevel(logging.DEBUG)
-    log.debug(f"Starting oeleo!")
-    console.print(f"Starting oeleo!")
-
     db_name = db_name or os.environ["OELEO_DB_NAME"]
 
     base_directory_from = base_directory_from or os.environ["OELEO_BASE_DIR_FROM"]
@@ -507,14 +507,13 @@ def sharepoint_worker(
 
     bookkeeper = SimpleDbHandler(db_name)
     checker = ChecksumChecker()
+    log.debug("<SSH Worker created>")
 
     log.debug(
-        f"[bold]from:[/] [bold green]{local_connector.directory}[/]",
-        extra={"markup": True},
+        f"from: {local_connector.directory}"
     )
     log.debug(
-        f"[bold]to  :[/] [bold blue]{external_connector.url}:{external_connector.directory}[/]",
-        extra={"markup": True},
+        f"to  :{external_connector.url}:{external_connector.directory}"
     )
 
     worker = Worker(

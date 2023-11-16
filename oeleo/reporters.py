@@ -2,16 +2,25 @@ import logging
 import os
 from typing import Protocol
 from math import ceil
+import warnings
 
 from rich.panel import Panel
 from rich.text import Text
 from rich.console import Console
 
 from oeleo.layouts import N_COLS_NOT_BODY, N_ROWS_NOT_BODY
-from utils import logger
+from oeleo.utils import logger
+from oeleo.console import simple_console
+
+# used for same_line reporting in Reporter.report
+NOT_LOGGED = ["\n", "\r", "\r\n", "", " ", " .", ".", "-", "o", "v", "!"]
+line_length = 0
+try:
+    max_line_length = os.get_terminal_size().columns
+except OSError:
+    max_line_length = 80
 
 log = logger()
-simple_console = Console()
 
 
 class ReporterBase(Protocol):
@@ -31,27 +40,45 @@ class ReporterBase(Protocol):
         ...
 
 
-class Reporter:
+class Reporter(ReporterBase):
     """Minimal reporter that uses console for outputs."""
 
     layout = None
     lines = []
 
     @staticmethod
-    def report(status, events=None, same_line=False, replace_line=False):
-        simple_console.print(status)
-        log.info(status)
+    def report(status, same_line=False, **kwargs):
+        """Report status to the user."""
+        global line_length
+
+        if same_line:
+            new_line_length = line_length + len(status)
+            if new_line_length > max_line_length:
+                simple_console.print()
+                line_length = 0
+
+            simple_console.print(status, end="")
+            line_length += len(status)
+            if status not in NOT_LOGGED:
+                log.info(status)
+        else:
+            simple_console.print(status)
+            line_length = 0
+            log.info(status)
 
     def clear(self):
         pass
 
 
-class LayoutReporter:
+class LayoutReporter(ReporterBase):
     """A relatively advanced reporter that outputs through a `Rich.layout.Layout`.
 
     This reporter is used by `oeleo.schedulers.RichScheduler`.
     The reporter sends output as a string within a `Rich.panel.Panel` by issuing the `update` method
     on the layout[sub_pane] instance.
+
+    Update: This reporter together with `oeleo.schedulers.RichScheduler`
+        will be removed in the next major release.
     """
 
     def __init__(
@@ -85,6 +112,9 @@ class LayoutReporter:
         self.sub_pane = sub_pane
         self.n_rows_not_body = n_rows_not_body
         self.n_cols_not_body = n_cols_not_body
+        warnings.warn(
+            "LayoutReporter together with RichScheduler will be removed in the next major release."
+        )
 
     def report(self, status, events=None, same_line=False, replace_line=False):
         if same_line and len(self.lines):
@@ -101,6 +131,7 @@ class LayoutReporter:
         self._trim_if_needed()
         body_panel = self._update_body_panel()
         self.layout[self.sub_pane].update(body_panel)
+        log.info(status)
 
     def clear(self):
         self.lines = []

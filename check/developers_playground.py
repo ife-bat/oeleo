@@ -50,7 +50,10 @@ def example_ssh_worker_with_simple_scheduler():
     log.setLevel(logging.DEBUG)
     log.debug(f"Starting oeleo!")
     dotenv.load_dotenv()
-    worker = ssh_worker(base_directory_to="/home/jepe@ad.ife.no/Temp")
+    worker = ssh_worker(
+        base_directory_to="/home/jepe@ad.ife.no/Temp",
+        db_name=r"../test_databases/testdb_ssh.db",
+    )
     log.info(f"{worker.bookkeeper=}")
     log.info(f"{worker.bookkeeper.db_name=}")
     log.info(f"{worker.local_connector=}")
@@ -60,7 +63,8 @@ def example_ssh_worker_with_simple_scheduler():
     s = SimpleScheduler(
         worker,
         run_interval_time=2,
-        max_run_intervals=10000,
+        max_run_intervals=5000,
+        add_check=False,
     )
     s.start()
 
@@ -131,4 +135,4 @@ def check_01():
 
 
 if __name__ == "__main__":
-    example_with_simple_scheduler()
+    example_ssh_worker_with_simple_scheduler()

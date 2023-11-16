@@ -4,7 +4,7 @@ import logging
 import os
 import sys
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import Any, Protocol, Iterator, List
+from typing import Any, Protocol, Iterator, List, Union
 
 from fabric import Connection
 
@@ -48,7 +48,7 @@ class Connector(Protocol):
 
     def base_filter_sub_method(
         self, glob_pattern: str = "*", **kwargs
-    ) -> Iterator[Path]:
+    ) -> Union[Iterator[Path], List[Path]]:
         ...
 
     def calculate_checksum(self, f: Path, hide: bool = True) -> Hash:
@@ -66,16 +66,13 @@ class LocalConnector(Connector):
         else:
             self.directory = os.environ["OELEO_BASE_DIR_FROM"]
             log.debug(
-                "No directory passed to LocalConnector, defaulting to OELEO_BASE_DIR_FROM:",
-                self.directory,
+                f"No directory passed to LocalConnector, defaulting to OELEO_BASE_DIR_FROM: {self.directory}"
             )
 
         self.directory = Path(self.directory)
 
     def __str__(self):
-        text = "LocalConnector"
-        text += f"{self.directory=}\n"
-        return text
+        return f"LocalConnector\n{self.directory=}\n"
 
     def connect(self, **kwargs) -> None:
         pass
@@ -113,8 +110,7 @@ class SSHConnector(Connector):
         else:
             self.directory = os.environ["OELEO_BASE_DIR_TO"]
             log.debug(
-                "No directory passed to SSHConnector, defaulting to OELEO_BASE_DIR_TO:",
-                self.directory,
+                f"No directory passed to SSHConnector, defaulting to OELEO_BASE_DIR_TO: {self.directory}"
             )
 
         self.is_posix = is_posix
@@ -135,7 +131,7 @@ class SSHConnector(Connector):
     def _validate(self):
         if self.is_posix:
             self.directory = PurePosixPath(self.directory)
-            log.debug("On posix")
+            log.debug("SSHConnector:ON POSIX")
             if str(self.directory).startswith(r"\\"):
                 log.warning("YOUR PATH STARTS WITH WINDOWS TYPE SEPARATOR")
         else:
@@ -159,9 +155,14 @@ class SSHConnector(Connector):
     def __check_connection_and_exit(self):
         # used only when developing oeleo
         log.debug("Connected?")
-        cmd = f"find {self.directory} -maxdepth 1 -name '*'"
-        log.debug(cmd)
-        self.c.run(cmd)
+        if self.is_posix:
+            cmd = f"find {self.directory} -maxdepth 1 -name '*'"
+            log.debug(cmd)
+            self.c.run(cmd)
+        else:
+            cmd = f"dir {self.directory}"
+            log.debug(cmd)
+            self.c.run(cmd)
         sys.exit()
 
     def close(self):
