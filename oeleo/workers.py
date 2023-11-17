@@ -148,7 +148,6 @@ class Worker(WorkerBase):
         """Selects the files that should be processed through filtering."""
         self.status = ("state", "filter-local")
         self.status = ("filtered_once", True)
-        print("FILTERING LOCAL")
         local_files = self.local_connector.base_filter_sub_method(
             self.extension, **kwargs
         )
@@ -202,9 +201,7 @@ class Worker(WorkerBase):
                 connector=self.local_connector,
             )
             if external_name in external_files:
-                self.reporter.report(
-                    f"{f.name} -> {self.external_name}"
-                )
+                self.reporter.report(f"{f.name} -> {self.external_name}")
                 code = 1
                 exists = True
 
@@ -224,20 +221,14 @@ class Worker(WorkerBase):
                         same = False
                         number_of_duplicates_out_of_sync += 1
                         code = 0
-                        self.reporter.report(
-                            f"    (E) {k}: {external_vals[k]}"
-                        )
+                        self.reporter.report(f"    (E) {k}: {external_vals[k]}")
                     else:
-                        self.reporter.report(
-                            f"    (E) {k}: {external_vals[k]}"
-                        )
+                        self.reporter.report(f"    (E) {k}: {external_vals[k]}")
                 log.debug(f"In sync: {same}")
 
             else:
                 number_of_duplicates_out_of_sync += 1
-                self.reporter.report(
-                    f"{f.name} -> {self.external_name}"
-                )
+                self.reporter.report(f"{f.name} -> {self.external_name}")
                 exists = False
                 code = 0
                 log.debug("[ONLY LOCAL]")
@@ -286,15 +277,11 @@ class Worker(WorkerBase):
         self.bookkeeper.register(f)
         checks = self.checker.check(f)
         if not self.bookkeeper.is_changed(**checks):
-            log.debug(
-                f"{f.name} == {self.external_name}"
-            )
+            log.debug(f"{f.name} == {self.external_name}")
             self.reporter.report(" .", same_line=True)
             return
 
-        log.debug(
-            f"{f.name} -> {self.external_name}"
-        )
+        log.debug(f"{f.name} -> {self.external_name}")
 
         self.status = ("changed", True)
         if self.external_connector.move_func(
@@ -304,15 +291,10 @@ class Worker(WorkerBase):
             self.status = ("moved", True)
             self.bookkeeper.update_record(self.external_name, **checks)
             self.reporter.report("o", same_line=True)
-            log.debug(
-                f"{f.name} -> {self.external_name} copied"
-
-            )
+            log.debug(f"{f.name} -> {self.external_name} copied")
         else:
             self.reporter.report("!", same_line=True)
-            log.debug(
-                f"{f.name} -> {self.external_name} FAILED COPY!"
-            )
+            log.debug(f"{f.name} -> {self.external_name} FAILED COPY!")
 
     def _default_external_name_generator(self, f):
         return self.external_connector.directory / f.name
@@ -386,12 +368,8 @@ def simple_worker(
     local_connector = LocalConnector(directory=base_directory_from)
     external_connector = LocalConnector(directory=base_directory_to)
     log.debug("<Simple Worker created>")
-    log.debug(
-        f"from:{base_directory_from}"
-    )
-    log.debug(
-        f"to  :{base_directory_to}"
-    )
+    log.debug(f"from:{base_directory_from}")
+    log.debug(f"to  :{base_directory_to}")
 
     worker = Worker(
         checker=checker,
@@ -443,12 +421,8 @@ def ssh_worker(
 
     log.debug("<SSH Worker created>")
 
-    log.debug(
-        f"from:{local_connector.directory}"
-    )
-    log.debug(
-        f"to  :{external_connector.host}:{external_connector.directory}"
-    )
+    log.debug(f"from:{local_connector.directory}")
+    log.debug(f"to  :{external_connector.host}:{external_connector.directory}")
 
     worker = Worker(
         checker=checker,
@@ -511,12 +485,8 @@ def sharepoint_worker(
     checker = ChecksumChecker()
     log.debug("<SSH Worker created>")
 
-    log.debug(
-        f"from: {local_connector.directory}"
-    )
-    log.debug(
-        f"to  :{external_connector.url}:{external_connector.directory}"
-    )
+    log.debug(f"from: {local_connector.directory}")
+    log.debug(f"to  :{external_connector.url}:{external_connector.directory}")
 
     worker = Worker(
         checker=checker,

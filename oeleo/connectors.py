@@ -201,7 +201,9 @@ class SSHConnector(Connector):
         if self.is_posix:
             file_list = [PurePosixPath(f) for f in file_list]
         else:
-            file_list = [Path(f) for f in file_list]  # OBS Linux -> Win not supported yet!
+            file_list = [
+                Path(f) for f in file_list
+            ]  # OBS Linux -> Win not supported yet!
 
         return file_list
 

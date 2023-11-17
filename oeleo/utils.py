@@ -25,7 +25,9 @@ def calculate_checksum(file_path: Path) -> str:
     return file_hash.hexdigest()
 
 
-def logger(name="oeleo", log_level=logging.DEBUG, screen=False, log_message_format=None):
+def logger(
+    name="oeleo", log_level=logging.DEBUG, screen=False, log_message_format=None
+):
     """Create a logger for the oeleo package"""
 
     log = logging.getLogger(name)
@@ -35,10 +37,11 @@ def logger(name="oeleo", log_level=logging.DEBUG, screen=False, log_message_form
     if screen:
         console_log_message_format = log_message_format or "%(message)s"
         console_formatter = logging.Formatter(
-            console_log_message_format,
-            datefmt="[%X]"
+            console_log_message_format, datefmt="[%X]"
         )
-        console_handler = RichHandler(rich_tracebacks=True, tracebacks_suppress=[peewee])
+        console_handler = RichHandler(
+            rich_tracebacks=True, tracebacks_suppress=[peewee]
+        )
         console_handler.setLevel(log_level)
         console_handler.setFormatter(console_formatter)
         log.addHandler(console_handler)
@@ -49,9 +52,8 @@ def logger(name="oeleo", log_level=logging.DEBUG, screen=False, log_message_form
     logdir.mkdir(exist_ok=True)
     log_path = logdir / "oeleo.log"
     file_handler = RotatingFileHandler(
-        log_path,
-        maxBytes=FILE_LOG_MAX_BYTES,
-        backupCount=FILE_LOG_BACKUP_COUNT)
+        log_path, maxBytes=FILE_LOG_MAX_BYTES, backupCount=FILE_LOG_BACKUP_COUNT
+    )
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(logging.Formatter(FILE_LOG_MESSAGE_FORMAT))
     log.addHandler(file_handler)

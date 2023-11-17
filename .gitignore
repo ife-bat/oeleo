@@ -167,3 +167,4 @@ cython_debug/
 /external/
 transfer.py
 /.env
+/oeleo-bins/

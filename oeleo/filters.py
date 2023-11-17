@@ -56,7 +56,8 @@ def base_filter(
 
 
 def additional_filtering(
-    file_list: Iterable[Union[Path, str]], additional_filters: Iterable[FilterTuple] = None
+    file_list: Iterable[Union[Path, str]],
+    additional_filters: Iterable[FilterTuple] = None,
 ) -> Iterable:
     for filter_name, filter_val in additional_filters:
         filter_func = FILTERS[filter_name]
@@ -85,7 +86,9 @@ def main():
     print("This is what I got after filtering:")
     for n, f in enumerate(g):
         st_mtime = datetime.fromtimestamp(f.stat().st_mtime)
-        print(f"{n+1}: {f} {st_mtime} not-before: {st_mtime >= not_before} not-after: {st_mtime <= not_after}")
+        print(
+            f"{n+1}: {f} {st_mtime} not-before: {st_mtime >= not_before} not-after: {st_mtime <= not_after}"
+        )
 
 
 if __name__ == "__main__":

@@ -53,10 +53,17 @@ def example_ssh_worker_with_simple_scheduler():
     FROM_DAY = 1
 
     my_filters = [
-        ("not_before", datetime(
-            year=FROM_YEAR, month=FROM_MONTH, day=FROM_DAY, hour=0, minute=0, second=0
-        )
-         ),
+        (
+            "not_before",
+            datetime(
+                year=FROM_YEAR,
+                month=FROM_MONTH,
+                day=FROM_DAY,
+                hour=0,
+                minute=0,
+                second=0,
+            ),
+        ),
     ]
     run_interval_time = 3600 * HOURS_SLEEP
 
@@ -112,7 +119,7 @@ def dump_oeleo_db_table(worker, code=None, verbose=True):
 
 
 def inspect_db(worker, table="filelist"):
-    print(80*"=")
+    print(80 * "=")
     print(f"db: {worker.bookkeeper.db_name}")
     tables = worker.bookkeeper.db_instance.obj.get_tables()
     print(f"tables: {tables}")
@@ -139,6 +146,7 @@ def check_01():
 
     """
     from oeleo.utils import dump_worker_db_table
+
     log.setLevel(logging.DEBUG)
     log.debug(f"Starting oeleo!")
     console.print(f"Starting oeleo!")
@@ -151,6 +159,7 @@ def check_01():
 
 def check_db_dumper():
     from oeleo.utils import dump_db
+
     dump_db()
 
 

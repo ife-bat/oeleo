@@ -68,7 +68,11 @@ class SimpleScheduler(SchedulerBase):
         log.debug("setting up scheduler")
         self.worker.connect_to_db()
         if self.add_check:
-            self.worker.check(update_db=self.update_db, force=self.force, additional_filters=self.additional_filters)
+            self.worker.check(
+                update_db=self.update_db,
+                force=self.force,
+                additional_filters=self.additional_filters,
+            )
         # self._last_update = datetime.now()
 
     def start(self):
@@ -109,7 +113,10 @@ class RichScheduler(SchedulerBase):
         additional_filters=None,
         auto_accept_check=False,
     ):
-        warnings.warn("RichScheduler will be deprecated and is not maintained!", DeprecationWarning)
+        warnings.warn(
+            "RichScheduler will be deprecated and is not maintained!",
+            DeprecationWarning,
+        )
         self.worker = worker
         self.state = {"iterations": 0}
         # self.update_interval = 3_600  # not used
@@ -147,7 +154,11 @@ class RichScheduler(SchedulerBase):
                 self.worker.connect_to_db()
 
                 self.layout["left_footer"].update(Panel(f"CHECK..."))
-                self.worker.check(update_db=self.update_db, force=self.force, additional_filters=self.additional_filters)
+                self.worker.check(
+                    update_db=self.update_db,
+                    force=self.force,
+                    additional_filters=self.additional_filters,
+                )
                 if not self.auto_accept_check:
                     if not confirm(self.layout):
                         raise ScheduleAborted
@@ -168,7 +179,9 @@ class RichScheduler(SchedulerBase):
                         f"\n[cyan bold]NEW ITERATION:[/cyan bold] {self.state['iterations']:06}/{self.max_run_intervals:06}"
                     )
                     self.layout["middle_footer"].update(Panel("filter local"))
-                    self.worker.filter_local(additional_filters=self.additional_filters)  # TODO: allow for keywords
+                    self.worker.filter_local(
+                        additional_filters=self.additional_filters
+                    )  # TODO: allow for keywords
                     self.layout["middle_footer"].update(Panel("run"))
                     self.worker.run()
                     self._last_run = datetime.now()
