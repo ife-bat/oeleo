@@ -39,6 +39,7 @@ class Connector(Protocol):
     """
 
     directory = None
+    is_local = True
 
     def connect(self, **kwargs) -> None:
         ...
@@ -83,7 +84,11 @@ class LocalConnector(Connector):
     def base_filter_sub_method(
         self, glob_pattern: str = "*", **kwargs
     ) -> Iterator[Path]:  # RENAME TO enquire
-        return base_filter(self.directory, extension=glob_pattern)
+
+        file_list = base_filter(self.directory, extension=glob_pattern)
+        if additional_filters := kwargs.get("additional_filters"):
+            file_list = additional_filtering(file_list, additional_filters)
+        return file_list
 
     def calculate_checksum(self, f: Path, hide: bool = True) -> Hash:
         return calculate_checksum(f)
@@ -93,6 +98,8 @@ class LocalConnector(Connector):
 
 
 class SSHConnector(Connector):
+    is_local = False
+
     def __init__(
         self,
         username=None,
@@ -186,7 +193,7 @@ class SSHConnector(Connector):
         # experimental feature:
         if additional_filters := kwargs.get("additional_filters"):
             logging.critical(
-                "Got additional_filters for SSHConnector. This is still an experimental feature!"
+                "Got additional_filters for SSHConnector. This is not implemented yet!"
             )
 
             file_list = additional_filtering(file_list, additional_filters)

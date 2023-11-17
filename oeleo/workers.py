@@ -148,6 +148,7 @@ class Worker(WorkerBase):
         """Selects the files that should be processed through filtering."""
         self.status = ("state", "filter-local")
         self.status = ("filtered_once", True)
+        print("FILTERING LOCAL")
         local_files = self.local_connector.base_filter_sub_method(
             self.extension, **kwargs
         )
@@ -158,6 +159,7 @@ class Worker(WorkerBase):
     def filter_external(self, **kwargs):
         """Filter for external files that correspond to local ones."""
         self.status = ("state", "filter-external")
+        print("FILTERING EXTERNAL")
         external_files = self.external_connector.base_filter_sub_method(
             self.extension, **kwargs
         )

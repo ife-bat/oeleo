@@ -1,14 +1,15 @@
 import logging
 from datetime import datetime
 from functools import partial
+import os
 from pathlib import Path
-from typing import Any, Generator, Iterable
+from typing import Any, Generator, Iterable, Union
 
 log = logging.getLogger("oeleo")
 
 
-def filter_on_not_before(path: Path, value: datetime):
-    st = path.stat()
+def filter_on_not_before(path: Union[Path, str], value: datetime):
+    st = os.stat(path)
     sdt = datetime.fromtimestamp(st.st_mtime)
     if sdt >= value:
         return True
@@ -16,8 +17,8 @@ def filter_on_not_before(path: Path, value: datetime):
         return False
 
 
-def filter_on_not_after(path: Path, value: datetime):
-    st = path.stat()
+def filter_on_not_after(path: Union[Path, str], value: datetime):
+    st = os.stat(path)
     sdt = datetime.fromtimestamp(st.st_mtime)
     if sdt <= value:
         return True
@@ -55,7 +56,7 @@ def base_filter(
 
 
 def additional_filtering(
-    file_list: Iterable, additional_filters: Iterable[FilterTuple] = None
+    file_list: Iterable[Union[Path, str]], additional_filters: Iterable[FilterTuple] = None
 ) -> Iterable:
     for filter_name, filter_val in additional_filters:
         filter_func = FILTERS[filter_name]

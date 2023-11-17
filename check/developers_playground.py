@@ -47,6 +47,19 @@ def example_with_simple_scheduler():
 
 
 def example_ssh_worker_with_simple_scheduler():
+    HOURS_SLEEP = 0.5
+    FROM_YEAR = 2023
+    FROM_MONTH = 3
+    FROM_DAY = 1
+
+    my_filters = [
+        ("not_before", datetime(
+            year=FROM_YEAR, month=FROM_MONTH, day=FROM_DAY, hour=0, minute=0, second=0
+        )
+         ),
+    ]
+    run_interval_time = 3600 * HOURS_SLEEP
+
     log.setLevel(logging.DEBUG)
     log.debug(f"Starting oeleo!")
     dotenv.load_dotenv()
@@ -62,9 +75,10 @@ def example_ssh_worker_with_simple_scheduler():
     log.info(f"{worker.file_names=}")
     s = SimpleScheduler(
         worker,
-        run_interval_time=2,
-        max_run_intervals=5000,
-        add_check=False,
+        run_interval_time=2,  # run_interval_time
+        max_run_intervals=1000000000,
+        additional_filters=my_filters,
+        add_check=True,
     )
     s.start()
 
@@ -141,4 +155,4 @@ def check_db_dumper():
 
 
 if __name__ == "__main__":
-    check_01()
+    example_ssh_worker_with_simple_scheduler()

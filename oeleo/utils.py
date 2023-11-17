@@ -26,7 +26,7 @@ def calculate_checksum(file_path: Path) -> str:
 
 
 def logger(name="oeleo", log_level=logging.DEBUG, screen=False, log_message_format=None):
-    dotenv.load_dotenv()
+    """Create a logger for the oeleo package"""
 
     log = logging.getLogger(name)
     log.setLevel(log_level)
@@ -60,7 +60,6 @@ def logger(name="oeleo", log_level=logging.DEBUG, screen=False, log_message_form
 
 def dump_db(db_name=None, code=None, verbose=False, output_format="human"):
     """Dump the contents of the database"""
-    dotenv.load_dotenv()
     db_name = db_name or os.environ.get("OELEO_DB_NAME")
     if db_name is None:
         raise ValueError("db_name must be provided")
