@@ -3,9 +3,25 @@ from datetime import datetime
 from functools import partial
 import os
 from pathlib import Path
-from typing import Any, Generator, Iterable, Union
+from typing import Any, Generator, Iterable, Union, Callable
 
 log = logging.getLogger("oeleo")
+
+
+def filter_on_startswith(path: Union[Path, str], value: str):
+    return os.path.basename(path).startswith(value)
+
+
+def filter_on_contains(path: Union[Path, str], value: str):
+    return value in os.path.basename(path)
+
+
+def filter_on_not_contains(path: Union[Path, str], value: str):
+    return value not in os.path.basename(path)
+
+
+def filter_on_callable(path: Union[Path, str], f: Callable):
+    return f(os.path.basename(path))
 
 
 def filter_on_not_before(path: Union[Path, str], value: datetime):
@@ -27,6 +43,9 @@ def filter_on_not_after(path: Union[Path, str], value: datetime):
 
 
 FILTERS = {
+    "startswith": filter_on_startswith,
+    "contains": filter_on_contains,
+    "callable": filter_on_callable,
     "not_before": filter_on_not_before,
     "not_after": filter_on_not_after,
 }
