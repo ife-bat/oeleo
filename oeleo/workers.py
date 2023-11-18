@@ -8,6 +8,7 @@ from typing import Any, Generator, Union, Callable, Iterable, List
 
 from rich.panel import Panel
 from rich.text import Text
+from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from oeleo.checkers import ChecksumChecker
 from oeleo.connectors import (
@@ -181,69 +182,79 @@ class Worker(WorkerBase):
         self.reporter.report(
             f"Comparing {self.local_connector.directory} <=> {self.external_connector.directory}"
         )
-        local_files = self.file_names or self.filter_local(**kwargs)
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            transient=True,
+        ) as progress:
+            task = progress.add_task("Getting local files...", total=None)
+            local_files = self.file_names or self.filter_local(**kwargs)
+            progress.remove_task(task)
 
-        # cannot be a generator since we need to do a `if in` lookup:
-        external_files = list(self.filter_external(**kwargs))
-        log.debug(f"Checking {len(external_files)} files")
+            # cannot be a generator since we need to do a `if in` lookup:
+            task = progress.add_task("Getting external files...", total=None)
+            external_files = list(self.filter_external(**kwargs))
+            log.debug(f"Checking {len(external_files)} files")
+            progress.remove_task(task)
 
-        number_of_local_files = 0
-        number_of_external_duplicates = 0
-        number_of_duplicates_out_of_sync = 0
+            number_of_local_files = 0
+            number_of_external_duplicates = 0
+            number_of_duplicates_out_of_sync = 0
 
-        for f in local_files:
-            number_of_local_files += 1
-            self.make_external_name(f)
-            external_name = self.external_name
-            local_vals = self.checker.check(
-                f,
-                connector=self.local_connector,
-            )
-            if external_name in external_files:
-                self.reporter.report(f"{f.name} -> {self.external_name}")
-                code = 1
-                exists = True
-
-                log.debug(f"FOUND EXTERNAL")
-                number_of_external_duplicates += 1
-
-                external_vals = self.checker.check(
-                    external_name,
-                    connector=self.external_connector,
+            task = progress.add_task("Checking...", total=None)
+            for f in local_files:
+                number_of_local_files += 1
+                self.make_external_name(f)
+                external_name = self.external_name
+                local_vals = self.checker.check(
+                    f,
+                    connector=self.local_connector,
                 )
+                if external_name in external_files:
+                    log.info(f"{f.name} -> {self.external_name}")
+                    code = 1
+                    exists = True
 
-                same = True
-                for k in local_vals:
-                    self.reporter.report(f"    (L) {k}: {local_vals[k]}")
+                    log.debug(f"FOUND EXTERNAL")
+                    number_of_external_duplicates += 1
 
-                    if local_vals[k] != external_vals[k]:
-                        same = False
-                        number_of_duplicates_out_of_sync += 1
-                        code = 0
-                        self.reporter.report(f"    (E) {k}: {external_vals[k]}")
-                    else:
-                        self.reporter.report(f"    (E) {k}: {external_vals[k]}")
-                log.debug(f"In sync: {same}")
-
-            else:
-                number_of_duplicates_out_of_sync += 1
-                self.reporter.report(f"{f.name} -> {self.external_name}")
-                exists = False
-                code = 0
-                log.debug("[ONLY LOCAL]")
-
-            if update_db:
-                log.debug("Updating db")
-                self.bookkeeper.register(f)
-                if self.bookkeeper.code < 2:
-
-                    if not force and not exists:
-                        code = self.bookkeeper.code
-                    self.bookkeeper.update_record(
-                        external_name, code=code, **local_vals
+                    external_vals = self.checker.check(
+                        external_name,
+                        connector=self.external_connector,
                     )
 
-        self.reporter.report("\nREPORT (CHECK):")
+                    same = True
+                    for k in local_vals:
+                        logging.debug(f"    (L) {k}: {local_vals[k]}")
+
+                        if local_vals[k] != external_vals[k]:
+                            same = False
+                            number_of_duplicates_out_of_sync += 1
+                            code = 0
+                            logging.debug(f"    (E) {k}: {external_vals[k]}")
+                        else:
+                            logging.debug(f"    (E) {k}: {external_vals[k]}")
+                    log.debug(f"In sync: {same}")
+
+                else:
+                    number_of_duplicates_out_of_sync += 1
+                    logging.debug(f"{f.name} -> {self.external_name}")
+                    exists = False
+                    code = 0
+                    log.debug("[ONLY LOCAL]")
+
+                if update_db:
+                    log.debug("Updating db")
+                    self.bookkeeper.register(f)
+                    if self.bookkeeper.code < 2:
+
+                        if not force and not exists:
+                            code = self.bookkeeper.code
+                        self.bookkeeper.update_record(
+                            external_name, code=code, **local_vals
+                        )
+
+        self.reporter.report("REPORT (CHECK):")
         self.reporter.report(
             f"-Total number of local files:    {number_of_local_files}"
         )
@@ -257,10 +268,10 @@ class Worker(WorkerBase):
 
     def run(self):
         """Copy the files that needs to be copied and update the db."""
-
         logging.debug("<RUN>")
         self.status = ("state", "run")
         local_files_found = False
+
         for f in self.file_names:
             local_files_found = True
             self._process_file(f)
@@ -277,7 +288,7 @@ class Worker(WorkerBase):
         checks = self.checker.check(f)
         if not self.bookkeeper.is_changed(**checks):
             log.debug(f"{f.name} == {self.external_name}")
-            self.reporter.report(" .", same_line=True)
+            self.reporter.report(".", same_line=True)
             return
 
         log.debug(f"{f.name} -> {self.external_name}")

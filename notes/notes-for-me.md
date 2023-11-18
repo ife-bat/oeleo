@@ -66,5 +66,5 @@ AttributeError: 'str' object has no attribute 'stat'
 [2023-11-17 11:58:33,359 - oeleo] ||   DEBUG || 20220407_slt27a_02_cc_01.h5 -> /mnt/data-raw/arbin05/20220407_slt27a_02_cc_01.h5 FAILED COPY!
 ```
 
-### Error 3 (the logger is used by several instances - and it uses env-variables)
+### Error 3 (the start_logger is used by several instances - and it uses env-variables)
 ### Q 1 (does not seem to find out that some files are too old - could it be that the files are not old?)

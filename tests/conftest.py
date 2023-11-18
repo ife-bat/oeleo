@@ -3,10 +3,10 @@ import logging
 
 import dotenv
 
-from oeleo.utils import logger
+from oeleo.utils import start_logger
 from oeleo.workers import simple_worker
 
-log = logger()
+log = start_logger()
 
 
 def pytest_configure():

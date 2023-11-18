@@ -9,7 +9,7 @@ from rich.text import Text
 from rich.console import Console
 
 from oeleo.layouts import N_COLS_NOT_BODY, N_ROWS_NOT_BODY
-from oeleo.utils import logger
+from oeleo.utils import start_logger
 from oeleo.console import simple_console
 
 # used for same_line reporting in Reporter.report

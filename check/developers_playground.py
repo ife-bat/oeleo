@@ -8,16 +8,16 @@ import dotenv
 from oeleo.console import console
 from oeleo.workers import simple_worker, ssh_worker
 from oeleo.schedulers import SimpleScheduler
-from oeleo.utils import logger
+from oeleo.utils import start_logger
 
 dotenv.load_dotenv()
-log = logger()
+start_logger()
 
 
 def example_bare_minimum():
 
-    log.setLevel(logging.DEBUG)
-    log.debug(f"Starting oeleo!")
+    logging.setLevel(logging.DEBUG)
+    logging.debug(f"Starting oeleo!")
     console.print(f"Starting oeleo!")
 
     worker = simple_worker()
@@ -29,14 +29,14 @@ def example_bare_minimum():
 
 
 def example_with_simple_scheduler():
-    log.info(f"<Starting oeleo!>")
+    logging.info(f"<Starting oeleo!>")
     worker = simple_worker()
-    log.debug(f"{worker.bookkeeper=}")
-    log.debug(f"{worker.bookkeeper.db_name=}")
-    log.debug(f"{worker.local_connector=}")
-    log.debug(f"{worker.external_connector=}")
-    log.debug(f"{worker.reporter=}")
-    log.debug(f"{worker.file_names=}")
+    logging.debug(f"{worker.bookkeeper=}")
+    logging.debug(f"{worker.bookkeeper.db_name=}")
+    logging.debug(f"{worker.local_connector=}")
+    logging.debug(f"{worker.external_connector=}")
+    logging.debug(f"{worker.reporter=}")
+    logging.debug(f"{worker.file_names=}")
     s = SimpleScheduler(
         worker,
         run_interval_time=2,
@@ -67,18 +67,17 @@ def example_ssh_worker_with_simple_scheduler():
     ]
     run_interval_time = 3600 * HOURS_SLEEP
 
-    # log.setLevel(logging.INFO)
-    log.debug(f"Starting oeleo!")
+    logging.debug(f"Starting oeleo!")
     worker = ssh_worker(
         base_directory_to="/home/jepe@ad.ife.no/Temp",
         db_name=r"../test_databases/testdb_ssh.db",
     )
-    log.info(f"{worker.bookkeeper=}")
-    log.info(f"{worker.bookkeeper.db_name=}")
-    log.info(f"{worker.local_connector=}")
-    log.info(f"{worker.external_connector=}")
-    log.info(f"{worker.reporter=}")
-    log.info(f"{worker.file_names=}")
+    logging.info(f"{worker.bookkeeper=}")
+    logging.info(f"{worker.bookkeeper.db_name=}")
+    logging.info(f"{worker.local_connector=}")
+    logging.info(f"{worker.external_connector=}")
+    logging.info(f"{worker.reporter=}")
+    logging.info(f"{worker.file_names=}")
     s = SimpleScheduler(
         worker,
         run_interval_time=2,  # run_interval_time
@@ -146,8 +145,8 @@ def check_01():
     """
     from oeleo.utils import dump_worker_db_table
 
-    log.setLevel(logging.DEBUG)
-    log.debug(f"Starting oeleo!")
+    logging.setLevel(logging.DEBUG)
+    logging.debug(f"Starting oeleo!")
     console.print(f"Starting oeleo!")
     dotenv.load_dotenv()
     worker = simple_worker()

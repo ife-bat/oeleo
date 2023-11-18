@@ -6,10 +6,10 @@ import pytest
 import utils
 from connectors import LocalConnector
 from movers import simple_mover, connected_mover
-from oeleo.utils import logger
+from oeleo.utils import start_logger
 from oeleo.schedulers import RichScheduler, SimpleScheduler
 
-log = logger()
+log = start_logger()
 
 
 def test_import():
@@ -125,18 +125,18 @@ def test_calculate_checksum(local_file_tmp_path):
 
 
 def test_logger():
-    test_log = utils.logger(name="test-oeleo")
+    test_log = utils.start_logger(name="test-oeleo")
     test_log.info("Hello from oeleo test suite")
 
 
 def test_logger_debug():
-    test_log = utils.logger(name="test-oeleo", log_level=logging.DEBUG)
+    test_log = utils.start_logger(name="test-oeleo", log_level=logging.DEBUG)
     test_log.debug("Hello from oeleo test suite")
 
 
 def test_logger_format():
     # not finished yet
-    test_log = utils.logger(
+    test_log = utils.start_logger(
         name="test-oeleo",
         log_level=logging.INFO,
         log_message_format="%(asctime)s %(message)s",

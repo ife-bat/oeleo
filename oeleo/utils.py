@@ -10,9 +10,10 @@ from rich.logging import RichHandler
 
 from oeleo.models import SimpleDbHandler
 
-
-# FILE_LOG_MESSAGE_FORMAT = "%(asctime)s - %(name)s (%(filename)s-%(funcName)s) - %(levelname)s - %(message)s"
+STDOUT_LOG_MESSAGE_FORMAT = "%(message)s"
 FILE_LOG_MESSAGE_FORMAT = "[%(asctime)s - %(name)s] || %(levelname)7s || %(message)s"
+FILE_LOG_MESSAGE_FORMAT_ALL = "[%(asctime)s - %(name)24s] || %(levelname)7s || %(message)s"
+
 FILE_LOG_MAX_BYTES = 1_000_000
 FILE_LOG_BACKUP_COUNT = 3
 
@@ -25,31 +26,19 @@ def calculate_checksum(file_path: Path) -> str:
     return file_hash.hexdigest()
 
 
-def logger(
-    name="oeleo",
-    log_level=logging.INFO,
-    screen=False,
-    log_message_format=None,
-    logdir=None,
-):
-    """Create a logger for the oeleo package"""
+def start_logger(logdir=None, only_oeleo=False):
+    """Start logging to file for the oeleo package"""
 
-    log = logging.getLogger(name)
+    log = logging.getLogger()
     log.setLevel(logging.DEBUG)
-    # create logger for console:
-    if screen:
-        console_log_message_format = log_message_format or "%(message)s"
-        console_formatter = logging.Formatter(
-            console_log_message_format, datefmt="[%X]"
-        )
-        console_handler = RichHandler(
-            rich_tracebacks=True, tracebacks_suppress=[peewee]
-        )
-        console_handler.setLevel(log_level)
-        console_handler.setFormatter(console_formatter)
-        log.addHandler(console_handler)
 
-    # create logger for file:
+    # create screen logger:
+    screen_handler = RichHandler()
+    screen_handler.setLevel(logging.CRITICAL)
+    screen_handler.setFormatter(logging.Formatter(STDOUT_LOG_MESSAGE_FORMAT))
+    log.addHandler(screen_handler)
+
+    # create start_logger for file:
     if logdir is None:
         logdir = os.environ.get("OELEO_LOG_DIR", os.getcwd())
 
@@ -67,10 +56,14 @@ def logger(
         log_path, maxBytes=FILE_LOG_MAX_BYTES, backupCount=FILE_LOG_BACKUP_COUNT
     )
     file_handler.setLevel(logging.DEBUG)
-    file_handler.setFormatter(logging.Formatter(FILE_LOG_MESSAGE_FORMAT))
-    log.addHandler(file_handler)
 
-    return log
+    if only_oeleo:
+        file_handler.addFilter(logging.Filter("oeleo"))
+        file_handler.setFormatter(logging.Formatter(FILE_LOG_MESSAGE_FORMAT))
+    else:
+        file_handler.setFormatter(logging.Formatter(FILE_LOG_MESSAGE_FORMAT_ALL))
+
+    log.addHandler(file_handler)
 
 
 def dump_db(db_name=None, code=None, verbose=False, output_format="human"):

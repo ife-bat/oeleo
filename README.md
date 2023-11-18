@@ -45,11 +45,11 @@ from oeleo.checkers import ChecksumChecker
 from oeleo.models import SimpleDbHandler
 from oeleo.connectors import LocalConnector
 from oeleo.workers import Worker
-from oeleo.utils import logger
+from oeleo.utils import start_logger
 
 
 def main():
-  log = logger()
+  log = start_logger()
   # assuming you have made a .env file:
   dotenv.load_dotenv()
 
@@ -170,10 +170,10 @@ from pathlib import Path
 import dotenv
 
 from oeleo.connectors import register_password
-from oeleo.utils import logger
+from oeleo.utils import start_logger
 from oeleo.workers import ssh_worker
 
-log = logger()
+log = start_logger()
 
 print(" ssh ".center(80, "-"))
 log.setLevel(logging.DEBUG)
@@ -186,18 +186,18 @@ filter_extension = ".res"
 register_password(os.environ["OELEO_PASSWORD"])
 
 worker = ssh_worker(
-    db_name="ssh_to_server.db",
-    base_directory_from=Path(r"data\raw"),
-    base_directory_to=external_dir,
-    extension=filter_extension,
+  db_name="ssh_to_server.db",
+  base_directory_from=Path(r"data\raw"),
+  base_directory_to=external_dir,
+  extension=filter_extension,
 )
 worker.connect_to_db()
 try:
-    worker.check(update_db=True)
-    worker.filter_local()
-    worker.run()
+  worker.check(update_db=True)
+  worker.filter_local()
+  worker.run()
 finally:
-    worker.close()
+  worker.close()
 ```
 
 ## Future planned improvements
