@@ -158,7 +158,6 @@ class Worker(WorkerBase):
     def filter_external(self, **kwargs):
         """Filter for external files that correspond to local ones."""
         self.status = ("state", "filter-external")
-        print("FILTERING EXTERNAL")
         external_files = self.external_connector.base_filter_sub_method(
             self.extension, **kwargs
         )
@@ -259,7 +258,7 @@ class Worker(WorkerBase):
     def run(self):
         """Copy the files that needs to be copied and update the db."""
 
-        log.debug("<RUN>")
+        logging.debug("<RUN>")
         self.status = ("state", "run")
         local_files_found = False
         for f in self.file_names:
@@ -420,7 +419,6 @@ def ssh_worker(
     checker = ChecksumChecker()
 
     log.debug("<SSH Worker created>")
-
     log.debug(f"from:{local_connector.directory}")
     log.debug(f"to  :{external_connector.host}:{external_connector.directory}")
 

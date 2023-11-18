@@ -192,11 +192,11 @@ class SSHConnector(Connector):
 
         # experimental feature:
         if additional_filters := kwargs.get("additional_filters"):
-            logging.critical(
+            logging.debug(
                 "Got additional_filters for SSHConnector. This is not implemented yet!"
             )
 
-            file_list = additional_filtering(file_list, additional_filters)
+            # file_list = additional_filtering(file_list, additional_filters)
 
         if self.is_posix:
             file_list = [PurePosixPath(f) for f in file_list]

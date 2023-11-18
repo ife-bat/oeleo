@@ -8,16 +8,18 @@ import dotenv
 from oeleo.console import console
 from oeleo.workers import simple_worker, ssh_worker
 from oeleo.schedulers import SimpleScheduler
+from oeleo.utils import logger
 
-log = logging.getLogger("oeleo")
-# log.setLevel(logging.DEBUG)
+dotenv.load_dotenv()
+log = logger()
 
 
 def example_bare_minimum():
+
     log.setLevel(logging.DEBUG)
     log.debug(f"Starting oeleo!")
     console.print(f"Starting oeleo!")
-    dotenv.load_dotenv()
+
     worker = simple_worker()
     worker.connect_to_db()
 
@@ -27,9 +29,7 @@ def example_bare_minimum():
 
 
 def example_with_simple_scheduler():
-    # log.setLevel(logging.DEBUG)
-    log.debug(f"Starting oeleo!")
-    dotenv.load_dotenv()
+    log.info(f"<Starting oeleo!>")
     worker = simple_worker()
     log.debug(f"{worker.bookkeeper=}")
     log.debug(f"{worker.bookkeeper.db_name=}")
@@ -40,7 +40,7 @@ def example_with_simple_scheduler():
     s = SimpleScheduler(
         worker,
         run_interval_time=2,
-        max_run_intervals=2,
+        max_run_intervals=200,
         add_check=False,
     )
     s.start()
@@ -67,9 +67,8 @@ def example_ssh_worker_with_simple_scheduler():
     ]
     run_interval_time = 3600 * HOURS_SLEEP
 
-    log.setLevel(logging.DEBUG)
+    # log.setLevel(logging.INFO)
     log.debug(f"Starting oeleo!")
-    dotenv.load_dotenv()
     worker = ssh_worker(
         base_directory_to="/home/jepe@ad.ife.no/Temp",
         db_name=r"../test_databases/testdb_ssh.db",

@@ -26,13 +26,16 @@ def calculate_checksum(file_path: Path) -> str:
 
 
 def logger(
-    name="oeleo", log_level=logging.DEBUG, screen=False, log_message_format=None
+    name="oeleo",
+    log_level=logging.INFO,
+    screen=False,
+    log_message_format=None,
+    logdir=None,
 ):
     """Create a logger for the oeleo package"""
 
     log = logging.getLogger(name)
-    log.setLevel(log_level)
-
+    log.setLevel(logging.DEBUG)
     # create logger for console:
     if screen:
         console_log_message_format = log_message_format or "%(message)s"
@@ -47,9 +50,18 @@ def logger(
         log.addHandler(console_handler)
 
     # create logger for file:
-    logdir = os.environ.get("OELEO_LOG_DIR", os.getcwd())
+    if logdir is None:
+        logdir = os.environ.get("OELEO_LOG_DIR", os.getcwd())
+
     logdir = Path(logdir)
-    logdir.mkdir(exist_ok=True)
+
+    try:
+        logdir.mkdir(exist_ok=True)
+    except Exception as e:
+        log.debug(f"Could not use log directory {logdir}: {e}")
+        logdir = Path(os.getcwd())
+        log.debug(f"Using {logdir} instead")
+
     log_path = logdir / "oeleo.log"
     file_handler = RotatingFileHandler(
         log_path, maxBytes=FILE_LOG_MAX_BYTES, backupCount=FILE_LOG_BACKUP_COUNT
@@ -57,6 +69,7 @@ def logger(
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(logging.Formatter(FILE_LOG_MESSAGE_FORMAT))
     log.addHandler(file_handler)
+
     return log
 
 

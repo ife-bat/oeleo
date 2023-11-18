@@ -120,9 +120,7 @@ def main():
     print("This is what I got after filtering:")
     for n, f in enumerate(g):
         st_mtime = datetime.fromtimestamp(f.stat().st_mtime)
-        print(
-            f"{n+1}: {f} {st_mtime}"
-        )
+        print(f"{n+1}: {f} {st_mtime}")
 
 
 if __name__ == "__main__":
