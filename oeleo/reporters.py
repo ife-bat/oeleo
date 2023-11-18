@@ -20,7 +20,7 @@ try:
 except OSError:
     max_line_length = 80
 
-log = logger()
+log = logging.getLogger("oeleo")
 
 
 class ReporterBase(Protocol):
