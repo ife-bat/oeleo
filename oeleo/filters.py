@@ -3,9 +3,31 @@ from datetime import datetime
 from functools import partial
 import os
 from pathlib import Path
-from typing import Any, Generator, Iterable, Union
+from typing import Any, Generator, Iterable, Union, Callable, List
 
 log = logging.getLogger("oeleo")
+
+
+def filter_on_startswith(path: Union[Path, str], value: str):
+    return os.path.basename(path).startswith(value)
+
+
+def filter_on_contains(path: Union[Path, str], value: str):
+    print(f"{value} in {os.path.basename(path)}? {value in os.path.basename(path)}")
+    return value in os.path.basename(path)
+
+
+def filter_on_not_contains(path: Union[Path, str], value: str):
+    return value not in os.path.basename(path)
+
+
+def filter_on_excluded(path: Union[Path, str], value: List[str]):
+    n = os.path.basename(path)
+    return not any(v in n for v in value)
+
+
+def filter_on_callable(path: Union[Path, str], f: Callable):
+    return f(os.path.basename(path))
 
 
 def filter_on_not_before(path: Union[Path, str], value: datetime):
@@ -27,6 +49,11 @@ def filter_on_not_after(path: Union[Path, str], value: datetime):
 
 
 FILTERS = {
+    "startswith": filter_on_startswith,
+    "contains": filter_on_contains,
+    "not_contains": filter_on_not_contains,
+    "excluded": filter_on_excluded,
+    "callable": filter_on_callable,
     "not_before": filter_on_not_before,
     "not_after": filter_on_not_after,
 }
@@ -67,10 +94,15 @@ def additional_filtering(
 
 def main():
     directory = Path("../check/from").resolve()
-    not_before = datetime(year=2022, month=7, day=1, hour=1, minute=0, second=0)
-    not_after = datetime(year=2022, month=8, day=4, hour=1, minute=0, second=0)
+    not_before = datetime(year=2022, month=5, day=1, hour=1, minute=0, second=0)
+    not_after = datetime(year=2023, month=8, day=4, hour=1, minute=0, second=0)
+    not_contains = "2"
+    excluded = ["5", "6"]
     print(f"not_before: {not_before}")
     print(f"not_after: {not_after}")
+    print(f"not_contains: {not_contains}")
+    print(f"excluded: {excluded}")
+
     for f in directory.glob("*"):
         print(f"file: {f}: {datetime.fromtimestamp(f.stat().st_mtime)}")
     extension = ".xyz"
@@ -80,6 +112,8 @@ def main():
     my_filters = [
         ("not_before", not_before),
         ("not_after", not_after),
+        ("not_contains", not_contains),
+        ("excluded", excluded),
     ]
 
     g = base_filter(directory, extension, additional_filters=my_filters)
@@ -87,7 +121,7 @@ def main():
     for n, f in enumerate(g):
         st_mtime = datetime.fromtimestamp(f.stat().st_mtime)
         print(
-            f"{n+1}: {f} {st_mtime} not-before: {st_mtime >= not_before} not-after: {st_mtime <= not_after}"
+            f"{n+1}: {f} {st_mtime}"
         )
 
 
