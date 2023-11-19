@@ -12,7 +12,7 @@ from oeleo.utils import start_logger
 from oeleo.reporters import LogReporter
 
 dotenv.load_dotenv()
-start_logger()
+start_logger(only_oeleo=True)
 
 
 def example_bare_minimum():

@@ -1,3 +1,4 @@
+import atexit
 import logging
 import time
 from datetime import datetime
@@ -74,6 +75,10 @@ class SimpleScheduler(SchedulerBase):
                 additional_filters=self.additional_filters,
             )
         # self._last_update = datetime.now()
+        atexit.register(self._cleanup)
+
+    def _cleanup(self):
+        self.worker.close()
 
     def start(self):
         log.debug("SimpleScheduler *STARTED*")

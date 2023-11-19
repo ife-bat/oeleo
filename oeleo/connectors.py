@@ -17,6 +17,9 @@ from oeleo.filters import base_filter, additional_filtering
 from oeleo.movers import simple_mover
 from oeleo.utils import calculate_checksum
 
+CONNECTION_RETRIES = 3
+
+
 log = logging.getLogger("oeleo")
 
 FabricRunResult = Any
@@ -172,6 +175,18 @@ class SSHConnector(Connector):
             self.c.run(cmd)
         sys.exit()
 
+    def check_connection_and_exit(self):
+        log.debug("Connected?")
+        if self.is_posix:
+            cmd = f"find {self.directory} -maxdepth 1 -name '*'"
+            log.debug(cmd)
+            self.c.run(cmd)
+        else:
+            cmd = f"dir {self.directory}"
+            log.debug(cmd)
+            self.c.run(cmd)
+        sys.exit()
+
     def close(self):
         self.c.close()
 
@@ -240,21 +255,28 @@ class SSHConnector(Connector):
         return checksum
 
     def move_func(self, path: Path, to: Path, *args, **kwargs) -> bool:
+        exceptions = []
         if self.c is None:  # make this as a decorator ("@connected")
             log.debug("Connecting ...")
             self.connect()
 
-        try:
-            log.debug(f"Copying {path} to {to}")
-            self.c.put(str(path), remote=str(to))
-        except Exception as e:
-            log.debug("GOT AN EXCEPTION DURING COPYING FILE")
-            log.debug(f"FROM     : {path}")
-            log.debug(f"TO       : {to}")
-            log.debug(f"EXCEPTION:")
-            log.debug(e)
-            return False
-        return True
+        for i in range(CONNECTION_RETRIES):
+            try:
+                log.debug(f"Copying {path} to {to}")
+                self.c.put(str(path), remote=str(to))
+                return True
+            except Exception as e:
+                log.debug(f"Got an exception during moving file: {e}")
+                log.debug(f"Retrying {i+1}/{CONNECTION_RETRIES}")
+                exceptions.append(e)
+                time.sleep(1)
+                self.connect()
+
+        log.debug("GOT A CRITICAL EXCEPTIONS DURING COPYING FILE")
+        log.debug(f"FROM     : {path}")
+        log.debug(f"TO       : {to}")
+        log.debug(f"EXCEPTIONS: {exceptions}")
+        return False
 
 
 class SharePointConnection:
@@ -347,16 +369,14 @@ class SharePointConnector(Connector):
             log.debug("GOT A ShareplumRequestError EXCEPTION DURING COPYING FILE")
             log.debug(f"FROM     : {path}")
             log.debug(f"TO       : {to}")
-            log.debug(f"EXCEPTION:")
-            log.debug(e)
+            log.debug(f"EXCEPTION: {e}")
             return False
 
         except Exception as e:
             log.debug("GOT AN EXCEPTION DURING COPYING FILE")
             log.debug(f"FROM     : {path}")
             log.debug(f"TO       : {to}")
-            log.debug(f"EXCEPTION:")
-            log.debug(e)
+            log.debug(f"EXCEPTION: {e}")
             return False
 
         return True

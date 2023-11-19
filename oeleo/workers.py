@@ -102,6 +102,7 @@ class Worker(WorkerBase):
         dry_run: Bool
         extension: str (with the .)
         reporter: Reporter
+        reconnect: Bool (reconnect to the external server if connection is lost)
         external_name_generator: Callable that accepts the class instance and a string
     """
 
@@ -113,7 +114,7 @@ class Worker(WorkerBase):
     extension: str = None
     reporter: ReporterBase = Reporter()
     external_name_generator: Callable[[Any, Path], Path] = field(default=None)
-
+    reconnect: bool  = True
     file_names: Iterable[Path] = field(init=False, default_factory=list)
 
     _external_name: Union[Path, str] = field(init=False, default="")
@@ -291,10 +292,17 @@ class Worker(WorkerBase):
         log.debug(f"{f.name} -> {self.external_name}")
 
         self.status = ("changed", True)
-        if self.external_connector.move_func(
-            f,
-            self.external_name,
-        ):
+
+        success = self.external_connector.move_func(f, self.external_name)
+        if not success and self.reconnect:
+            log.debug("Reconnecting...")
+            self.external_connector.connect()
+            success = self.external_connector.move_func(f, self.external_name)
+
+        if self.reconnect:
+            self.external_connector.connect()
+
+        if success:
             self.status = ("moved", True)
             self.bookkeeper.update_record(self.external_name, **checks)
             self.reporter.report("o", same_line=True)
@@ -339,7 +347,9 @@ class Worker(WorkerBase):
         self._external_name = name
 
     def close(self):
+        self.reporter.report("<CLOSE WORKER>")
         self.external_connector.close()
+        self.reporter.close()
 
 
 def simple_worker(
@@ -389,6 +399,7 @@ def simple_worker(
         extension=extension,
         dry_run=dry_run,
         reporter=reporter,
+        reconnect=True,
     )
     return worker
 
@@ -445,6 +456,7 @@ def ssh_worker(
         extension=extension,
         dry_run=dry_run,
         reporter=reporter,
+        reconnect=True,
     )
     return worker
 

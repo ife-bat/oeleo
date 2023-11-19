@@ -69,6 +69,9 @@ class ReporterBase(Protocol):
     def clear(self):
         ...
 
+    def close(self):
+        ...
+
     @contextmanager
     def progress(self, *args, **kwargs):
 
@@ -90,6 +93,32 @@ class LogReporter(ReporterBase):
             log.info(status)
 
     def clear(self):
+        pass
+
+    def close(self):
+        pass
+
+
+class LogAndTrayReporter(ReporterBase):
+    """Minimal reporter that only writes to the log."""
+    super().__init__(*args, **kwargs)
+    self.tray = None  # TODO: implement tray
+
+    @staticmethod
+    def report(status, *args, **kwargs):
+        """Report status."""
+
+        if status not in NOT_LOGGED:
+            log.info(status)
+
+        # TODO: implement updating tray
+
+    def clear(self):
+        # TODO: implement clearing tray
+        pass
+
+    def close(self):
+        # TODO: implement closing tray
         pass
 
 
@@ -135,6 +164,9 @@ class Reporter(ReporterBase):
             yield p
         finally:
             p.__exit__(None, None, None)
+
+    def close(self):
+        pass
 
 
 class LayoutReporter(ReporterBase):
@@ -238,4 +270,7 @@ class LayoutReporter(ReporterBase):
 
         p = Panel(s)
         return p
+
+    def close(self):
+        pass
 
