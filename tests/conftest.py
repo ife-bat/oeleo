@@ -6,7 +6,8 @@ import dotenv
 from oeleo.utils import start_logger
 from oeleo.workers import simple_worker
 
-log = start_logger()
+start_logger()
+log = logging.getLogger("test-oeleo")
 
 
 def pytest_configure():

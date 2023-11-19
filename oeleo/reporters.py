@@ -79,6 +79,20 @@ class ReporterBase(Protocol):
             p.__exit__(None, None, None)
 
 
+class LogReporter(ReporterBase):
+    """Minimal reporter that only writes to the log."""
+
+    @staticmethod
+    def report(status, *args, **kwargs):
+        """Report status."""
+
+        if status not in NOT_LOGGED:
+            log.info(status)
+
+    def clear(self):
+        pass
+
+
 class Reporter(ReporterBase):
     """Minimal reporter that uses console for outputs."""
 
@@ -225,6 +239,3 @@ class LayoutReporter(ReporterBase):
         p = Panel(s)
         return p
 
-    @contextmanager
-    def progress(*args, **kwargs):
-        yield

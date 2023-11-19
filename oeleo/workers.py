@@ -348,6 +348,7 @@ def simple_worker(
     db_name=None,
     dry_run=False,
     extension=None,
+        reporter=None,
 ):
     """Create a Worker for copying files locally.
 
@@ -357,6 +358,7 @@ def simple_worker(
         db_name: name of the database.
         dry_run: set to True if you would like to run without updating or moving anything.
         extension: file extension to filter on (for example '.csv').
+        reporter: reporter to use. If None, a default reporter will be used.
 
     Returns:
         simple worker that can copy files between two local folder.
@@ -374,6 +376,7 @@ def simple_worker(
     checker = ChecksumChecker()
     local_connector = LocalConnector(directory=base_directory_from)
     external_connector = LocalConnector(directory=base_directory_to)
+    reporter = reporter or Reporter()
     log.debug("<Simple Worker created>")
     log.debug(f"from:{base_directory_from}")
     log.debug(f"to  :{base_directory_to}")
@@ -385,6 +388,7 @@ def simple_worker(
         bookkeeper=bookkeeper,
         extension=extension,
         dry_run=dry_run,
+        reporter=reporter,
     )
     return worker
 
@@ -396,6 +400,7 @@ def ssh_worker(
     extension: str = None,
     use_password: bool = False,
     dry_run: bool = False,
+    reporter: ReporterBase = None,
     is_posix: bool = True,
 ):
     """Create a Worker with SSHConnector.
@@ -408,6 +413,7 @@ def ssh_worker(
         extension: file extension to filter on (for example '.csv').
         use_password: set to True if you want to connect using a password instead of key-pair.
         is_posix: make external path (base_directory_to) a PurePosixPath.
+        reporter: reporter to use. If None, a default reporter will be used.
 
     Returns:
         worker with SSHConnector attached to it.
@@ -425,6 +431,7 @@ def ssh_worker(
 
     bookkeeper = SimpleDbHandler(db_name)
     checker = ChecksumChecker()
+    reporter = reporter or Reporter()
 
     log.debug("<SSH Worker created>")
     log.debug(f"from:{local_connector.directory}")
@@ -437,6 +444,7 @@ def ssh_worker(
         bookkeeper=bookkeeper,
         extension=extension,
         dry_run=dry_run,
+        reporter=reporter,
     )
     return worker
 
@@ -448,6 +456,7 @@ def sharepoint_worker(
     doc_library_to: Union[str, None] = None,
     db_name: Union[str, None] = None,
     extension: str = None,
+        reporter: ReporterBase = None,
     dry_run: bool = False,
 ):
     """Create a Worker with SharePointConnector.
@@ -459,6 +468,7 @@ def sharepoint_worker(
         doc_library_to: folder within the SharePoint site to copy to.
         db_name: name of the database.
         extension: file extension to filter on (for example '.csv').
+        reporter: reporter to use. If None, a default reporter will be used.
         dry_run: set to True if you would like to run without updating or moving anything.
 
     Returns:
@@ -489,6 +499,7 @@ def sharepoint_worker(
 
     bookkeeper = SimpleDbHandler(db_name)
     checker = ChecksumChecker()
+    reporter = reporter or Reporter()
     log.debug("<SSH Worker created>")
 
     log.debug(f"from: {local_connector.directory}")
@@ -502,5 +513,6 @@ def sharepoint_worker(
         extension=extension,
         external_name_generator=external_name_generator,
         dry_run=dry_run,
+        reporter=reporter,
     )
     return worker

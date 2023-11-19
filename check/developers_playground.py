@@ -9,6 +9,7 @@ from oeleo.console import console
 from oeleo.workers import simple_worker, ssh_worker
 from oeleo.schedulers import SimpleScheduler
 from oeleo.utils import start_logger
+from oeleo.reporters import LogReporter
 
 dotenv.load_dotenv()
 start_logger()
@@ -71,6 +72,7 @@ def example_ssh_worker_with_simple_scheduler():
     worker = ssh_worker(
         base_directory_to="/home/jepe@ad.ife.no/Temp",
         db_name=r"../test_databases/testdb_ssh.db",
+        reporter=LogReporter(),
     )
     logging.info(f"{worker.bookkeeper=}")
     logging.info(f"{worker.bookkeeper.db_name=}")
