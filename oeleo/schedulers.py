@@ -96,6 +96,7 @@ class SimpleScheduler(SchedulerBase):
             while used_time < self.run_interval_time:
                 time.sleep(self._sleep_interval)
                 used_time = (datetime.now() - self._last_run).total_seconds()
+                log.debug(f"slept for {used_time} s of {self.run_interval_time} s")
         self.worker.close()
 
     def _update_db(self):
