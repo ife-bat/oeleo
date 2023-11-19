@@ -8,22 +8,27 @@ from typing import Any, Generator, Iterable, Union, Callable, List
 log = logging.getLogger("oeleo")
 
 
-def filter_on_startswith(path: Union[Path, str], value: str):
-    return os.path.basename(path).startswith(value)
+def filter_on_startswith(path: Union[Path, str], value: Union[str, List[str]]):
+    n = os.path.basename(path)
+    v = value if isinstance(value, list) else [value]
+    return any(n.startswith(vv) for vv in v)
 
 
-def filter_on_contains(path: Union[Path, str], value: str):
-    print(f"{value} in {os.path.basename(path)}? {value in os.path.basename(path)}")
-    return value in os.path.basename(path)
+def filter_on_contains(path: Union[Path, str], value: Union[str, List[str]]):
+    n = os.path.basename(path)
+    v = value if isinstance(value, list) else [value]
+    return any(vv in n for vv in v)
 
 
-def filter_on_not_contains(path: Union[Path, str], value: str):
-    return value not in os.path.basename(path)
+def filter_on_not_contains(path: Union[Path, str], value: Union[str, List[str]]):
+    n = os.path.basename(path)
+    v = value if isinstance(value, list) else [value]
+    return not any(vv in n for vv in v)
 
 
 def filter_on_excluded(path: Union[Path, str], value: List[str]):
     n = os.path.basename(path)
-    return not any(v in n for v in value)
+    return not any(v == n for v in value)
 
 
 def filter_on_callable(path: Union[Path, str], f: Callable):
@@ -96,8 +101,8 @@ def main():
     directory = Path("../check/from").resolve()
     not_before = datetime(year=2022, month=5, day=1, hour=1, minute=0, second=0)
     not_after = datetime(year=2023, month=8, day=4, hour=1, minute=0, second=0)
-    not_contains = "2"
-    excluded = ["5", "6"]
+    not_contains = ["2", "3"]
+    excluded = ["file_number_5.xyz", "file_number_6.xyz"]
     print(f"not_before: {not_before}")
     print(f"not_after: {not_after}")
     print(f"not_contains: {not_contains}")
