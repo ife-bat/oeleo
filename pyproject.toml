@@ -30,6 +30,7 @@ python-dotenv = "^0.20.0"
 rich = "^12.4.4"
 Fabric = "^2.7.0"
 SharePlum = "^0.5.1"
+pystray = "^0.19.5"
 
 [tool.poetry.dev-dependencies]
 black = "^22.6.0"

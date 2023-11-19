@@ -5,6 +5,9 @@ from typing import Protocol, Any
 from math import ceil
 import warnings
 
+from PIL import Image, ImageDraw
+import pystray
+
 from rich.panel import Panel
 from rich.text import Text
 from rich.console import Console
@@ -24,6 +27,29 @@ except OSError:
     max_line_length = 80
 
 log = logging.getLogger("oeleo")
+
+
+def create_icon(width, height, color1, color2):
+    image = Image.new('RGB', (width, height), color1)
+    dc = ImageDraw.Draw(image)
+    dc.ellipse(
+        (
+            (width // 6, height // 6),
+            (5 * width // 6, 5 * height // 6),
+        ),
+        fill=color2
+    )
+    dc.ellipse(
+        (
+            (2 * width // 6, 2 * height // 6),
+            (4 * width // 6, 4 * height // 6),
+        ),
+        fill=color1
+    )
+
+    return image
+
+
 
 
 class NullProgress:
@@ -101,8 +127,23 @@ class LogReporter(ReporterBase):
 
 class LogAndTrayReporter(ReporterBase):
     """Minimal reporter that only writes to the log."""
-    super().__init__(*args, **kwargs)
-    self.tray = None  # TODO: implement tray
+    def __init__(self):
+        self.icon_image = create_icon(64, 64, 'black', 'white')
+        self.icon_state = False
+        self._create_tray_icon()
+        self.icon.run()
+
+    def _on_icon_clicked(self, icon, item):
+        self.icon_state = not item.checked
+
+    def _create_tray_icon(self):
+        self.icon = pystray.Icon(
+            "oeleo",
+            self.icon_image,
+            menu=pystray.Menu(
+                pystray.MenuItem("HEI", self._on_icon_clicked, checked=lambda item: self.icon_state),
+            )
+        )
 
     @staticmethod
     def report(status, *args, **kwargs):
@@ -118,7 +159,7 @@ class LogAndTrayReporter(ReporterBase):
         pass
 
     def close(self):
-        # TODO: implement closing tray
+        icon.stop()
         pass
 
 

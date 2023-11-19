@@ -9,7 +9,7 @@ from oeleo.console import console
 from oeleo.workers import simple_worker, ssh_worker
 from oeleo.schedulers import SimpleScheduler
 from oeleo.utils import start_logger
-from oeleo.reporters import LogReporter
+from oeleo.reporters import LogReporter, LogAndTrayReporter
 
 dotenv.load_dotenv()
 start_logger(only_oeleo=True)
@@ -86,6 +86,7 @@ def example_ssh_worker_with_simple_scheduler():
         max_run_intervals=1000000000,
         additional_filters=my_filters,
         add_check=True,
+        reporter=LogAndTrayReporter(),
     )
     s.start()
 
