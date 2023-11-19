@@ -72,7 +72,7 @@ def example_ssh_worker_with_simple_scheduler():
     worker = ssh_worker(
         base_directory_to="/home/jepe@ad.ife.no/Temp",
         db_name=r"../test_databases/testdb_ssh.db",
-        reporter=LogReporter(),
+        reporter=LogAndTrayReporter(),
     )
     logging.info(f"{worker.bookkeeper=}")
     logging.info(f"{worker.bookkeeper.db_name=}")
@@ -83,10 +83,9 @@ def example_ssh_worker_with_simple_scheduler():
     s = SimpleScheduler(
         worker,
         run_interval_time=2,  # run_interval_time
-        max_run_intervals=1000000000,
+        max_run_intervals=5,
         additional_filters=my_filters,
         add_check=True,
-        reporter=LogAndTrayReporter(),
     )
     s.start()
 

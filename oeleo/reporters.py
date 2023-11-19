@@ -2,8 +2,11 @@ from contextlib import contextmanager
 import logging
 import os
 from typing import Protocol, Any
+import time
 from math import ceil
 import warnings
+import sys
+from threading import Thread
 
 from PIL import Image, ImageDraw
 import pystray
@@ -50,8 +53,6 @@ def create_icon(width, height, color1, color2):
     return image
 
 
-
-
 class NullProgress:
     """A progress tracker that does nothing at all."""
 
@@ -92,11 +93,17 @@ class ReporterBase(Protocol):
     def report(self, status, events=None, same_line=False, replace_line=False):
         ...
 
+    def status(self, status: str):
+        ...
+
     def clear(self):
         ...
 
     def close(self):
         ...
+
+    def notify(self, status: str, title: str = None):
+        pass
 
     @contextmanager
     def progress(self, *args, **kwargs):
@@ -121,6 +128,12 @@ class LogReporter(ReporterBase):
     def clear(self):
         pass
 
+    def status(self, status: str):
+        pass
+
+    def notify(self, status: str, title: str = None):
+        pass
+
     def close(self):
         pass
 
@@ -130,20 +143,25 @@ class LogAndTrayReporter(ReporterBase):
     def __init__(self):
         self.icon_image = create_icon(64, 64, 'black', 'white')
         self.icon_state = False
-        self._create_tray_icon()
-        self.icon.run()
+        self.icon = None
+        self.icon_thread = None
+        self.create_tray_icon("oeleo")
+        self.status_message = ""
 
     def _on_icon_clicked(self, icon, item):
-        self.icon_state = not item.checked
+        pass
 
-    def _create_tray_icon(self):
+    def create_tray_icon(self, txt="oeleo"):
         self.icon = pystray.Icon(
-            "oeleo",
+            txt,
             self.icon_image,
             menu=pystray.Menu(
-                pystray.MenuItem("HEI", self._on_icon_clicked, checked=lambda item: self.icon_state),
+                pystray.MenuItem(txt, self._on_icon_clicked, checked=None),
             )
         )
+        self.icon_thread = Thread(target=self.icon.run)
+        self.icon_thread.daemon = True
+        self.icon_thread.start()
 
     @staticmethod
     def report(status, *args, **kwargs):
@@ -152,15 +170,24 @@ class LogAndTrayReporter(ReporterBase):
         if status not in NOT_LOGGED:
             log.info(status)
 
-        # TODO: implement updating tray
+    def notify(self, status, title="oeleo"):
+        self.icon.notify(status, title=title)
+
+    def status(self, status: str):
+        if status:
+            message = f"oleo: {status}"
+        else:
+            message = "oeleo"
+        self.status_message = message
 
     def clear(self):
         # TODO: implement clearing tray
         pass
 
     def close(self):
-        icon.stop()
-        pass
+        self.icon.notify("oeleo finished for now.")
+        time.sleep(5)
+        self.icon.stop()
 
 
 class Reporter(ReporterBase):
@@ -207,6 +234,12 @@ class Reporter(ReporterBase):
             p.__exit__(None, None, None)
 
     def close(self):
+        pass
+
+    def status(self, status: str):
+        pass
+
+    def notify(self, status: str, title: str = None):
         pass
 
 
@@ -313,5 +346,11 @@ class LayoutReporter(ReporterBase):
         return p
 
     def close(self):
+        pass
+
+    def status(self, status: str):
+        pass
+
+    def notify(self, status: str, title: str = None):
         pass
 

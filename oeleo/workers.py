@@ -114,7 +114,7 @@ class Worker(WorkerBase):
     extension: str = None
     reporter: ReporterBase = Reporter()
     external_name_generator: Callable[[Any, Path], Path] = field(default=None)
-    reconnect: bool  = True
+    reconnect: bool = True
     file_names: Iterable[Path] = field(init=False, default_factory=list)
 
     _external_name: Union[Path, str] = field(init=False, default="")
@@ -125,9 +125,11 @@ class Worker(WorkerBase):
             log.debug("DRY RUN")
             self.bookkeeper = MockDbHandler()
         self.external_connector.connect()
+        self.reporter.notify("oeleo started", title="info")
 
     def connect_to_db(self):
         self.status = ("state", "connect-to-db")
+        self.reporter.status("CONNECTING TO DB")
         self.bookkeeper.initialize_db()
         log.debug(f"Connecting to db -> '{self.bookkeeper.db_name}' DONE")
 
@@ -180,6 +182,7 @@ class Worker(WorkerBase):
 
         self.status = ("state", "check")
         log.debug("<CHECK>")
+        self.reporter.status("CHECKING")
         self.reporter.report(
             f"Comparing {self.local_connector.directory} <=> {self.external_connector.directory}"
         )
@@ -269,6 +272,7 @@ class Worker(WorkerBase):
         logging.debug("<RUN>")
         self.status = ("state", "run")
         local_files_found = False
+        self.reporter.status("RUNNING")
 
         for f in self.file_names:
             local_files_found = True
@@ -278,6 +282,7 @@ class Worker(WorkerBase):
                 "No files to handle. Did you forget to run `worker.filter_local()`?"
             )
         log.debug("<RUN FINISHED>")
+        self.reporter.status("RUN FINISHED")
 
     def _process_file(self, f):
         del self.status
