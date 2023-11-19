@@ -182,11 +182,7 @@ class Worker(WorkerBase):
         self.reporter.report(
             f"Comparing {self.local_connector.directory} <=> {self.external_connector.directory}"
         )
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            transient=True,
-        ) as progress:
+        with self.reporter.progress() as progress:
             task = progress.add_task("Getting local files...", total=None)
             local_files = self.file_names or self.filter_local(**kwargs)
             progress.remove_task(task)
@@ -253,6 +249,7 @@ class Worker(WorkerBase):
                         self.bookkeeper.update_record(
                             external_name, code=code, **local_vals
                         )
+            progress.remove_task(task)
 
         self.reporter.report("REPORT (CHECK):")
         self.reporter.report(

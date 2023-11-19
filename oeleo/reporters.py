@@ -1,12 +1,15 @@
+from contextlib import contextmanager
 import logging
 import os
-from typing import Protocol
+from typing import Protocol, Any
 from math import ceil
 import warnings
 
 from rich.panel import Panel
 from rich.text import Text
 from rich.console import Console
+from rich.progress import TextColumn, SpinnerColumn
+from rich.progress import Progress as RichProgress
 
 from oeleo.layouts import N_COLS_NOT_BODY, N_ROWS_NOT_BODY
 from oeleo.utils import start_logger
@@ -23,6 +26,31 @@ except OSError:
 log = logging.getLogger("oeleo")
 
 
+class NullProgress:
+    """A progress tracker that does nothing at all."""
+
+    def __init__(self, *args, **kwargs):
+        ...
+
+    def __enter__(self):
+        ...
+
+    def __exit__(self, *args, **kwargs):
+        ...
+
+    def update(self, *args, **kwargs):
+        ...
+
+    def close(self, *args, **kwargs):
+        ...
+
+    def add_task(self, *args, **kwargs):
+        ...
+
+    def remove_task(self, *args, **kwargs):
+        ...
+
+
 class ReporterBase(Protocol):
     """Reporter base class.
 
@@ -33,11 +61,22 @@ class ReporterBase(Protocol):
     layout = None
     lines: list = None
 
+    Progress: Any = NullProgress
+
     def report(self, status, events=None, same_line=False, replace_line=False):
         ...
 
     def clear(self):
         ...
+
+    @contextmanager
+    def progress(self, *args, **kwargs):
+
+        p = self.Progress(*args, **kwargs)
+        try:
+            yield p
+        finally:
+            p.__exit__(None, None, None)
 
 
 class Reporter(ReporterBase):
@@ -45,6 +84,8 @@ class Reporter(ReporterBase):
 
     layout = None
     lines = []
+
+    Progress = RichProgress
 
     @staticmethod
     def report(status, same_line=False, **kwargs):
@@ -68,6 +109,18 @@ class Reporter(ReporterBase):
 
     def clear(self):
         pass
+
+    @contextmanager
+    def progress(self, *args, **kwargs):
+        p = self.Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            transient=True
+        )
+        try:
+            yield p
+        finally:
+            p.__exit__(None, None, None)
 
 
 class LayoutReporter(ReporterBase):
@@ -171,3 +224,7 @@ class LayoutReporter(ReporterBase):
 
         p = Panel(s)
         return p
+
+    @contextmanager
+    def progress(*args, **kwargs):
+        yield
