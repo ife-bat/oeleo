@@ -268,9 +268,18 @@ class SSHConnector(Connector):
             except Exception as e:
                 log.debug(f"Got an exception during moving file: {e}")
                 log.debug(f"Retrying {i+1}/{CONNECTION_RETRIES}")
-                exceptions.append(e)
+                exceptions.append(str(e))
                 time.sleep(1)
-                self.connect()
+                try:
+                    self.c.close()
+                except Exception as e:
+                    log.debug(f"Got an exception during closing connection: {e}")
+                    exceptions.append(str(e))
+                try:
+                    self.connect()
+                except Exception as e:
+                    log.debug(f"Got an exception during connecting: {e}")
+                    exceptions.append(str(e))
 
         log.debug("GOT A CRITICAL EXCEPTIONS DURING COPYING FILE")
         log.debug(f"FROM     : {path}")

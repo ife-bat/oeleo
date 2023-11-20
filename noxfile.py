@@ -11,6 +11,10 @@ dotenv.load_dotenv()
 @nox.session
 def pack(session):
 
+    # TODO: put all deps inside one folder ("dependencies")
+    # TODO: fix so that also py3.8, py3.10 and py3.11 is packed
+    # TODO: fix so that packages for win32 py3.8 and win_amd64 py3.10 and py3.11 are packed
+
     out = session.run("poetry", "version", silent=True, external=True)
     version = out.strip().replace("oeleo ", "")
     print(f"version: {version}")
@@ -55,12 +59,14 @@ def pack(session):
     print("-------ok-win-32---------")
 
     print(" downloading packages for win64 ".center(80, "-"))
-    session.run(r"pip", "download", "--no-deps", f"oeleo=={version}", "-d", r"oeleo-bins")
+    session.run(r"pip", "download", "--platform", "win_amd64", "--no-deps", f"oeleo=={version}", "-d", r"oeleo-bins")
 
     with session.chdir(r"oeleo-bins"):
         session.run(
             "pip",
             "download",
+            "--platform",
+            "win_amd64",
             "--no-deps",
             "-r",
             "oeleo-requirements.txt",
