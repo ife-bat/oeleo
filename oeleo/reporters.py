@@ -140,17 +140,33 @@ class LogReporter(ReporterBase):
 
 class LogAndTrayReporter(ReporterBase):
     """Minimal reporter that only writes to the log."""
-    # TODO: check if other tray icon libraries are better
     def __init__(self):
+        self.status_message = ""
+        self.icon_state = False
         self.icon_image = create_icon(64, 64, 'black', 'white')
         self.icon_state = False
         self.icon = None
         self.icon_thread = None
+        self.icon_update_thread = None
         self.create_tray_icon("oeleo")
-        self.status_message = ""
 
     def _on_icon_clicked(self, icon, item):
+        # insert code here, e.g. log.debug(f"Menu item {item} clicked")
         pass
+
+    def _update_icon(self):
+        while True:
+            if self.status_message == "oeleo":
+                self.icon.icon = create_icon(64, 64, 'white', 'red')
+            elif self.status_message == "run":
+                self.icon.icon = create_icon(64, 64, 'black', 'red')
+            elif self.status_message == "check":
+                self.icon.icon = create_icon(64, 64, 'white', 'green')
+            elif self.status_message == "finished":
+                self.icon.icon = create_icon(64, 64, 'black', 'white')
+            else:
+                self.icon.icon = create_icon(64, 64, 'black', 'white')
+            time.sleep(0.1)
 
     def create_tray_icon(self, txt="oeleo"):
         self.icon = pystray.Icon(
@@ -163,6 +179,9 @@ class LogAndTrayReporter(ReporterBase):
         self.icon_thread = Thread(target=self.icon.run)
         self.icon_thread.daemon = True
         self.icon_thread.start()
+        self.icon_update_thread = Thread(target=self._update_icon)
+        self.icon_update_thread.daemon = True
+        self.icon_update_thread.start()
 
     @staticmethod
     def report(status, *args, **kwargs):
@@ -176,7 +195,7 @@ class LogAndTrayReporter(ReporterBase):
 
     def status(self, status: str):
         if status:
-            message = f"oleo: {status}"
+            message = f"{status}"
         else:
             message = "oeleo"
         self.status_message = message
@@ -187,7 +206,7 @@ class LogAndTrayReporter(ReporterBase):
 
     def close(self):
         self.icon.notify("oeleo finished for now.")
-        time.sleep(5)
+        time.sleep(2)
         self.icon.stop()
 
 

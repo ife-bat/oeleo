@@ -89,9 +89,9 @@ def dump_bookkeeper(bookkeeper, code=None, verbose=False, output_format="human")
     # TODO: option to dump to log
 
     if verbose:
-        print("... dumping 'filelist' table")
-        print(f"... file: {bookkeeper.db_name}")
-        print(" records ".center(80, "="))
+        logging.info("... dumping 'filelist' table")
+        logging.info(f"... file: {bookkeeper.db_name}")
+        logging.info(" records ".center(80, "="))
     n_records = len(bookkeeper.db_model)
     if code is None:
         records = bookkeeper.db_model.filter()
@@ -99,15 +99,15 @@ def dump_bookkeeper(bookkeeper, code=None, verbose=False, output_format="human")
         records = bookkeeper.db_model.filter(code=code)
     if verbose:
         for i, record in enumerate(records):
-            print(f" pk {record._pk:03} [{i:03}:{n_records:03}] ".center(80, "-"))
-            print(f"local_name:     {record.local_name}")
-            print(f"external_name:  {record.external_name}")
-            print(f"code:           {record.code}")
-            print(f"processed_date: {record.processed_date}")
-            print(f"checksum:       {record.checksum}")
+            logging.info(f" pk {record._pk:03} [{i:03}:{n_records:03}] ".center(80, "-"))
+            logging.info(f"local_name:     {record.local_name}")
+            logging.info(f"external_name:  {record.external_name}")
+            logging.info(f"code:           {record.code}")
+            logging.info(f"processed_date: {record.processed_date}")
+            logging.info(f"checksum:       {record.checksum}")
 
-        print(80 * "=")
+        logging.info(80 * "=")
     else:
         for record in records:
             txt = f"{record._pk:05}\tc={record.code}\tlf={record.local_name}\tef={record.external_name}"
-            print(txt)
+            logging.info(txt)

@@ -129,7 +129,7 @@ class Worker(WorkerBase):
 
     def connect_to_db(self):
         self.status = ("state", "connect-to-db")
-        self.reporter.status("CONNECTING TO DB")
+        self.reporter.status(self.status["state"])
         self.bookkeeper.initialize_db()
         log.debug(f"Connecting to db -> '{self.bookkeeper.db_name}' DONE")
 
@@ -182,7 +182,7 @@ class Worker(WorkerBase):
 
         self.status = ("state", "check")
         log.debug("<CHECK>")
-        self.reporter.status("CHECKING")
+        self.reporter.status(self.status["state"])
         self.reporter.report(
             f"Comparing {self.local_connector.directory} <=> {self.external_connector.directory}"
         )
@@ -272,7 +272,7 @@ class Worker(WorkerBase):
         logging.debug("<RUN>")
         self.status = ("state", "run")
         local_files_found = False
-        self.reporter.status("RUNNING")
+        self.reporter.status(self.status["state"])
 
         for f in self.file_names:
             local_files_found = True
@@ -282,7 +282,8 @@ class Worker(WorkerBase):
                 "No files to handle. Did you forget to run `worker.filter_local()`?"
             )
         log.debug("<RUN FINISHED>")
-        self.reporter.status("RUN FINISHED")
+        self.status = ("state", "finished")
+        self.reporter.status(self.status["state"])
 
     def _process_file(self, f):
         del self.status
