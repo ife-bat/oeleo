@@ -26,6 +26,11 @@ FabricRunResult = Any
 Hash = str
 
 
+class OeleoConnectionError(Exception):
+    """Raised when a connection cannot be established"""
+    pass
+
+
 def register_password(pwd: str = None) -> None:
     """Helper function to export the password as an environmental variable"""
     log.debug(" -> Register password ")
@@ -46,6 +51,10 @@ class Connector(Protocol):
 
     def connect(self, **kwargs) -> None:
         ...
+
+    def reconnect(self, **kwargs) -> None:
+        self.close()
+        self.connect()
 
     def close(self) -> None:
         ...
@@ -79,6 +88,9 @@ class LocalConnector(Connector):
         return f"LocalConnector\n{self.directory=}\n"
 
     def connect(self, **kwargs) -> None:
+        pass
+
+    def reconnect(self, **kwargs) -> None:
         pass
 
     def close(self):
@@ -161,6 +173,18 @@ class SSHConnector(Connector):
         self.c = Connection(
             host=self.host, user=self.username, connect_kwargs=connect_kwargs
         )
+
+    def reconnect(self, **kwargs) -> None:
+        try:
+            self.close()
+        except Exception as e:
+            log.debug(f"Got an exception during closing connection: {e}")
+            raise OeleoConnectionError("Could not close connection")
+        try:
+            self.connect()
+        except Exception as e:
+            log.debug(f"Got an exception during connecting: {e}")
+            raise OeleoConnectionError("Could not connect")
 
     def __check_connection_and_exit(self):
         # used only when developing oeleo
@@ -270,16 +294,7 @@ class SSHConnector(Connector):
                 log.debug(f"Retrying {i+1}/{CONNECTION_RETRIES}")
                 exceptions.append(str(e))
                 time.sleep(1)
-                try:
-                    self.c.close()
-                except Exception as e:
-                    log.debug(f"Got an exception during closing connection: {e}")
-                    exceptions.append(str(e))
-                try:
-                    self.connect()
-                except Exception as e:
-                    log.debug(f"Got an exception during connecting: {e}")
-                    exceptions.append(str(e))
+                self.reconnect()
 
         log.debug("GOT A CRITICAL EXCEPTIONS DURING COPYING FILE")
         log.debug(f"FROM     : {path}")
@@ -300,9 +315,12 @@ class SharePointConnection:
         )
         self.folder = self.site.Folder(doc_library)
 
-    @staticmethod
     def close(self):
         pass
+
+    def reconnect(self, **kwargs) -> None:
+        self.close()
+        self.connect()
 
 
 class SharePointConnector(Connector):

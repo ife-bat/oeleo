@@ -143,11 +143,12 @@ class LogAndTrayReporter(ReporterBase):
     def __init__(self):
         self.status_message = ""
         self.icon_state = False
-        self.icon_image = create_icon(64, 64, 'black', 'white')
+        self.icon_image = None
         self.icon_state = False
         self.icon = None
         self.icon_thread = None
         self.icon_update_thread = None
+
         self.create_tray_icon("oeleo")
 
     def _on_icon_clicked(self, icon, item):
@@ -156,22 +157,22 @@ class LogAndTrayReporter(ReporterBase):
 
     def _update_icon(self):
         while True:
-            if self.status_message == "oeleo":
-                self.icon.icon = create_icon(64, 64, 'white', 'red')
-            elif self.status_message == "run":
-                self.icon.icon = create_icon(64, 64, 'black', 'red')
-            elif self.status_message == "check":
-                self.icon.icon = create_icon(64, 64, 'white', 'green')
-            elif self.status_message == "finished":
-                self.icon.icon = create_icon(64, 64, 'black', 'white')
-            else:
-                self.icon.icon = create_icon(64, 64, 'black', 'white')
+            self.icon.icon = self.icon_image.get(self.status_message) or self.icon_image["oeleo"]
             time.sleep(0.1)
 
+    def _make_all_icons(self):
+        self.icon_image = {
+            "oeleo": create_icon(64, 64, 'black', 'white'),
+            "run": create_icon(64, 64, 'black', 'red'),
+            "check": create_icon(64, 64, 'white', 'green'),
+            "finished": create_icon(64, 64, 'black', 'white'),
+        }
+
     def create_tray_icon(self, txt="oeleo"):
+        self._make_all_icons()
         self.icon = pystray.Icon(
             txt,
-            self.icon_image,
+            self.icon_image["oeleo"],
             menu=pystray.Menu(
                 pystray.MenuItem(txt, self._on_icon_clicked, checked=None),
             )

@@ -300,13 +300,14 @@ class Worker(WorkerBase):
         self.status = ("changed", True)
 
         success = self.external_connector.move_func(f, self.external_name)
-        if not success and self.reconnect:
+
+        if not success:
             log.debug("Reconnecting...")
-            self.external_connector.connect()
+            self.external_connector.reconnect()
             success = self.external_connector.move_func(f, self.external_name)
 
         if self.reconnect:
-            self.external_connector.connect()
+            self.external_connector.reconnect()
 
         if success:
             self.status = ("moved", True)
