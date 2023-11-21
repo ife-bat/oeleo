@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from asyncio import Protocol
 from dataclasses import dataclass, field
 from math import ceil
@@ -53,6 +54,9 @@ class WorkerBase(Protocol):
     def close(self):
         ...
 
+    def die_if_necessary(self):
+        ...
+
 
 class MockWorker(WorkerBase):
     def connect_to_db(self):
@@ -77,6 +81,9 @@ class MockWorker(WorkerBase):
 
     def close(self):
         console.log("Closing all connections")
+
+    def die_if_necessary(self):
+        console.log("Dying if necessary")
 
 
 @dataclass
@@ -187,6 +194,7 @@ class Worker(WorkerBase):
             f"Comparing {self.local_connector.directory} <=> {self.external_connector.directory}"
         )
         with self.reporter.progress() as progress:
+            self.die_if_necessary()
             task = progress.add_task("Getting local files...", total=None)
             local_files = self.file_names or self.filter_local(**kwargs)
             progress.remove_task(task)
@@ -203,6 +211,7 @@ class Worker(WorkerBase):
 
             task = progress.add_task("Checking...", total=None)
             for f in local_files:
+                self.die_if_necessary()
                 number_of_local_files += 1
                 self.make_external_name(f)
                 external_name = self.external_name
@@ -270,6 +279,7 @@ class Worker(WorkerBase):
     def run(self):
         """Copy the files that needs to be copied and update the db."""
         logging.debug("<RUN>")
+        self.die_if_necessary()
         self.status = ("state", "run")
         local_files_found = False
         self.reporter.status(self.status["state"])
@@ -287,6 +297,7 @@ class Worker(WorkerBase):
 
     def _process_file(self, f):
         del self.status
+        self.die_if_necessary()
         self.make_external_name(f)
         self.bookkeeper.register(f)
         checks = self.checker.check(f)
@@ -317,6 +328,7 @@ class Worker(WorkerBase):
         else:
             self.reporter.report("!", same_line=True)
             log.debug(f"{f.name} -> {self.external_name} FAILED COPY!")
+
 
     def _default_external_name_generator(self, f):
         return self.external_connector.directory / f.name
@@ -357,6 +369,13 @@ class Worker(WorkerBase):
         self.reporter.report("<CLOSE WORKER>")
         self.external_connector.close()
         self.reporter.close()
+
+    def die_if_necessary(self):
+        should_die = self.reporter.should_die()
+        if should_die:
+            self.reporter.report("You told me to die! Dying...")
+            self.close()
+            sys.exit(0)
 
 
 def simple_worker(

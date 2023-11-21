@@ -83,7 +83,7 @@ def example_ssh_worker_with_simple_scheduler():
     s = SimpleScheduler(
         worker,
         run_interval_time=2,  # run_interval_time
-        max_run_intervals=5,
+        max_run_intervals=20,
         additional_filters=my_filters,
         add_check=True,
     )

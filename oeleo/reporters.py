@@ -102,6 +102,9 @@ class ReporterBase(Protocol):
     def close(self):
         ...
 
+    def should_die(self) -> bool:
+        ...
+
     def notify(self, status: str, title: str = None):
         pass
 
@@ -148,12 +151,16 @@ class LogAndTrayReporter(ReporterBase):
         self.icon = None
         self.icon_thread = None
         self.icon_update_thread = None
+        self.kill_me = False
 
         self.create_tray_icon("oeleo")
 
     def _on_icon_clicked(self, icon, item):
         # insert code here, e.g. log.debug(f"Menu item {item} clicked")
         pass
+
+    def _on_quit_clicked(self, icon, item):
+        self.kill_me = True
 
     def _update_icon(self):
         while True:
@@ -175,6 +182,7 @@ class LogAndTrayReporter(ReporterBase):
             self.icon_image["oeleo"],
             menu=pystray.Menu(
                 pystray.MenuItem(txt, self._on_icon_clicked, checked=None),
+                pystray.MenuItem("Quit", self._on_quit_clicked, checked=None),  # TODO: Make sub-meny
             )
         )
         self.icon_thread = Thread(target=self.icon.run)
@@ -209,6 +217,9 @@ class LogAndTrayReporter(ReporterBase):
         self.icon.notify("oeleo finished for now.")
         time.sleep(2)
         self.icon.stop()
+
+    def should_die(self) -> bool:
+        return self.kill_me
 
 
 class Reporter(ReporterBase):
