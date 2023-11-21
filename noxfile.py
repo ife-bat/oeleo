@@ -22,19 +22,21 @@ def pack(session):
     print(f"folder_name_base: {folder_name_base}")
     wheel_name = f"oeleo-{version}-py3-none-any.whl"
 
-    print(" creating frozen requirements file ".center(80, "-"))
+    print(" creating frozen requirements file for py3.8 win32".center(80, "-"))
     session.run(
         "poetry",
         "export",
         "-f",
         "requirements.txt",
+        "--extras",
+        "python==3.8",
         "--without-hashes",
         "--output",
-        r"oeleo-bins\oeleo-requirements.txt",
+        r"oeleo-bins\oeleo-requirements-py38.txt",
         external=True,
     )
     print("---------------------")
-    print(" downloading packages for win32 ".center(80, "-"))
+    print(" downloading packages for py3.8 win32 ".center(80, "-"))
 
     session.run(
         r"pip",
@@ -49,8 +51,8 @@ def pack(session):
     win_32_file = pathlib.Path(wheel_name).name.replace("-any.whl", "-any-win32.whl")
 
     with session.chdir(r"oeleo-bins"):
+        shutil.move(wheel_name, win_32_file)
         print(f"win_32_file: {win_32_file}")
-        shutil.copy(wheel_name, win_32_file)
 
     with session.chdir(r"oeleo-bins"):
         session.run(
@@ -60,9 +62,9 @@ def pack(session):
             "win32",
             "--no-deps",
             "-r",
-            "oeleo-requirements.txt",
+            "oeleo-requirements-py38.txt",
             "-d",
-            f"{folder_name_base}-win32",
+            f"dependencies",
         )
 
     print("-------ok-win-32---------")
@@ -89,7 +91,7 @@ def pack(session):
             "-r",
             "oeleo-requirements.txt",
             "-d",
-            f"{folder_name_base}",
+            f"dependencies",
         )
     print("--------OK-----------")
     print()
@@ -102,20 +104,13 @@ def pack(session):
             session.run(
                 "scp",
                 "-r",
-                f"{folder_name_base}-win32",
+                f"dependencies",
                 f"{server_name}:{server_folder}",
                 external=True,
             )
             session.run(
                 "scp",
                 win_32_file,
-                f"{server_name}:{server_folder}",
-                external=True,
-            )
-            session.run(
-                "scp",
-                "-r",
-                f"{folder_name_base}",
                 f"{server_name}:{server_folder}",
                 external=True,
             )
@@ -130,9 +125,9 @@ def pack(session):
         else:
             print("To upload to server, use:")
             print(f"# if in oeleo-bins folder and uploading win32 to server <server>")
-            print(f"> scp -r {folder_name_base}-win32 <server>:/srv/share/oeleo-bin")
+            print(f"> scp -r dependencies <server>:/srv/share/oeleo-bin")
             print()
     print("To install on win32, use:")
-    print(f"pip install {win_32_file} --no-index --find-links {folder_name_base}-win32")
+    print(f"pip install {win_32_file} --no-index --find-links dependencies")
     print("To install on win, use:")
-    print(f"pip install {wheel_name} --no-index --find-links {folder_name_base}")
+    print(f"pip install {wheel_name} --no-index --find-links dependencies")
