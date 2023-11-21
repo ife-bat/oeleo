@@ -142,7 +142,7 @@ class LogReporter(ReporterBase):
 
 
 class LogAndTrayReporter(ReporterBase):
-    """Minimal reporter that only writes to the log."""
+    """Reporter with a system tray icon that also writes to the log."""
 
     def __init__(self):
         self.status_message = ""
@@ -157,8 +157,9 @@ class LogAndTrayReporter(ReporterBase):
         self.create_tray_icon("oeleo")
 
     def _on_action_clicked(self, icon, item):
-        # insert code here, e.g. log.debug(f"Menu item {item} clicked")
-        pass
+        # insert code here, e.g.
+        log.debug(f"ACTION: {item}-{icon}@{time.ctime()}")
+        log.debug(f"STATUS: {self.status_message}@{time.ctime()}")
 
     def _on_quit_clicked(self, icon, item):
         self.kill_me = True
