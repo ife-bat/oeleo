@@ -28,6 +28,7 @@ Hash = str
 
 class OeleoConnectionError(Exception):
     """Raised when a connection cannot be established"""
+
     pass
 
 

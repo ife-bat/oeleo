@@ -12,7 +12,9 @@ from oeleo.models import SimpleDbHandler
 
 STDOUT_LOG_MESSAGE_FORMAT = "%(message)s"
 FILE_LOG_MESSAGE_FORMAT = "[%(asctime)s - %(name)s] || %(levelname)7s || %(message)s"
-FILE_LOG_MESSAGE_FORMAT_ALL = "[%(asctime)s - %(name)24s] || %(levelname)7s || %(message)s"
+FILE_LOG_MESSAGE_FORMAT_ALL = (
+    "[%(asctime)s - %(name)24s] || %(levelname)7s || %(message)s"
+)
 
 FILE_LOG_MAX_BYTES = 1_000_000
 FILE_LOG_BACKUP_COUNT = 3
@@ -99,7 +101,9 @@ def dump_bookkeeper(bookkeeper, code=None, verbose=False, output_format="human")
         records = bookkeeper.db_model.filter(code=code)
     if verbose:
         for i, record in enumerate(records):
-            logging.info(f" pk {record._pk:03} [{i:03}:{n_records:03}] ".center(80, "-"))
+            logging.info(
+                f" pk {record._pk:03} [{i:03}:{n_records:03}] ".center(80, "-")
+            )
             logging.info(f"local_name:     {record.local_name}")
             logging.info(f"external_name:  {record.external_name}")
             logging.info(f"code:           {record.code}")

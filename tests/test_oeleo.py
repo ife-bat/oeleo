@@ -130,7 +130,6 @@ def test_logger():
     logging.info("Hello from oeleo test suite")
 
 
-
 # ----------- filters ----------------
 
 

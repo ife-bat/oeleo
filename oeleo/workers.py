@@ -329,7 +329,6 @@ class Worker(WorkerBase):
             self.reporter.report("!", same_line=True)
             log.debug(f"{f.name} -> {self.external_name} FAILED COPY!")
 
-
     def _default_external_name_generator(self, f):
         return self.external_connector.directory / f.name
 
@@ -384,7 +383,7 @@ def simple_worker(
     db_name=None,
     dry_run=False,
     extension=None,
-        reporter=None,
+    reporter=None,
 ):
     """Create a Worker for copying files locally.
 
@@ -494,7 +493,7 @@ def sharepoint_worker(
     doc_library_to: Union[str, None] = None,
     db_name: Union[str, None] = None,
     extension: str = None,
-        reporter: ReporterBase = None,
+    reporter: ReporterBase = None,
     dry_run: bool = False,
 ):
     """Create a Worker with SharePointConnector.

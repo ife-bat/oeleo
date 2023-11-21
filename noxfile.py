@@ -36,7 +36,16 @@ def pack(session):
     print("---------------------")
     print(" downloading packages for win32 ".center(80, "-"))
 
-    session.run(r"pip", "download", "--platform", "win32", "--no-deps", f"oeleo=={version}", "-d", r"oeleo-bins")
+    session.run(
+        r"pip",
+        "download",
+        "--platform",
+        "win32",
+        "--no-deps",
+        f"oeleo=={version}",
+        "-d",
+        r"oeleo-bins",
+    )
     win_32_file = pathlib.Path(wheel_name).name.replace("-any.whl", "-any-win32.whl")
 
     with session.chdir(r"oeleo-bins"):
@@ -59,7 +68,16 @@ def pack(session):
     print("-------ok-win-32---------")
 
     print(" downloading packages for win64 ".center(80, "-"))
-    session.run(r"pip", "download", "--platform", "win_amd64", "--no-deps", f"oeleo=={version}", "-d", r"oeleo-bins")
+    session.run(
+        r"pip",
+        "download",
+        "--platform",
+        "win_amd64",
+        "--no-deps",
+        f"oeleo=={version}",
+        "-d",
+        r"oeleo-bins",
+    )
 
     with session.chdir(r"oeleo-bins"):
         session.run(
