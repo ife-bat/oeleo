@@ -8,8 +8,13 @@ import warnings
 import sys
 from threading import Thread
 
-from PIL import Image, ImageDraw
-import pystray
+try:
+    from PIL import Image, ImageDraw
+    import pystray
+except ImportError:
+    Image = None
+    ImageDraw = None
+    pystray = None
 
 from rich.panel import Panel
 from rich.text import Text
@@ -33,6 +38,9 @@ log = logging.getLogger("oeleo")
 
 
 def create_icon(width, height, color1, color2):
+    if Image is None:
+        return None
+
     image = Image.new("RGB", (width, height), color1)
     dc = ImageDraw.Draw(image)
     dc.ellipse(
@@ -153,7 +161,6 @@ class LogAndTrayReporter(ReporterBase):
         self.icon_thread = None
         self.icon_update_thread = None
         self.kill_me = False
-
         self.create_tray_icon("oeleo")
 
     def _on_action_clicked(self, icon, item):
@@ -184,6 +191,10 @@ class LogAndTrayReporter(ReporterBase):
         pass
 
     def create_tray_icon(self, name="oeleo"):
+        logging.debug("Creating tray icon")
+        if pystray is None:
+            self.icon = None
+            return
         self._make_all_icons()
         self.icon = pystray.Icon(
             name,
@@ -229,8 +240,9 @@ class LogAndTrayReporter(ReporterBase):
             log.info(status)
 
     def notify(self, status, title=None):
-        time.sleep(0.1)
-        self.icon.notify(status)
+        if self.icon is not None:
+            time.sleep(0.1)
+            self.icon.notify(status)
 
     def status(self, status: str):
         if status:
@@ -244,6 +256,8 @@ class LogAndTrayReporter(ReporterBase):
         pass
 
     def close(self, silent=False):
+        if self.icon is None:
+            return
         if not silent:
             self.icon.notify("oeleo finished for now.")
             time.sleep(4)

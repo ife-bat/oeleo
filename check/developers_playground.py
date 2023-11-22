@@ -15,6 +15,20 @@ dotenv.load_dotenv()
 start_logger(only_oeleo=True)
 
 
+def check_connection():
+    print("Checking connection")
+    worker = ssh_worker(
+        base_directory_to="/home/jepe@ad.ife.no/Temp",
+        db_name=r"../test_databases/testdb_ssh.db",
+        reporter=LogAndTrayReporter()
+    )
+    worker.connect_to_db()
+    worker.external_connector.connect()
+    cmd = f"find {worker.external_connector.directory} -maxdepth 1 -name '*'"
+    worker.external_connector.c.run(cmd)
+    worker.external_connector.close()
+
+
 def example_bare_minimum():
 
     logging.setLevel(logging.DEBUG)
@@ -68,11 +82,15 @@ def example_ssh_worker_with_simple_scheduler():
     ]
     run_interval_time = 3600 * HOURS_SLEEP
 
+    print("creating reporter")
+    reporter = LogAndTrayReporter()
+    print("reporter created")
+
     logging.debug(f"Starting oeleo!")
     worker = ssh_worker(
         base_directory_to="/home/jepe@ad.ife.no/Temp",
         db_name=r"../test_databases/testdb_ssh.db",
-        reporter=LogAndTrayReporter(),
+        reporter=reporter,
     )
     logging.info(f"{worker.bookkeeper=}")
     logging.info(f"{worker.bookkeeper.db_name=}")

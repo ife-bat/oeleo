@@ -187,7 +187,7 @@ class SSHConnector(Connector):
             log.debug(f"Got an exception during connecting: {e}")
             raise OeleoConnectionError("Could not connect")
 
-    def __check_connection_and_exit(self):
+    def _check_connection_and_exit(self):
         # used only when developing oeleo
         log.debug("Connected?")
         if self.is_posix:

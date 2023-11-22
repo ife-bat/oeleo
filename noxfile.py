@@ -28,8 +28,8 @@ def pack(session):
         "export",
         "-f",
         "requirements.txt",
-        "--extras",
-        "python==3.8",
+        # "--extras",
+        # "'python==3.8'",
         "--without-hashes",
         "--output",
         r"oeleo-bins\oeleo-requirements-py38.txt",
@@ -41,12 +41,15 @@ def pack(session):
     session.run(
         r"pip",
         "download",
+        "--python-version",
+        "3.8",
         "--platform",
         "win32",
         "--no-deps",
         f"oeleo=={version}",
         "-d",
         r"oeleo-bins",
+        external=True,
     )
     win_32_file = pathlib.Path(wheel_name).name.replace("-any.whl", "-any-win32.whl")
 
@@ -65,6 +68,7 @@ def pack(session):
             "oeleo-requirements-py38.txt",
             "-d",
             f"dependencies",
+            external=True,
         )
 
     print("-------ok-win-32---------")
@@ -79,6 +83,7 @@ def pack(session):
         f"oeleo=={version}",
         "-d",
         r"oeleo-bins",
+        external=True,
     )
 
     with session.chdir(r"oeleo-bins"):
@@ -92,6 +97,22 @@ def pack(session):
             "oeleo-requirements.txt",
             "-d",
             f"dependencies",
+            external=True,
+
+        )
+    with session.chdir(r"oeleo-bins"):
+        session.run(
+            "pip",
+            "download",
+            "--platform",
+            "win_amd64",
+            "--no-deps",
+            "-r",
+            "oeleo-requirements-py38.txt",
+            "-d",
+            f"dependencies",
+            external=True,
+
         )
     print("--------OK-----------")
     print()
