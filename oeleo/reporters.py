@@ -265,10 +265,7 @@ class LogAndTrayReporter(ReporterBase):
 
 class Reporter(ReporterBase):
     """Minimal reporter that uses console for outputs."""
-    try:
-        max_line_length = os.get_terminal_size().columns
-    except OSError:
-        max_line_length = 80
+    max_line_length = 80
 
     layout = None
     lines = []
