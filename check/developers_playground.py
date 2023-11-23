@@ -4,15 +4,15 @@ from datetime import datetime
 from pathlib import Path
 
 import dotenv
-
+import oeleo
 from oeleo.console import console
 from oeleo.workers import simple_worker, ssh_worker
 from oeleo.schedulers import SimpleScheduler
-from oeleo.utils import start_logger
+# from oeleo.utils import start_logger
 from oeleo.reporters import LogReporter, LogAndTrayReporter
 
 dotenv.load_dotenv()
-start_logger(only_oeleo=True)
+oeleo.utils.start_logger(only_oeleo=True)
 
 
 def check_connection():
@@ -59,6 +59,12 @@ def example_with_simple_scheduler():
         add_check=False,
     )
     s.start()
+
+
+def create_and_save_icon():
+    from oeleo.reporters import create_icon
+    image = create_icon(256, 256, "black", "white")
+    image.save('oeleo.ico', sizes=[(256, 256), (128, 128), (64, 64), (32, 32), (16, 16)])
 
 
 def example_ssh_worker_with_simple_scheduler():
@@ -182,4 +188,4 @@ def check_db_dumper():
 
 
 if __name__ == "__main__":
-    example_ssh_worker_with_simple_scheduler()
+    create_and_save_icon()

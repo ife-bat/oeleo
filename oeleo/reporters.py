@@ -29,13 +29,8 @@ from oeleo.console import simple_console
 # used for same_line reporting in Reporter.report
 NOT_LOGGED = ["\n", "\r", "\r\n", "", " ", " .", ".", "-", "o", "v", "!"]
 line_length = 0
-try:
-    max_line_length = os.get_terminal_size().columns
-except OSError:
-    max_line_length = 80
 
 log = logging.getLogger("oeleo")
-
 
 def create_icon(width, height, color1, color2):
     if Image is None:
@@ -270,6 +265,10 @@ class LogAndTrayReporter(ReporterBase):
 
 class Reporter(ReporterBase):
     """Minimal reporter that uses console for outputs."""
+    try:
+        max_line_length = os.get_terminal_size().columns
+    except OSError:
+        max_line_length = 80
 
     layout = None
     lines = []
@@ -283,7 +282,7 @@ class Reporter(ReporterBase):
 
         if same_line:
             new_line_length = line_length + len(status)
-            if new_line_length > max_line_length:
+            if new_line_length > self.max_line_length:
                 simple_console.print()
                 line_length = 0
 

@@ -27,32 +27,6 @@
 5. remove loading dotenv files within the package!!!
    r"C:\scripting\oeleo\.env"
 
-### Error 1 (filters assume Path objects)
-
-```text
-Comparing C:\Data_split <=> /mnt/data-raw/arbin05
-CRITICAL:root:Got additional_filters for SSHConnector. This is still an experimental feature!
-Traceback (most recent call last):
-  File "C:\scripting\oeleo\odin_ssh.py", line 46, in <module>
-    odin_ssh_connection()
-  File "C:\scripting\oeleo\odin_ssh.py", line 42, in odin_ssh_connection
-    s.start()
-  File "C:\scripting\oeleo\.venv\lib\site-packages\oeleo\schedulers.py", line 76, in start
-    self._setup()
-  File "C:\scripting\oeleo\.venv\lib\site-packages\oeleo\schedulers.py", line 71, in _setup
-    self.worker.check(update_db=self.update_db, force=self.force, additional_filters=self.additional_filters)
-  File "C:\scripting\oeleo\.venv\lib\site-packages\oeleo\workers.py", line 187, in check
-    external_files = list(self.filter_external(**kwargs))
-  File "C:\scripting\oeleo\.venv\lib\site-packages\oeleo\workers.py", line 161, in filter_external
-    external_files = self.external_connector.base_filter_sub_method(
-  File "C:\scripting\oeleo\.venv\lib\site-packages\oeleo\connectors.py", line 195, in base_filter_sub_method
-    file_list = [PurePosixPath(f) for f in file_list]
-  File "C:\scripting\oeleo\.venv\lib\site-packages\oeleo\connectors.py", line 195, in <listcomp>
-    file_list = [PurePosixPath(f) for f in file_list]
-  File "C:\scripting\oeleo\.venv\lib\site-packages\oeleo\filters.py", line 11, in filter_on_not_before
-    st = path.stat()
-AttributeError: 'str' object has no attribute 'stat'
-```
 
 ### Error 2 (ssh connector aborts when encountering exception (permission denied))
 
@@ -66,5 +40,14 @@ AttributeError: 'str' object has no attribute 'stat'
 [2023-11-17 11:58:33,359 - oeleo] ||   DEBUG || 20220407_slt27a_02_cc_01.h5 -> /mnt/data-raw/arbin05/20220407_slt27a_02_cc_01.h5 FAILED COPY!
 ```
 
-### Error 3 (the start_logger is used by several instances - and it uses env-variables)
-### Q 1 (does not seem to find out that some files are too old - could it be that the files are not old?)
+
+## deps
+    
+```text
+peewee, invoke, commonmark, urllib3, sspilib, six, 
+python-dotenv, pygments, pycparser, 
+lxml, idna, charset-normalizer, certifi, bcrypt, rich, 
+requests, pathlib2, cffi, requests-toolbelt, pynacl, 
+cryptography, pyspnego, paramiko, requests-ntlm, 
+Fabric, SharePlum, 
+```
