@@ -215,10 +215,22 @@ class Worker(WorkerBase):
                 number_of_local_files += 1
                 self.make_external_name(f)
                 external_name = self.external_name
-                local_vals = self.checker.check(
-                    f,
-                    connector=self.local_connector,
-                )
+
+                check_counter = 0
+                while True:
+                    try:
+                        local_vals = self.checker.check(
+                            f,
+                            connector=self.local_connector,
+                        )
+                        break
+                    except Exception as e:
+                        log.error(f"Error when checking {f}: {e}")
+                        time.sleep(1)
+                        check_counter += 1
+                        if check_counter > 300:
+                            raise e
+
                 if external_name in external_files:
                     log.info(f"{f.name} -> {self.external_name}")
                     code = 1

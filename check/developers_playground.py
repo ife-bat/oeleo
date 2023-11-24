@@ -67,6 +67,49 @@ def create_and_save_icon():
     image.save('oeleo.ico', sizes=[(256, 256), (128, 128), (64, 64), (32, 32), (16, 16)])
 
 
+def example_ssh_worker():
+    CHECK=False
+    FROM_YEAR = 2023
+    FROM_MONTH = 3
+    FROM_DAY = 1
+
+    my_filters = [
+        (
+            "not_before",
+            datetime(
+                year=FROM_YEAR,
+                month=FROM_MONTH,
+                day=FROM_DAY,
+                hour=0,
+                minute=0,
+                second=0,
+            ),
+        ),
+    ]
+
+    print("creating reporter")
+    reporter = LogAndTrayReporter()
+    print("reporter created")
+
+    logging.debug(f"Starting oeleo!")
+    worker = ssh_worker(
+        base_directory_to="/home/jepe@ad.ife.no/Temp",
+        db_name=r"../test_databases/testdb_ssh.db",
+        reporter=reporter,
+    )
+    logging.info(f"{worker.bookkeeper=}")
+    logging.info(f"{worker.bookkeeper.db_name=}")
+    logging.info(f"{worker.local_connector=}")
+    logging.info(f"{worker.external_connector=}")
+    logging.info(f"{worker.reporter=}")
+    logging.info(f"{worker.file_names=}")
+    worker.connect_to_db()
+    if CHECK:
+        worker.check(update_db=True)
+    worker.filter_local(filter_list=my_filters)
+    worker.run()
+
+
 def example_ssh_worker_with_simple_scheduler():
     HOURS_SLEEP = 0.5
     FROM_YEAR = 2023
@@ -188,4 +231,4 @@ def check_db_dumper():
 
 
 if __name__ == "__main__":
-    create_and_save_icon()
+    example_ssh_worker()
