@@ -12,6 +12,10 @@ from oeleo.schedulers import SimpleScheduler
 from oeleo.reporters import LogReporter, LogAndTrayReporter
 
 dotenv.load_dotenv()
+for env_var in os.environ:
+    if env_var.startswith("OELEO"):
+        print(f"{env_var}={os.environ[env_var]}")
+
 oeleo.utils.start_logger(only_oeleo=True)
 
 
@@ -150,7 +154,7 @@ def example_ssh_worker_with_simple_scheduler():
         run_interval_time=2,  # run_interval_time
         max_run_intervals=20,
         additional_filters=my_filters,
-        add_check=True,
+        add_check=False,
     )
     s.start()
 
@@ -229,4 +233,5 @@ def check_db_dumper():
 
 
 if __name__ == "__main__":
+    from oeleo.utils import start_logger
     example_ssh_worker_with_simple_scheduler()

@@ -133,10 +133,17 @@ class Worker(WorkerBase):
             self.bookkeeper = MockDbHandler()
         self.external_connector.connect()
         self.reporter.notify("oeleo started", title="info")
+        self.number_of_local_files = 0
+        self.number_of_external_duplicates = 0
+        self.number_of_duplicates_out_of_sync = 0
+
+    def _reset_check_counter(self):
+        self.number_of_local_files = 0
+        self.number_of_external_duplicates = 0
+        self.number_of_duplicates_out_of_sync = 0
 
     def connect_to_db(self):
         self.status = ("state", "connect-to-db")
-        self.reporter.status(self.status["state"])
         self.bookkeeper.initialize_db()
         log.debug(f"Connecting to db -> '{self.bookkeeper.db_name}' DONE")
 
@@ -175,6 +182,23 @@ class Worker(WorkerBase):
         log.debug(f"Filtering external files to the worker")
         return external_files
 
+    def _check_local(self, f: Path, sleep_time=1, max_check_counter=300):
+        check_counter = 0
+        while True:
+            try:
+                local_vals = self.checker.check(
+                    f,
+                    connector=self.local_connector,
+                )
+                break
+            except Exception as e:
+                log.error(f"Error when checking {f}: {e}")
+                time.sleep(sleep_time)
+                check_counter += 1
+                if check_counter > max_check_counter:
+                    raise e
+        return local_vals
+
     def check(self, update_db=False, force=True, **kwargs):
         """Check for differences between the two directories.
 
@@ -186,13 +210,12 @@ class Worker(WorkerBase):
         Additional keyword arguments:
             sent to the filter functions.
         """
-
-        self.status = ("state", "check")
         log.debug("<CHECK>")
-        self.reporter.status(self.status["state"])
+        self.status = ("state", "check")
         self.reporter.report(
             f"Comparing {self.local_connector.directory} <=> {self.external_connector.directory}"
         )
+
         with self.reporter.progress() as progress:
             self.die_if_necessary()
             task = progress.add_task("Getting local files...", total=None)
@@ -205,141 +228,137 @@ class Worker(WorkerBase):
             log.debug(f"Checking {len(external_files)} files")
             progress.remove_task(task)
 
-            number_of_local_files = 0
-            number_of_external_duplicates = 0
-            number_of_duplicates_out_of_sync = 0
+            self._reset_check_counter()
 
             task = progress.add_task("Checking...", total=None)
             for f in local_files:
                 self.die_if_necessary()
-                number_of_local_files += 1
+                self.number_of_local_files += 1
                 self.make_external_name(f)
-                external_name = self.external_name
+                local_vals = self._check_local(f)
 
-                check_counter = 0
-                while True:
-                    try:
-                        local_vals = self.checker.check(
-                            f,
-                            connector=self.local_connector,
-                        )
-                        break
-                    except Exception as e:
-                        log.error(f"Error when checking {f}: {e}")
-                        time.sleep(1)
-                        check_counter += 1
-                        if check_counter > 300:
-                            raise e
-
-                if external_name in external_files:
+                if self.external_name in external_files:
                     log.info(f"{f.name} -> {self.external_name}")
                     code = 1
                     exists = True
-
-                    log.debug(f"FOUND EXTERNAL")
-                    number_of_external_duplicates += 1
-
+                    self.number_of_external_duplicates += 1
                     external_vals = self.checker.check(
-                        external_name,
+                        self.external_name,
                         connector=self.external_connector,
                     )
-
                     same = True
                     for k in local_vals:
-                        logging.debug(f"    (L) {k}: {local_vals[k]}")
-
                         if local_vals[k] != external_vals[k]:
                             same = False
-                            number_of_duplicates_out_of_sync += 1
+                            self.number_of_duplicates_out_of_sync += 1
                             code = 0
-                            logging.debug(f"    (E) {k}: {external_vals[k]}")
-                        else:
-                            logging.debug(f"    (E) {k}: {external_vals[k]}")
-                    log.debug(f"In sync: {same}")
+                            break
+
+                    log.debug(f"in sync: {same}")
 
                 else:
-                    number_of_duplicates_out_of_sync += 1
+                    self.number_of_duplicates_out_of_sync += 1
                     logging.debug(f"{f.name} -> {self.external_name}")
                     exists = False
                     code = 0
-                    log.debug("[ONLY LOCAL]")
 
                 if update_db:
-                    log.debug("Updating db")
+                    log.debug("updating db")
                     self.bookkeeper.register(f)
                     if self.bookkeeper.code < 2:
-
                         if not force and not exists:
                             code = self.bookkeeper.code
                         self.bookkeeper.update_record(
-                            external_name, code=code, **local_vals
+                            self.external_name, code=code, **local_vals
                         )
             progress.remove_task(task)
 
         self.reporter.report("REPORT (CHECK):")
         self.reporter.report(
-            f"-Total number of local files:    {number_of_local_files}"
+            f"-Total number of local files:    {self.number_of_local_files}"
         )
         self.reporter.report(
-            f"-Files with external duplicates: {number_of_external_duplicates}"
+            f"-Files with external duplicates: {self.number_of_external_duplicates}"
         )
         self.reporter.report(
-            f"-Files out of sync:              {number_of_duplicates_out_of_sync}"
+            f"-Files out of sync:              {self.number_of_duplicates_out_of_sync}"
         )
         log.debug("<CHECK FINISHED>")
 
     def run(self):
-        """Copy the files that needs to be copied and update the db."""
+        """Copy the files that needs to be copied and update the db.
+
+        Remarks:
+            The method only iterates over the files that are registered in the
+            self.file_names attribute. This attribute is typically set by the filter_local
+            method.
+        """
+        print("RUNNING....")
+
         logging.debug("<RUN>")
         self.die_if_necessary()
         self.status = ("state", "run")
+
         local_files_found = False
-        self.reporter.status(self.status["state"])
+
+        failed_files = []
 
         for f in self.file_names:
             local_files_found = True
-            self._process_file(f)
+
+            # insert chunking here (but remark that what we have could be a generator or a list)
+            processed = self._process_file(f)
+            if not processed:
+                failed_files.append(f)
+
         if not local_files_found:
             self.reporter.report(
                 "No files to handle. Did you forget to run `worker.filter_local()`?"
             )
+
         log.debug("<RUN FINISHED>")
         self.status = ("state", "finished")
-        self.reporter.status(self.status["state"])
 
     def _process_file(self, f):
         del self.status
         self.die_if_necessary()
         self.make_external_name(f)
         self.bookkeeper.register(f)
-        checks = self.checker.check(f)
+
+        try:
+            checks = self.checker.check(f)
+        except Exception as e:
+            log.error(f"Error when checking {f}: {e}")
+            return False
+
         if not self.bookkeeper.is_changed(**checks):
             log.debug(f"{f.name} == {self.external_name}")
             self.reporter.report(".", same_line=True)
-            return
+            return True
 
         log.debug(f"{f.name} -> {self.external_name}")
 
         self.status = ("changed", True)
 
+        if self.reconnect:
+            self.external_connector.reconnect()
         success = self.external_connector.move_func(f, self.external_name)
 
         if not success:
-            log.debug("Reconnecting...")
+            log.debug("failed - so trying one more time after reconnecting...")
             self.external_connector.reconnect()
             success = self.external_connector.move_func(f, self.external_name)
-
-        if self.reconnect:
-            self.external_connector.reconnect()
 
         if success:
             self.status = ("moved", True)
             self.bookkeeper.update_record(self.external_name, **checks)
             self.reporter.report("o", same_line=True)
             log.debug(f"{f.name} -> {self.external_name} copied")
+            return True
         else:
             self.reporter.report("!", same_line=True)
             log.debug(f"{f.name} -> {self.external_name} FAILED COPY!")
+            return False
 
     def _default_external_name_generator(self, f):
         return self.external_connector.directory / f.name
@@ -361,6 +380,8 @@ class Worker(WorkerBase):
     def status(self, pair: tuple):
         key, value = pair
         self._status[key] = value
+        if key == "state":
+            self.reporter.status(value)
 
     @status.deleter
     def status(self):

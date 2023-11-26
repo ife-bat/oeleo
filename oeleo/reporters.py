@@ -236,8 +236,8 @@ class LogAndTrayReporter(ReporterBase):
 
     def notify(self, status, title=None):
         if self.icon is not None:
-            time.sleep(0.1)
             self.icon.notify(status)
+            time.sleep(0.1)
 
     def status(self, status: str):
         if status:
