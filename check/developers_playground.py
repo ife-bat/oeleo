@@ -131,9 +131,7 @@ def example_ssh_worker_with_simple_scheduler():
     ]
     run_interval_time = 3600 * HOURS_SLEEP
 
-    print("creating reporter")
     reporter = LogAndTrayReporter()
-    print("reporter created")
 
     logging.debug(f"Starting oeleo!")
     worker = ssh_worker(
@@ -231,4 +229,4 @@ def check_db_dumper():
 
 
 if __name__ == "__main__":
-    example_ssh_worker()
+    example_ssh_worker_with_simple_scheduler()
