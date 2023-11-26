@@ -20,25 +20,9 @@
    
 ## List of things to improve
 
-1. figure out how to make tests
-2. figure out how to make sure it restarts when stopped
-3. add some way of viewing the db easily
-4. add OELEO_DIST_BINARIES_PATH to the config and a method for downloading the binaries from remote server
-5. remove loading dotenv files within the package!!!
-   r"C:\scripting\oeleo\.env"
-
-
-### Error 2 (ssh connector aborts when encountering exception (permission denied))
-
-```text
-[2023-11-17 11:57:47,479 - oeleo] ||   DEBUG || Copying C:\Data_split\20220407_slt27a_02_cc_01.h5 to /mnt/data-raw/arbin05/20220407_slt27a_02_cc_01.h5
-[2023-11-17 11:58:33,344 - oeleo] ||   DEBUG || GOT AN EXCEPTION DURING COPYING FILE
-[2023-11-17 11:58:33,344 - oeleo] ||   DEBUG || FROM     : C:\Data_split\20220407_slt27a_02_cc_01.h5
-[2023-11-17 11:58:33,344 - oeleo] ||   DEBUG || TO       : /mnt/data-raw/arbin05/20220407_slt27a_02_cc_01.h5
-[2023-11-17 11:58:33,344 - oeleo] ||   DEBUG || EXCEPTION:
-[2023-11-17 11:58:33,344 - oeleo] ||   DEBUG || [Errno 13] Permission denied
-[2023-11-17 11:58:33,359 - oeleo] ||   DEBUG || 20220407_slt27a_02_cc_01.h5 -> /mnt/data-raw/arbin05/20220407_slt27a_02_cc_01.h5 FAILED COPY!
-```
+1. include app building in the git repository
+2. include multi-threading (fix how the log rotation is done)
+3. include a nice console reporter with progress bars.
 
 
 ## deps
