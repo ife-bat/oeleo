@@ -75,7 +75,7 @@ def main():
   )
 
   # Running the worker with 5 minutes intervals.
-  # You can also use an oeleo scheduler for this. The RichScheduler is kind-of cool.
+  # You can also use an oeleo scheduler for this.
   worker.connect_to_db()
   while True:
     worker.filter_local()
@@ -104,6 +104,7 @@ OELEO_LOG_DIR=C:\oeleo\logs
 # OELEO_USERNAME=<ssh username>
 # OELEO_PASSWORD=<ssh password>
 # OELEO_KEY_FILENAME=<ssh key-pair filename>
+
 ## only needed for SharePointConnector:
 # OELEO_SHAREPOINT_USERNAME=<sharepoint username (fallbacks to ssh username if missing)>
 # OELEO_SHAREPOINT_URL=<url to sharepoint>
@@ -139,19 +140,19 @@ Hint! You can **lock** (chose to never copy) a file by editing the `code` manual
 Instead of for example using a while loop to keep `oeleo` running continuously or at selected intervals, 
 you can use a scheduler (e.g. `rocketry`, `watchdog`, `schedule`, or more advanced options such as `AirFlow`).
 
-`oeleo` also includes its own schedulers. This is an example of how to use the `oeleo.RichScheduler`:
+`oeleo` also includes its own schedulers. This is an example of how to use the `oeleo.SimpleScheduler`:
 
 
 ```python
 import dotenv
 
-from oeleo.schedulers import RichScheduler
+from oeleo.schedulers import SimpleScheduler
 from oeleo.workers import simple_worker
 
 # assuming you have created an appropriate .env file
 dotenv.load_dotenv()
 worker = simple_worker()
-s = RichScheduler(
+s = SimpleScheduler(
         worker,
         run_interval_time=4,  # seconds
         max_run_intervals=4,
@@ -268,7 +269,7 @@ poetry publish
 ```
 
 ### Next
-- Take some time off and enjoy the summer.
+- Implement app in git repository.
 
 ### Development lead
 - Jan Petter Maehlen, IFE

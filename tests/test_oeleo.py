@@ -7,7 +7,7 @@ import utils
 from connectors import LocalConnector
 from movers import simple_mover, connected_mover
 from oeleo.utils import start_logger
-from oeleo.schedulers import RichScheduler, SimpleScheduler
+from oeleo.schedulers import SimpleScheduler
 
 start_logger()
 log = logging.getLogger("test-oeleo")
@@ -197,21 +197,3 @@ def test_worker_with_simple_scheduler(
     assert len(os.listdir(to_directory)) == 2
 
 
-def test_worker_with_rich_scheduler(
-    simple_worker_with_two_matching_and_one_not_matching,
-):
-
-    worker = simple_worker_with_two_matching_and_one_not_matching
-    from_directory = worker.local_connector.directory
-    to_directory = worker.external_connector.directory
-
-    s = RichScheduler(
-        worker,
-        run_interval_time=0.1,
-        max_run_intervals=2,
-        auto_accept_check=True,
-    )
-    s.start()
-
-    assert len(os.listdir(from_directory)) == 3
-    assert len(os.listdir(to_directory)) == 2

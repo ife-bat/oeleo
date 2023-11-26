@@ -1,11 +1,16 @@
+from collections import deque
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
+import multiprocessing
+from multiprocessing import Process, Queue
 import os
 import sys
 from asyncio import Protocol
 from dataclasses import dataclass, field
 from math import ceil
 from pathlib import Path
-from typing import Any, Generator, Union, Callable, Iterable, List
+from typing import Any, Generator, Union, Callable, Iterable, List, TypeVar
 
 from rich.panel import Panel
 from rich.text import Text
@@ -19,11 +24,29 @@ from oeleo.connectors import (
     SharePointConnector,
 )
 from oeleo.console import console
-from oeleo.layouts import N_COLS_NOT_BODY, N_ROWS_NOT_BODY
 from oeleo.models import DbHandler, MockDbHandler, SimpleDbHandler
 from oeleo.reporters import Reporter, ReporterBase
 
+T = TypeVar("T")
+
 log = logging.getLogger("oeleo")
+
+
+def chunkify(file_list: Iterable[T], n: int = 10) -> Iterable[List[T]]:
+    """Split a file-list into chunks of size n"""
+    file_list = iter(file_list)
+    buffer = deque()
+    while True:
+        try:
+            buffer.append(next(file_list))
+        except StopIteration:
+            break
+
+        if len(buffer) == n:
+            yield list(buffer)
+            buffer.clear()
+    if buffer:
+        yield list(buffer)
 
 
 class WorkerBase(Protocol):
@@ -293,25 +316,24 @@ class Worker(WorkerBase):
             self.file_names attribute. This attribute is typically set by the filter_local
             method.
         """
-        print("RUNNING....")
+        use_threads = False  # To be implemented - but need to fix log rotation etc. first
 
         logging.debug("<RUN>")
         self.die_if_necessary()
         self.status = ("state", "run")
-
-        local_files_found = False
+        self.status = ("local_exists", False)
 
         failed_files = []
 
-        for f in self.file_names:
-            local_files_found = True
+        for chunk in chunkify(self.file_names, n=20):
+            self.die_if_necessary()
+            if use_threads:
+                failed = self._process_chunk(chunk)
+            else:
+                failed = self._process_single_chunk(chunk)
+            failed_files.extend(failed)
 
-            # insert chunking here (but remark that what we have could be a generator or a list)
-            processed = self._process_file(f)
-            if not processed:
-                failed_files.append(f)
-
-        if not local_files_found:
+        if not self.status["local_exists"]:
             self.reporter.report(
                 "No files to handle. Did you forget to run `worker.filter_local()`?"
             )
@@ -319,7 +341,38 @@ class Worker(WorkerBase):
         log.debug("<RUN FINISHED>")
         self.status = ("state", "finished")
 
+    def _process_chunk(self, chunk):
+        failed_files = []
+        futures = []
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            for f in chunk:
+                self.status = ("local_exists", True)
+                futures.append(executor.submit(self._process_file, f))
+            for future in as_completed(futures):
+                try:
+                    failed_file = future.result()
+                    if failed_file:
+                        failed_files.append(failed_file)
+                except Exception as e:
+                    log.error(f"Error when processing file: {e}")
+        return failed_files
+
+    def _process_single_chunk(self, chunk):
+        failed_files = []
+        for f in chunk:
+            self.status = ("local_exists", True)
+            try:
+                failed_file = self._process_file(f)
+                if failed_file:
+                    failed_files.append(failed_file)
+            except Exception as e:
+                log.error(f"Error when processing file: {e}")
+                failed_files.append(f)
+        return failed_files
+
     def _process_file(self, f):
+        """Process a single file."""
+
         del self.status
         self.die_if_necessary()
         self.make_external_name(f)
@@ -329,12 +382,12 @@ class Worker(WorkerBase):
             checks = self.checker.check(f)
         except Exception as e:
             log.error(f"Error when checking {f}: {e}")
-            return False
+            return f
 
         if not self.bookkeeper.is_changed(**checks):
             log.debug(f"{f.name} == {self.external_name}")
             self.reporter.report(".", same_line=True)
-            return True
+            return
 
         log.debug(f"{f.name} -> {self.external_name}")
 
@@ -354,11 +407,11 @@ class Worker(WorkerBase):
             self.bookkeeper.update_record(self.external_name, **checks)
             self.reporter.report("o", same_line=True)
             log.debug(f"{f.name} -> {self.external_name} copied")
-            return True
-        else:
-            self.reporter.report("!", same_line=True)
-            log.debug(f"{f.name} -> {self.external_name} FAILED COPY!")
-            return False
+            return
+
+        self.reporter.report("!", same_line=True)
+        log.debug(f"{f.name} -> {self.external_name} FAILED COPY!")
+        return f
 
     def _default_external_name_generator(self, f):
         return self.external_connector.directory / f.name
@@ -386,7 +439,7 @@ class Worker(WorkerBase):
     @status.deleter
     def status(self):
         for k in self._status:
-            if k != "state":  # protected member
+            if k != "state" and k != "local_exists":  # protected members
                 self._status[k] = None
 
     @property

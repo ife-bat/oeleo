@@ -7,7 +7,7 @@ import dotenv
 
 from oeleo.connectors import register_password
 from oeleo.console import console
-from oeleo.schedulers import RichScheduler, SimpleScheduler
+from oeleo.schedulers import SimpleScheduler
 from oeleo.utils import start_logger
 from oeleo.workers import simple_worker, ssh_worker, sharepoint_worker
 
@@ -40,20 +40,7 @@ def example_with_simple_scheduler():
     s.start()
 
 
-def example_with_rich_scheduler():
-    dotenv.load_dotenv()
-    logging.setLevel(logging.CRITICAL)
-    worker = simple_worker()
-
-    s = RichScheduler(
-        worker,
-        run_interval_time=4,
-        max_run_intervals=4,
-    )
-    s.start()
-
-
-def example_with_ssh_connection_and_rich_scheduler():
+def example_with_ssh_connection_and_scheduler():
     dotenv.load_dotenv()
     logging.setLevel(logging.CRITICAL)
 
@@ -69,7 +56,7 @@ def example_with_ssh_connection_and_rich_scheduler():
         extension=filter_extension,
     )
 
-    s = RichScheduler(
+    s = SimpleScheduler(
         worker,
         run_interval_time=4,
         max_run_intervals=4,
