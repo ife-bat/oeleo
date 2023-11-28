@@ -20,6 +20,21 @@ FILE_LOG_MAX_BYTES = 1_000_000
 FILE_LOG_BACKUP_COUNT = 3
 
 
+def to_bool(value):
+    """Convert a value to a boolean"""
+    if not value:
+        return False
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        value = value.lower()
+        if value in ["true", "yes", "y", "1"]:
+            return True
+        if value in ["false", "no", "n", "0"]:
+            return False
+    raise ValueError(f"Could not convert {value} to a boolean")
+
+
 def calculate_checksum(file_path: Path) -> str:
     with open(file_path, "rb") as f:
         file_hash = hashlib.md5()
