@@ -168,3 +168,4 @@ cython_debug/
 transfer.py
 /.env
 /oeleo-bins/
+/app/output/

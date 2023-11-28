@@ -205,7 +205,6 @@ finally:
 
 Just plans, no promises given.
 
-- add `worker.add_local(something)` for updating the db (can be used instead of `worker.filter_local()`)
 - make even nicer printing and logging.
 - create CLI.
 - create an executable.
@@ -234,7 +233,7 @@ MIT
 
 ## Development
 
-- Developed using `poetry` on `python 3.10`.
+- Developed using `poetry` on `python 3.11`.
 - Must also run on `python 3.8` for Windows 7 support.
 
 ### Some useful commands
@@ -269,7 +268,7 @@ poetry publish
 ```
 
 ### Next
-- Implement app in git repository.
+- Improve logging
 
 ### Development lead
 - Jan Petter Maehlen, IFE
