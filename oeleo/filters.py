@@ -96,8 +96,12 @@ def base_filter(
 
     if base_filter_func is None:
         base_filter_func = path.glob
-
-    file_list = base_filter_func(f"*{extension}")
+    if isinstance(extension, list):
+        file_list = []
+        for ext in extension:
+            file_list.extend(list(base_filter_func(f"*{ext}")))
+    else:
+        file_list = base_filter_func(f"*{extension}")
 
     if additional_filters is not None:
         file_list = additional_filtering(file_list, additional_filters)

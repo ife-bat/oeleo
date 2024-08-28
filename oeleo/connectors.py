@@ -14,7 +14,7 @@ from shareplum.site import Version
 from shareplum.errors import ShareplumRequestError
 
 from oeleo.filters import base_filter, additional_filtering
-from oeleo.movers import simple_mover
+from oeleo.movers import simple_mover, simple_recursive_mover
 from oeleo.utils import calculate_checksum
 
 CONNECTION_RETRIES = 3
@@ -49,6 +49,7 @@ class Connector(Protocol):
 
     directory = None
     is_local = True
+    include_subdirs = False
 
     def connect(self, **kwargs) -> None:
         ...
@@ -84,7 +85,7 @@ class LocalConnector(Connector):
             )
 
         self.directory = Path(self.directory)
-        self._include_subdirs = kwargs.pop("include_subdirs", False)
+        self.include_subdirs = kwargs.pop("include_subdirs", False)
 
     def __str__(self):
         return f"LocalConnector\n{self.directory=}\n"
@@ -101,8 +102,10 @@ class LocalConnector(Connector):
     def base_filter_sub_method(
         self, glob_pattern: str = "*", **kwargs
     ) -> Iterator[Path]:  # RENAME TO enquire
-
-        if self._include_subdirs:
+        log.debug("base filter function for LocalConnector")
+        log.debug(f"{self.directory}")
+        log.debug(f"{self.include_subdirs=}")
+        if self.include_subdirs:
             base_filter_func = self.directory.rglob
         else:
             base_filter_func = self.directory.glob
@@ -120,6 +123,13 @@ class LocalConnector(Connector):
         return calculate_checksum(f)
 
     def move_func(self, path: Path, to: Path, *args, **kwargs) -> bool:
+        log.debug("\nmove_func function for LocalConnector")
+        log.debug(f"{path=}")
+        log.debug(f"{to=}")
+        log.debug(f"{self.directory}")
+        log.debug(f"{self.include_subdirs=}")
+        if self.include_subdirs:
+            return simple_recursive_mover(path, to, *args, **kwargs)
         return simple_mover(path, to, *args, **kwargs)
 
 

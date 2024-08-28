@@ -14,21 +14,19 @@ from oeleo.workers import simple_worker, ssh_worker, sharepoint_worker
 from pprint import pprint
 
 
-def trying_multi_dir():
+def simple_multi_dir():
     dotenv.load_dotenv()
-    start_logger(screen_level=logging.DEBUG, only_oeleo=True)
-    local_dir = r"C:\Users\jepe\Institutt for Energiteknikk\BAT - SOP\NABLA\SOPs-synchronization-test-MB"
-    external_dir = r"C:\Users\jepe\Institutt for Energiteknikk\IFE-Morrow Batteries - HSE\SOPs-synchronization-test-MB"
-    filter_extension = ".docx"
+    start_logger(screen_level=logging.CRITICAL, only_oeleo=True)
+    filter_extension = [".pdf", ".docx", ".doc", "pptx", "ppt", "xyz"]
 
     register_password(os.environ["OELEO_PASSWORD"])
-
+    db_name = Path(r"..\test_databases\multi_to_single6.db")
+    assert db_name.parent.is_dir()
     worker = simple_worker(
-        db_name=r"C:\scripting\oeleo\test_databases\soptest.db",
-        base_directory_from=Path(local_dir),
-        base_directory_to=Path(external_dir),
+        db_name=db_name,
         extension=filter_extension,
         include_subdirs=True,
+        external_subdirs=False,
     )
 
     worker.connect_to_db()
@@ -177,4 +175,4 @@ main = example_bare_minimum
 if __name__ == "__main__":
     # main()
     # example_with_ssh_connection_and_rich_scheduler()
-    trying_multi_dir()
+    simple_multi_dir()

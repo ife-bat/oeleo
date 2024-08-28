@@ -146,7 +146,8 @@ class Worker(WorkerBase):
     external_name_generator: Callable[[Any, Path], Path] = field(default=None)
     reconnect: bool = True
     file_names: Iterable[Path] = field(init=False, default_factory=list)
-
+    subdirs: bool = False
+    external_subdirs: bool = False
     _external_name: Union[Path, str] = field(init=False, default="")
     _status: dict = field(init=False, default_factory=dict)
 
@@ -324,7 +325,7 @@ class Worker(WorkerBase):
             False  # To be implemented - but need to fix log rotation etc. first
         )
 
-        logging.debug("<RUN>")
+        log.debug("<RUN>")
         self.die_if_necessary()
         self.status = ("state", "run")
         self.status = ("local_exists", False)
@@ -378,12 +379,10 @@ class Worker(WorkerBase):
 
     def _process_file(self, f):
         """Process a single file."""
-
         del self.status
         self.die_if_necessary()
         self.make_external_name(f)
         self.bookkeeper.register(f)
-
         try:
             checks = self.checker.check(f)
         except Exception as e:
@@ -402,7 +401,6 @@ class Worker(WorkerBase):
         if self.reconnect:
             self.external_connector.reconnect()
         success = self.external_connector.move_func(f, self.external_name)
-        print(f"MOVING FILE {f} TO {self.external_name}")
 
         if not success:
             log.debug("failed - so trying one more time after reconnecting...")
@@ -421,7 +419,15 @@ class Worker(WorkerBase):
         return f
 
     def _default_external_name_generator(self, f):
-        return self.external_connector.directory / f.name
+        log.debug(f"{self.subdirs=} {self.external_subdirs=}")
+
+        if self.subdirs and self.external_subdirs:
+            ext_name = self.external_connector.directory / f.relative_to(
+                self.local_connector.directory
+            )
+        else:
+            ext_name = self.external_connector.directory / f.name
+        return ext_name
 
     def make_external_name(self, f):
         if self.external_name_generator is not None:
@@ -478,6 +484,7 @@ def simple_worker(
     extension=None,
     reporter=None,
     include_subdirs=False,
+    external_subdirs=False,
 ):
     """Create a Worker for copying files locally.
 
@@ -488,6 +495,9 @@ def simple_worker(
         dry_run: set to True if you would like to run without updating or moving anything.
         extension: file extension to filter on (for example '.csv').
         reporter: reporter to use. If None, a default reporter will be used.
+        include_subdirs: set to True if you want to include subdirectories.
+        external_subdirs: set to True if you want to include subdirectory structure in the external directory
+          (only makes sense if include_subdirs is True).
 
     Returns:
         simple worker that can copy files between two local folder.
@@ -500,13 +510,19 @@ def simple_worker(
     db_name = db_name or os.environ["OELEO_DB_NAME"]
     base_directory_from = base_directory_from or os.environ["OELEO_BASE_DIR_FROM"]
     base_directory_to = base_directory_to or os.environ["OELEO_BASE_DIR_TO"]
-    extension = extension or os.environ["OELEO_FILTER_EXTENSION"]
+    if extension is None:
+        extension = os.environ["OELEO_FILTER_EXTENSION"]
+
     bookkeeper = SimpleDbHandler(db_name)
     checker = ChecksumChecker()
+
+    # Consider performing the setting of _include_subdirs in the worker instead
     local_connector = LocalConnector(
         directory=base_directory_from, include_subdirs=include_subdirs
     )
-    external_connector = LocalConnector(directory=base_directory_to)
+    external_connector = LocalConnector(
+        directory=base_directory_to, include_subdirs=external_subdirs
+    )
     reporter = reporter or Reporter()
     log.debug("<Simple Worker created>")
     log.debug(f"from:{base_directory_from}")
@@ -521,6 +537,8 @@ def simple_worker(
         dry_run=dry_run,
         reporter=reporter,
         reconnect=True,
+        subdirs=include_subdirs,
+        external_subdirs=external_subdirs,
     )
     return worker
 
