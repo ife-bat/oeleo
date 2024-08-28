@@ -73,7 +73,7 @@ class Connector(Protocol):
 
 
 class LocalConnector(Connector):
-    def __init__(self, directory=None):
+    def __init__(self, directory=None, **kwargs):
         # TODO: check if it is best to default to TO DIR or FROM DIR or if it should break instead
         if directory is not None:
             self.directory = directory
@@ -84,6 +84,7 @@ class LocalConnector(Connector):
             )
 
         self.directory = Path(self.directory)
+        self._include_subdirs = kwargs.pop("include_subdirs", False)
 
     def __str__(self):
         return f"LocalConnector\n{self.directory=}\n"
@@ -101,7 +102,16 @@ class LocalConnector(Connector):
         self, glob_pattern: str = "*", **kwargs
     ) -> Iterator[Path]:  # RENAME TO enquire
 
-        file_list = base_filter(self.directory, extension=glob_pattern)
+        if self._include_subdirs:
+            base_filter_func = self.directory.rglob
+        else:
+            base_filter_func = self.directory.glob
+
+        file_list = base_filter(
+            self.directory, extension=glob_pattern, base_filter_func=base_filter_func
+        )
+        logging.debug(f"Got {file_list} files")
+
         if additional_filters := kwargs.get("additional_filters"):
             file_list = additional_filtering(file_list, additional_filters)
         return file_list
@@ -248,7 +258,6 @@ class SSHConnector(Connector):
         return file_list
 
     def _list_content(self, glob_pattern="*", max_depth=1, hide=False):
-
         if self.c is None:  # make this as a decorator ("@connected")
             log.debug("Connecting ...")
             self.connect()

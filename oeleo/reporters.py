@@ -109,7 +109,6 @@ class ReporterBase(Protocol):
 
     @contextmanager
     def progress(self, *args, **kwargs):
-
         p = self.Progress(*args, **kwargs)
         try:
             yield p
@@ -191,14 +190,14 @@ class LogAndTrayReporter(ReporterBase):
             name,
             self.icon_image["oeleo"],
             menu=pystray.Menu(
-                pystray.MenuItem(
-                    text=name, action=None, default=True
-                ),
+                pystray.MenuItem(text=name, action=None, default=True),
                 pystray.MenuItem(
                     "Action",
                     pystray.Menu(
                         pystray.MenuItem(
-                            "[to be implemented]", self._on_action_clicked, checked=None,
+                            "[to be implemented]",
+                            self._on_action_clicked,
+                            checked=None,
                         ),
                     ),
                 ),
@@ -206,12 +205,16 @@ class LogAndTrayReporter(ReporterBase):
                     "Quit",
                     pystray.Menu(
                         pystray.MenuItem(
-                            "No", None, checked=None, default=True,
+                            "No",
+                            None,
+                            checked=None,
+                            default=True,
                         ),
                         pystray.MenuItem(
-                            "Yes - shut down oeleo!", self._on_quit_clicked, checked=None
+                            "Yes - shut down oeleo!",
+                            self._on_quit_clicked,
+                            checked=None,
                         ),
-
                     ),
                 ),
             ),

@@ -8,6 +8,7 @@ import oeleo
 from oeleo.console import console
 from oeleo.workers import simple_worker, ssh_worker
 from oeleo.schedulers import SimpleScheduler
+
 # from oeleo.utils import start_logger
 from oeleo.reporters import LogReporter, LogAndTrayReporter, Reporter
 
@@ -24,7 +25,7 @@ def check_connection():
     worker = ssh_worker(
         base_directory_to="/home/jepe@ad.ife.no/Temp",
         db_name=r"../test_databases/testdb_ssh.db",
-        reporter=LogAndTrayReporter()
+        reporter=LogAndTrayReporter(),
     )
     worker.connect_to_db()
     worker.external_connector.connect()
@@ -34,7 +35,6 @@ def check_connection():
 
 
 def example_bare_minimum():
-
     logging.setLevel(logging.DEBUG)
     logging.debug(f"Starting oeleo!")
     console.print(f"Starting oeleo!")
@@ -67,12 +67,15 @@ def example_with_simple_scheduler():
 
 def create_and_save_icon():
     from oeleo.reporters import create_icon
+
     image = create_icon(256, 256, "black", "white")
-    image.save('oeleo.ico', sizes=[(256, 256), (128, 128), (64, 64), (32, 32), (16, 16)])
+    image.save(
+        "oeleo.ico", sizes=[(256, 256), (128, 128), (64, 64), (32, 32), (16, 16)]
+    )
 
 
 def example_ssh_worker():
-    CHECK=False
+    CHECK = False
     FROM_YEAR = 2023
     FROM_MONTH = 3
     FROM_DAY = 1
@@ -234,5 +237,6 @@ def check_db_dumper():
 
 if __name__ == "__main__":
     from oeleo.utils import start_logger
+
     start_logger(only_oeleo=False)
     example_ssh_worker_with_simple_scheduler()

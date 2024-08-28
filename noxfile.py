@@ -10,7 +10,6 @@ dotenv.load_dotenv()
 
 @nox.session
 def pack(session):
-
     # TODO: put all deps inside one folder ("dependencies")
     # TODO: fix so that also py3.8, py3.10 and py3.11 is packed
     # TODO: fix so that packages for win32 py3.8 and win_amd64 py3.10 and py3.11 are packed
@@ -98,7 +97,6 @@ def pack(session):
             "-d",
             f"dependencies",
             external=True,
-
         )
     with session.chdir(r"oeleo-bins"):
         session.run(
@@ -112,7 +110,6 @@ def pack(session):
             "-d",
             f"dependencies",
             external=True,
-
         )
     print("--------OK-----------")
     print()

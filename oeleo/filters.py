@@ -67,13 +67,31 @@ FilterFunction = Any
 FilterTuple = Any  # tuple[str, FilterFunction] for py3.10
 
 
+def base_filter_old(
+    path: Path,
+    extension: str = None,
+    additional_filters: Iterable[FilterTuple] = None,
+    base_filter_func: Any = None,
+) -> Union[Generator[Path, None, None], Iterable[Path]]:
+    """Simple directory content filter - cannot be used for ssh"""
+
+    if base_filter_func is None:
+        base_filter_func = path.glob
+
+    file_list = base_filter_func(f"*{extension}")
+
+    if additional_filters is not None:
+        file_list = additional_filtering(file_list, additional_filters)
+
+    return file_list
+
+
 def base_filter(
     path: Path,
     extension: str = None,
     additional_filters: Iterable[FilterTuple] = None,
     base_filter_func: Any = None,
-) -> Generator[Path, None, None]:
-
+) -> Union[Generator[Path, None, None], Iterable[Path]]:
     """Simple directory content filter - cannot be used for ssh"""
 
     if base_filter_func is None:

@@ -43,7 +43,7 @@ def calculate_checksum(file_path: Path) -> str:
     return file_hash.hexdigest()
 
 
-def start_logger(logdir=None, only_oeleo=False):
+def start_logger(logdir=None, only_oeleo=False, screen_level=logging.CRITICAL):
     """Start logging to file for the oeleo package"""
 
     log = logging.getLogger()
@@ -51,7 +51,7 @@ def start_logger(logdir=None, only_oeleo=False):
 
     # create screen logger:
     screen_handler = RichHandler()
-    screen_handler.setLevel(logging.CRITICAL)
+    screen_handler.setLevel(screen_level)
     screen_handler.setFormatter(logging.Formatter(STDOUT_LOG_MESSAGE_FORMAT))
     log.addHandler(screen_handler)
 
@@ -77,6 +77,7 @@ def start_logger(logdir=None, only_oeleo=False):
     if only_oeleo:
         file_handler.addFilter(logging.Filter("oeleo"))
         file_handler.setFormatter(logging.Formatter(FILE_LOG_MESSAGE_FORMAT))
+        screen_handler.addFilter(logging.Filter("oeleo"))
     else:
         file_handler.setFormatter(logging.Formatter(FILE_LOG_MESSAGE_FORMAT_ALL))
 

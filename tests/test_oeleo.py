@@ -195,5 +195,3 @@ def test_worker_with_simple_scheduler(
 
     assert len(os.listdir(from_directory)) == 3
     assert len(os.listdir(to_directory)) == 2
-
-

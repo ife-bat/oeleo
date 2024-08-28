@@ -192,8 +192,11 @@ class Worker(WorkerBase):
         local_files = self.local_connector.base_filter_sub_method(
             self.extension, **kwargs
         )
+
         self.file_names = local_files
         log.debug(f"Filtering files to the worker")
+        log.debug(f"Files: {local_files}")
+
         return local_files
 
     def filter_external(self, **kwargs):
@@ -243,6 +246,7 @@ class Worker(WorkerBase):
             self.die_if_necessary()
             task = progress.add_task("Getting local files...", total=None)
             local_files = self.file_names or self.filter_local(**kwargs)
+
             progress.remove_task(task)
 
             # cannot be a generator since we need to do a `if in` lookup:
@@ -316,7 +320,9 @@ class Worker(WorkerBase):
             self.file_names attribute. This attribute is typically set by the filter_local
             method.
         """
-        use_threads = False  # To be implemented - but need to fix log rotation etc. first
+        use_threads = (
+            False  # To be implemented - but need to fix log rotation etc. first
+        )
 
         logging.debug("<RUN>")
         self.die_if_necessary()
@@ -396,6 +402,7 @@ class Worker(WorkerBase):
         if self.reconnect:
             self.external_connector.reconnect()
         success = self.external_connector.move_func(f, self.external_name)
+        print(f"MOVING FILE {f} TO {self.external_name}")
 
         if not success:
             log.debug("failed - so trying one more time after reconnecting...")
@@ -470,6 +477,7 @@ def simple_worker(
     dry_run=False,
     extension=None,
     reporter=None,
+    include_subdirs=False,
 ):
     """Create a Worker for copying files locally.
 
@@ -495,7 +503,9 @@ def simple_worker(
     extension = extension or os.environ["OELEO_FILTER_EXTENSION"]
     bookkeeper = SimpleDbHandler(db_name)
     checker = ChecksumChecker()
-    local_connector = LocalConnector(directory=base_directory_from)
+    local_connector = LocalConnector(
+        directory=base_directory_from, include_subdirs=include_subdirs
+    )
     external_connector = LocalConnector(directory=base_directory_to)
     reporter = reporter or Reporter()
     log.debug("<Simple Worker created>")

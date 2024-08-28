@@ -11,10 +11,36 @@ from oeleo.schedulers import SimpleScheduler
 from oeleo.utils import start_logger
 from oeleo.workers import simple_worker, ssh_worker, sharepoint_worker
 
+from pprint import pprint
+
+
+def trying_multi_dir():
+    dotenv.load_dotenv()
+    start_logger(screen_level=logging.DEBUG, only_oeleo=True)
+    local_dir = r"C:\Users\jepe\Institutt for Energiteknikk\BAT - SOP\NABLA\SOPs-synchronization-test-MB"
+    external_dir = r"C:\Users\jepe\Institutt for Energiteknikk\IFE-Morrow Batteries - HSE\SOPs-synchronization-test-MB"
+    filter_extension = ".docx"
+
+    register_password(os.environ["OELEO_PASSWORD"])
+
+    worker = simple_worker(
+        db_name=r"C:\scripting\oeleo\test_databases\soptest.db",
+        base_directory_from=Path(local_dir),
+        base_directory_to=Path(external_dir),
+        extension=filter_extension,
+        include_subdirs=True,
+    )
+
+    worker.connect_to_db()
+
+    worker.check(update_db=True)
+    worker.filter_local()
+    worker.run()
+
 
 def example_bare_minimum():
+    start_logger(screen_level=logging.DEBUG, only_oeleo=True)
     dotenv.load_dotenv()
-    logging.setLevel(logging.DEBUG)
     logging.debug(f"Starting oeleo!")
     console.print(f"Starting oeleo!")
 
@@ -28,7 +54,7 @@ def example_bare_minimum():
 
 def example_with_simple_scheduler():
     dotenv.load_dotenv()
-    logging.setLevel(logging.DEBUG)
+    start_logger(screen_level=logging.DEBUG, only_oeleo=True)
     logging.debug(f"Starting oeleo!")
     worker = simple_worker()
 
@@ -68,7 +94,7 @@ def example_with_ssh_connection_and_scheduler():
 def example_check_with_ssh_connection():
     print(" example_check_with_ssh_connection ".center(80, "-"))
     dotenv.load_dotenv()
-    logging.setLevel(logging.DEBUG)
+    start_logger(screen_level=logging.DEBUG, only_oeleo=True)
     logging.info(f"Starting oeleo!")
 
     external_dir = "/home/jepe@ad.ife.no/Temp"
@@ -94,7 +120,7 @@ def example_check_with_ssh_connection():
 def example_check_first_then_run():
     print(" example_check_first_then_run ".center(80, "-"))
     dotenv.load_dotenv()
-    logging.setLevel(logging.DEBUG)
+    start_logger(screen_level=logging.DEBUG, only_oeleo=True)
     logging.info(f"Starting oeleo!")
 
     not_before = datetime(year=2021, month=3, day=1, hour=1, minute=0, second=0)
@@ -124,7 +150,7 @@ def example_with_sharepoint_connector():
     print(" example_check_first_then_run ".center(80, "-"))
     dotenv.load_dotenv()
     start_logger()
-    logging.setLevel(logging.DEBUG)
+    start_logger(screen_level=logging.DEBUG, only_oeleo=True)
     logging.info(f"Starting oeleo!")
 
     worker = sharepoint_worker()
@@ -137,7 +163,7 @@ def example_with_sharepoint_connector():
 def example_with_ssh_and_env():
     print(" Single run SSH with env parameters ".center(80, "-"))
     dotenv.load_dotenv()
-    logging.setLevel(logging.DEBUG)
+    start_logger(screen_level=logging.DEBUG, only_oeleo=True)
     logging.info(f"Starting oeleo!")
     worker = ssh_worker()
     worker.connect_to_db()
@@ -149,5 +175,6 @@ def example_with_ssh_and_env():
 main = example_bare_minimum
 
 if __name__ == "__main__":
-    main()
+    # main()
     # example_with_ssh_connection_and_rich_scheduler()
+    trying_multi_dir()
