@@ -552,6 +552,8 @@ def ssh_worker(
     dry_run: bool = False,
     reporter: ReporterBase = None,
     is_posix: bool = True,
+    include_subdirs: bool = False,
+    external_subdirs: bool = False,
 ):
     """Create a Worker with SSHConnector.
 
@@ -564,6 +566,8 @@ def ssh_worker(
         use_password: set to True if you want to connect using a password instead of key-pair.
         is_posix: make external path (base_directory_to) a PurePosixPath.
         reporter: reporter to use. If None, a default reporter will be used.
+        include_subdirs: include subdirectories when filtering local files.
+        external_subdirs: include subdirectories when filtering remote files.
 
     Returns:
         worker with SSHConnector attached to it.
@@ -574,9 +578,15 @@ def ssh_worker(
     base_directory_to = base_directory_to or os.environ["OELEO_BASE_DIR_TO"]
     extension = extension or os.environ["OELEO_FILTER_EXTENSION"]
 
-    local_connector = LocalConnector(directory=base_directory_from)
+    local_connector = LocalConnector(
+        directory=base_directory_from,
+        include_subdirs=include_subdirs,
+    )
     external_connector = SSHConnector(
-        directory=base_directory_to, use_password=use_password, is_posix=is_posix
+        directory=base_directory_to,
+        use_password=use_password,
+        is_posix=is_posix,
+        include_subdirs=external_subdirs,
     )
 
     bookkeeper = SimpleDbHandler(db_name)
@@ -596,6 +606,8 @@ def ssh_worker(
         dry_run=dry_run,
         reporter=reporter,
         reconnect=True,
+        subdirs=include_subdirs,
+        external_subdirs=external_subdirs,
     )
     return worker
 

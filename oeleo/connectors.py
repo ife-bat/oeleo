@@ -3,6 +3,7 @@ import hashlib
 import logging
 import os
 import sys
+import time
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Protocol, Iterator, List, Union
 
@@ -143,6 +144,7 @@ class SSHConnector(Connector):
         directory=None,
         is_posix=True,
         use_password=False,
+        include_subdirs=False,
     ):
         self.session_password = os.environ["OELEO_PASSWORD"]
         self.username = username or os.environ["OELEO_USERNAME"]
@@ -158,6 +160,7 @@ class SSHConnector(Connector):
 
         self.is_posix = is_posix
         self.use_password = use_password
+        self.include_subdirs = include_subdirs
         self.c = None
         self._validate()
 
@@ -248,7 +251,12 @@ class SSHConnector(Connector):
             log.debug("Connecting ...")
             self.connect()
 
-        file_list = self._list_content(f"*{glob_pattern}", hide=True)
+        max_depth = None if self.include_subdirs else 1
+        file_list = self._list_content(
+            f"*{glob_pattern}",
+            hide=True,
+            max_depth=max_depth,
+        )
 
         # experimental feature:
         if additional_filters := kwargs.get("additional_filters"):
@@ -272,11 +280,14 @@ class SSHConnector(Connector):
             log.debug("Connecting ...")
             self.connect()
 
-        cmd = f"find {self.directory} -maxdepth {max_depth} -name '{glob_pattern}'"
+        if max_depth is None:
+            cmd = f"find {self.directory} -name '{glob_pattern}'"
+        else:
+            cmd = f"find {self.directory} -maxdepth {max_depth} -name '{glob_pattern}'"
         log.debug(cmd)
         file_list = []
         try:
-            result = self.c.run(cmd, hide=hide)
+            result = self.c.run(cmd, hide=hide, in_stream=False)
             if not result.ok:
                 log.debug("Encountered an error from fabric")
             else:

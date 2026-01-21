@@ -1,6 +1,6 @@
 [project]
 name = "oeleo"
-version = "0.5.3"
+version = "0.6.0"
 description = "A one-eyed tool to copy files with."
 authors = [{ name = "jepegit", email = "jepe@ife.no" }]
 license = { text = "MIT" }
@@ -44,7 +44,7 @@ minversion = "6.0"
 addopts = "-rA"
 log_cli = true
 log_cli_level = "DEBUG"
-markers = ["slow"]
+markers = ["slow", "ssh"]
 
 [dependency-groups]
 dev = [
