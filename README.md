@@ -231,27 +231,48 @@ Just plans, no promises given.
 ## Licence
 MIT
 
+## Hints
+You can silence the log output from paramiko (and Fabric/Invoke) like this:
+
+```python
+import logging
+
+for name in ("paramiko", "fabric", "invoke"):
+    logging.getLogger(name).setLevel(logging.WARNING)
+```
+
 ## Development
 
-- Developed using `poetry` on `python 3.11`.
-- Must also run on `python 3.8` for Windows 7 support.
+- Developed using `uv` on `python 3.11`.
+- For version `0.6` and newer, Python `3.8` support is no longer required.
 
 ### Some useful commands
 
 #### Update version
 
 ```bash
-# update version e.g. from 0.3.1 to 0.3.2:
-poetry version patch
+# update version in pyproject.toml, e.g. from 0.5.3 to 0.6.0
 ```
-Then edit `__init__.py`:
-```python
-__version__ = "0.3.2"
+## Testing
+
+Unit tests:
+
+```bash
+uv run pytest
 ```
+
+SSH integration tests (requires a local SSH server):
+
+```bash
+uv run pytest -m ssh
+```
+
+See `tests/README.md` for Docker setup, environment variables, and helper scripts.
+
 #### Build
 
 ```bash
-poetry build
+python -m build
 ```
 
 #### Publish
@@ -259,12 +280,7 @@ poetry build
 If you are using 2-factor authentication, you need to create a token on pypi.org and run:
 
 ```bash
-poetry config pypi-token.pypi <token>
-```
-Then run:
-
-```bash
-poetry publish
+python -m twine upload -u __token__ -p <token> dist/*
 ```
 
 ### Next
