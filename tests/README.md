@@ -57,6 +57,13 @@ source ../set-ssh-env.sh
 uv run pytest -m ssh
 ```
 
+From the repo root, you can also do:
+
+```bash
+source ./set-ssh-env.sh
+uv run pytest -m ssh
+```
+
 3) Run only SSH tests:
 
 ```bash

@@ -1,0 +1,73 @@
+name: Tests
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run unit tests (exclude ssh)
+        run: uv run pytest -m "not ssh"
+
+  ssh:
+    runs-on: ubuntu-latest
+    services:
+      ssh:
+        image: linuxserver/openssh-server:latest
+        ports:
+          - 2222:2222
+        env:
+          PUID: 1000
+          PGID: 1000
+          TZ: UTC
+          USER_NAME: oeleo
+          USER_PASSWORD: oeleo
+          PASSWORD_ACCESS: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Wait for SSH service
+        run: |
+          for i in {1..30}; do
+            nc -z 127.0.0.1 2222 && exit 0
+            sleep 1
+          done
+          echo "SSH service did not become ready" >&2
+          exit 1
+
+      - name: Run SSH tests
+        run: uv run pytest -m ssh
+        env:
+          OELEO_SSH_TESTS: "1"
+          OELEO_USERNAME: oeleo
+          OELEO_EXTERNAL_HOST: localhost:2222
+          OELEO_PASSWORD: oeleo
