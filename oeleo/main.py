@@ -39,8 +39,8 @@ def simple_multi_dir():
 def example_bare_minimum():
     start_logger(screen_level=logging.DEBUG, only_oeleo=True)
     dotenv.load_dotenv()
-    logging.debug(f"Starting oeleo!")
-    console.print(f"Starting oeleo!")
+    logging.debug("Starting oeleo!")
+    console.print("Starting oeleo!")
 
     worker = simple_worker()
     worker.connect_to_db()
@@ -53,7 +53,7 @@ def example_bare_minimum():
 def example_with_simple_scheduler():
     dotenv.load_dotenv()
     start_logger(screen_level=logging.DEBUG, only_oeleo=True)
-    logging.debug(f"Starting oeleo!")
+    logging.debug("Starting oeleo!")
     worker = simple_worker()
 
     s = SimpleScheduler(
@@ -93,7 +93,7 @@ def example_check_with_ssh_connection():
     print(" example_check_with_ssh_connection ".center(80, "-"))
     dotenv.load_dotenv()
     start_logger(screen_level=logging.DEBUG, only_oeleo=True)
-    logging.info(f"Starting oeleo!")
+    logging.info("Starting oeleo!")
 
     external_dir = "/home/jepe@ad.ife.no/Temp"
     filter_extension = ".res"
@@ -119,7 +119,7 @@ def example_check_first_then_run():
     print(" example_check_first_then_run ".center(80, "-"))
     dotenv.load_dotenv()
     start_logger(screen_level=logging.DEBUG, only_oeleo=True)
-    logging.info(f"Starting oeleo!")
+    logging.info("Starting oeleo!")
 
     not_before = datetime(year=2021, month=3, day=1, hour=1, minute=0, second=0)
     not_after = datetime(year=2022, month=8, day=30, hour=1, minute=0, second=0)
@@ -149,7 +149,7 @@ def example_with_sharepoint_connector():
     dotenv.load_dotenv()
     start_logger()
     start_logger(screen_level=logging.DEBUG, only_oeleo=True)
-    logging.info(f"Starting oeleo!")
+    logging.info("Starting oeleo!")
 
     worker = sharepoint_worker()
     worker.connect_to_db()
@@ -162,7 +162,7 @@ def example_with_ssh_and_env():
     print(" Single run SSH with env parameters ".center(80, "-"))
     dotenv.load_dotenv()
     start_logger(screen_level=logging.DEBUG, only_oeleo=True)
-    logging.info(f"Starting oeleo!")
+    logging.info("Starting oeleo!")
     worker = ssh_worker()
     worker.connect_to_db()
     worker.check(update_db=True)

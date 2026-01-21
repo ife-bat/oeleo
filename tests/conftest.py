@@ -1,5 +1,6 @@
 import pytest
 import logging
+from pathlib import Path
 
 import dotenv
 
@@ -8,6 +9,7 @@ from oeleo.workers import simple_worker
 
 start_logger()
 log = logging.getLogger("test-oeleo")
+TESTENV_PATH = Path(__file__).with_name(".testenv").resolve()
 
 
 def pytest_configure():
@@ -18,7 +20,7 @@ def pytest_configure():
 def local_tmp_path(tmp_path):
     """create tmp dir with two .xyz files and one .txt file"""
     log.setLevel(logging.DEBUG)
-    dotenv.load_dotenv(".testenv")
+    dotenv.load_dotenv(TESTENV_PATH)
 
     content = "some random strings"
 

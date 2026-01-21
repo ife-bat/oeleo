@@ -1,7 +1,6 @@
 import logging
 import os
 from datetime import datetime
-from pathlib import Path
 
 import dotenv
 import oeleo
@@ -10,7 +9,7 @@ from oeleo.workers import simple_worker, ssh_worker
 from oeleo.schedulers import SimpleScheduler
 
 # from oeleo.utils import start_logger
-from oeleo.reporters import LogReporter, LogAndTrayReporter, Reporter
+from oeleo.reporters import LogAndTrayReporter, Reporter
 
 dotenv.load_dotenv()
 for env_var in os.environ:
@@ -36,8 +35,8 @@ def check_connection():
 
 def example_bare_minimum():
     logging.setLevel(logging.DEBUG)
-    logging.debug(f"Starting oeleo!")
-    console.print(f"Starting oeleo!")
+    logging.debug("Starting oeleo!")
+    console.print("Starting oeleo!")
 
     worker = simple_worker()
     worker.connect_to_db()
@@ -48,7 +47,7 @@ def example_bare_minimum():
 
 
 def example_with_simple_scheduler():
-    logging.info(f"<Starting oeleo!>")
+    logging.info("<Starting oeleo!>")
     worker = simple_worker()
     logging.debug(f"{worker.bookkeeper=}")
     logging.debug(f"{worker.bookkeeper.db_name=}")
@@ -98,7 +97,7 @@ def example_ssh_worker():
     reporter = LogAndTrayReporter()
     print("reporter created")
 
-    logging.debug(f"Starting oeleo!")
+    logging.debug("Starting oeleo!")
     worker = ssh_worker(
         base_directory_to="/home/jepe@ad.ife.no/Temp",
         db_name=r"../test_databases/testdb_ssh.db",
@@ -118,7 +117,7 @@ def example_ssh_worker():
 
 
 def example_ssh_worker_with_simple_scheduler():
-    HOURS_SLEEP = 0.5
+    HOURS_SLEEP = 0.5  # noqa: F841
     FROM_YEAR = 2023
     FROM_MONTH = 3
     FROM_DAY = 1
@@ -136,11 +135,10 @@ def example_ssh_worker_with_simple_scheduler():
             ),
         ),
     ]
-    run_interval_time = 3600 * HOURS_SLEEP
 
     reporter = Reporter()
 
-    logging.debug(f"Starting oeleo!")
+    logging.debug("Starting oeleo!")
     worker = ssh_worker(
         base_directory_to="/home/jepe@ad.ife.no/Temp",
         db_name=r"../test_databases/testdb_ssh.db",
@@ -200,7 +198,7 @@ def inspect_db(worker, table="filelist"):
 
     print(f"selected table: {table}")
     columns = worker.bookkeeper.db_instance.obj.get_columns(table)
-    print(f"columns:")
+    print("columns:")
     for col in columns:
         print(f"  - {col.name}")
     n_records = len(worker.bookkeeper.db_model)
@@ -220,8 +218,8 @@ def check_01():
     from oeleo.utils import dump_worker_db_table
 
     logging.setLevel(logging.DEBUG)
-    logging.debug(f"Starting oeleo!")
-    console.print(f"Starting oeleo!")
+    logging.debug("Starting oeleo!")
+    console.print("Starting oeleo!")
     dotenv.load_dotenv()
     worker = simple_worker()
     worker.connect_to_db()

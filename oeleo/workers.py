@@ -195,7 +195,7 @@ class Worker(WorkerBase):
         )
 
         self.file_names = local_files
-        log.debug(f"Filtering files to the worker")
+        log.debug("Filtering files to the worker")
         log.debug(f"Files: {local_files}")
 
         return local_files
@@ -206,7 +206,7 @@ class Worker(WorkerBase):
         external_files = self.external_connector.base_filter_sub_method(
             self.extension, **kwargs
         )
-        log.debug(f"Filtering external files to the worker")
+        log.debug("Filtering external files to the worker")
         return external_files
 
     def _check_local(self, f: Path, sleep_time=1, max_check_counter=300):

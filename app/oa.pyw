@@ -1,5 +1,5 @@
 from datetime import datetime
-import time
+import time  # noqa: F401
 import os
 import logging
 
@@ -20,7 +20,7 @@ dotenv.load_dotenv()
 start_logger(only_oeleo=False)
 log = logging.getLogger("oeleo")
 
-log.debug(f"*A2O* starting oeleo!")
+log.debug("*A2O* starting oeleo!")
 log.debug(f"{oeleo.__file__=}")
 log.debug(f"{oeleo.__version__=}")
 
@@ -59,7 +59,7 @@ if startswith:
     my_filters.append(("startswith", startswith))
 
 
-log.debug(f"*A2O* settings")
+log.debug("*A2O* settings")
 log.debug(f"{single_run=}")
 log.debug(f"{add_check=}")
 log.debug(f"{startswith=}")
@@ -77,9 +77,9 @@ def ssh_connection():
     else:
         reporter = LogReporter()
 
-    log.debug(f"*A2O* creating worker")
+    log.debug("*A2O* creating worker")
     worker = ssh_worker(reporter=reporter)
-    log.debug(f"*A2O* creating scheduler")
+    log.debug("*A2O* creating scheduler")
     s = SimpleScheduler(
         worker,
         run_interval_time=run_interval_time,
@@ -87,7 +87,7 @@ def ssh_connection():
         additional_filters=my_filters,
         add_check=add_check,
     )
-    log.debug(f"*A2O* starting scheduler")
+    log.debug("*A2O* starting scheduler")
     s.start()
 
 
@@ -97,16 +97,16 @@ def single_ssh_connection():
     else:
         reporter = LogReporter()
 
-    log.debug(f"*A2O* creating worker")
+    log.debug("*A2O* creating worker")
     worker = ssh_worker(reporter=reporter)
     log.debug(f"*A2O* connecting to db ({worker.db_path})")
     worker.connect_to_db()
     if add_check:
-        log.debug(f"*A2O* checking")
+        log.debug("*A2O* checking")
         worker.check(update_db=True, additional_filters=my_filters)
-    log.debug(f"*A2O* filtering local")
+    log.debug("*A2O* filtering local")
     worker.filter_local(additional_filters=my_filters)
-    log.debug(f"*A2O* running")
+    log.debug("*A2O* running")
     worker.run()
 
 

@@ -1,12 +1,11 @@
-[tool.poetry]
+[project]
 name = "oeleo"
 version = "0.5.3"
 description = "A one-eyed tool to copy files with."
-authors = ["jepegit <jepe@ife.no>"]
-license = "MIT"
+authors = [{ name = "jepegit", email = "jepe@ife.no" }]
+license = { text = "MIT" }
 readme = "README.md"
-homepage = "https://github.com/ife-bat/oeleo"
-repository = "https://github.com/ife-bat/oeleo"
+requires-python = ">=3.8,<3.13"
 keywords = ["ssh", "db"]
 classifiers = [
     "Environment :: Console",
@@ -19,38 +18,39 @@ classifiers = [
     "Topic :: System :: Networking",
     "Topic :: Utilities",
 ]
-include = [
-    "LICENSE.md",
+dependencies = [
+    "peewee",
+    "python-dotenv",
+    "rich",
+    "Fabric",
+    "SharePlum",
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.8,<3.13"
-peewee = "^3.15.0"
-python-dotenv = "^0.20.0"
-rich = "^12.4.4"
-Fabric = "^2.7.0"
-SharePlum = "^0.5.1"
+[project.urls]
+Homepage = "https://github.com/ife-bat/oeleo"
+Repository = "https://github.com/ife-bat/oeleo"
 
-
-[tool.poetry.group.all.dependencies]
-pystray = "^0.19.5"
-
-[tool.poetry.group.dev.dependencies]
-auto-py-to-exe = "^2.42.0"
-black = "^22.6.0"
-isort = "^5.10.1"
-pytest = "^7.1.2"
-nox = "^2023.4.22"
+[project.optional-dependencies]
+all = [
+    "pystray>=0.19.5,<0.20.0",
+]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling>=1.18.0"]
+build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-rA"
 log_cli = true
 log_cli_level = "DEBUG"
-markers = [
-    "slow",
+markers = ["slow"]
+
+[dependency-groups]
+dev = [
+    "auto-py-to-exe>=2.42.0,<3.0.0",
+    "black>=22.6.0,<23.0.0",
+    "isort>=5.10.1,<6.0.0",
+    "pytest>=7.1.2,<8.0.0",
+    "nox>=2023.4.22,<2024.0.0",
 ]

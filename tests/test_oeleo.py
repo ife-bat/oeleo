@@ -1,16 +1,18 @@
 import logging
 import os
+from pathlib import Path
 import dotenv
 import pytest
 
-import utils
-from connectors import LocalConnector
-from movers import simple_mover, connected_mover
+from oeleo import utils
+from oeleo.connectors import LocalConnector
+from oeleo.movers import simple_mover, connected_mover
 from oeleo.utils import start_logger
 from oeleo.schedulers import SimpleScheduler
 
 start_logger()
 log = logging.getLogger("test-oeleo")
+TESTENV_PATH = Path(__file__).with_name(".testenv").resolve()
 
 
 def test_import():
@@ -20,7 +22,7 @@ def test_import():
 
 
 def test_dotenv():
-    dotenv.load_dotenv(".testenv")
+    dotenv.load_dotenv(TESTENV_PATH)
     assert "OELEO_BASE_DIR_FROM" in os.environ.keys()
 
 

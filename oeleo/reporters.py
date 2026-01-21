@@ -294,7 +294,7 @@ class Reporter(ReporterBase):
         try:
             yield p
         except Exception as e:
-            print(f"*")
+            print("*")
         finally:
             p.__exit__(None, None, None)
 

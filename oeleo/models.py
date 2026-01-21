@@ -56,7 +56,7 @@ class MockDbHandler(DbHandler):
         print(f"REGISTERING {f}")
 
     def is_changed(self, **checks) -> bool:
-        print(f"CHECKING IF IT HAS CHANGED")
+        print("CHECKING IF IT HAS CHANGED")
         print(f"checks: {checks}")
         _is_changed = random.choice([True, False])
         print(f"is-changed: {_is_changed}")
@@ -135,6 +135,6 @@ class SimpleDbHandler(DbHandler):
     @code.setter
     def code(self, code):
         if code not in (0, 1, 2):
-            raise ValueError(f"code is not valid")
+            raise ValueError("code is not valid")
         self.record.code = code
         self.record.save()

@@ -65,8 +65,8 @@ def pack(session):
             "--no-deps",
             "-r",
             "oeleo-requirements-py38.txt",
-            "-d",
-            f"dependencies",
+        "-d",
+        "dependencies",
             external=True,
         )
 
@@ -95,7 +95,7 @@ def pack(session):
             "-r",
             "oeleo-requirements.txt",
             "-d",
-            f"dependencies",
+            "dependencies",
             external=True,
         )
     with session.chdir(r"oeleo-bins"):
@@ -108,7 +108,7 @@ def pack(session):
             "-r",
             "oeleo-requirements-py38.txt",
             "-d",
-            f"dependencies",
+            "dependencies",
             external=True,
         )
     print("--------OK-----------")
@@ -122,7 +122,7 @@ def pack(session):
             session.run(
                 "scp",
                 "-r",
-                f"dependencies",
+                "dependencies",
                 f"{server_name}:{server_folder}",
                 external=True,
             )
@@ -142,8 +142,8 @@ def pack(session):
             print()
         else:
             print("To upload to server, use:")
-            print(f"# if in oeleo-bins folder and uploading win32 to server <server>")
-            print(f"> scp -r dependencies <server>:/srv/share/oeleo-bin")
+            print("# if in oeleo-bins folder and uploading win32 to server <server>")
+            print("> scp -r dependencies <server>:/srv/share/oeleo-bin")
             print()
     print("To install on win32, use:")
     print(f"pip install {win_32_file} --no-index --find-links dependencies")
