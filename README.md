@@ -207,7 +207,7 @@ Just plans, no promises given.
 
 - make even nicer printing and logging.
 - create CLI.
-- create an executable.
+- create an executable (partly done -- see the app folder).
 - create a web-app.
 - create a GUI (not likely).
 
