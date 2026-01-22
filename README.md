@@ -100,7 +100,7 @@ OELEO_LOG_DIR=C:\oeleo\logs
 # OELEO_DB_PORT=<db port>
 # OELEO_DB_USER=<db user>
 # OELEO_DB_PASSWORD=<db user>
-# OELEO_EXTERNAL_HOST<ssh hostname>
+# OELEO_EXTERNAL_HOST=<ssh hostname>
 # OELEO_USERNAME=<ssh username>
 # OELEO_PASSWORD=<ssh password>
 # OELEO_KEY_FILENAME=<ssh key-pair filename>
@@ -111,6 +111,39 @@ OELEO_LOG_DIR=C:\oeleo\logs
 # OELEO_SHAREPOINT_SITENAME=<name of sharepoint site>
 # OELEO_SHAREPOINT_DOC_LIBRARY=<name of sharepoint library>
 ```
+
+#### Environment variables reference
+
+Core transfer settings:
+- `OELEO_BASE_DIR_FROM`: local source directory.
+- `OELEO_BASE_DIR_TO`: destination directory (local or remote, depending on connector).
+- `OELEO_FILTER_EXTENSION`: file extension filter (include the dot, e.g. `.csv`).
+- `OELEO_DB_NAME`: sqlite database filename used for bookkeeping.
+- `OELEO_LOG_DIR`: directory for log files; defaults to the current working directory.
+
+SSH connector settings:
+- `OELEO_EXTERNAL_HOST`: SSH host (optionally with port, e.g. `host:2222`).
+- `OELEO_USERNAME`: SSH username.
+- `OELEO_PASSWORD`: SSH password (used when connecting with password).
+- `OELEO_KEY_FILENAME`: SSH private key path (used when connecting with key-pair).
+
+SharePoint connector settings:
+- `OELEO_SHAREPOINT_URL`: SharePoint base URL (e.g. `https://yourcompany.sharepoint.com`).
+- `OELEO_SHAREPOINT_SITENAME`: SharePoint site name.
+- `OELEO_SHAREPOINT_DOC_LIBRARY`: SharePoint document library name.
+- `OELEO_SHAREPOINT_USERNAME`: SharePoint username; falls back to `OELEO_USERNAME` if unset.
+
+App settings (`app/oa.pyw`):
+- `OA_SINGLE_RUN`: run once and exit when `true`.
+- `OA_ADD_CHECK`: run the check step before copying when `true`.
+- `OA_MAX_RUN_INTERVALS`: number of scheduler runs before stopping.
+- `OA_HOURS_SLEEP`: hours to sleep between runs.
+- `OA_FROM_YEAR`: filter out files older than this year.
+- `OA_FROM_MONTH`: filter out files older than this month.
+- `OA_FROM_DAY`: filter out files older than this day.
+- `OA_STARTS_WITH`: only include files starting with any of these prefixes; delimit with `;`.
+- `OA_INCLUDE_SUBDIRS`: include subdirectories in local search when `true`.
+- `OA_EXTERNAL_SUBDIRS`: include subdirectories on the destination when `true`.
 
 #### Database
 

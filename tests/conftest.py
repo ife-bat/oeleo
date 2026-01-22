@@ -1,3 +1,4 @@
+import datetime
 import pytest
 import logging
 from pathlib import Path
@@ -37,6 +38,23 @@ def local_tmp_path(tmp_path):
     p3.write_text(content)
 
     return d1
+
+
+@pytest.fixture
+def local_tmp_path_with_subdirs(local_tmp_path):
+    content = f"some random strings {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+
+    d1 = local_tmp_path / "subdir1"
+    d1.mkdir()
+    (d1 / "filename1.xyz").write_text(content)
+    (d1 / "filename1.txt").write_text(content)
+
+    d2 = local_tmp_path / "subdir2"
+    d2.mkdir()
+    (d2 / "filename2.xyz").write_text(content)
+    (d2 / "filename2.txt").write_text(content)
+
+    return local_tmp_path
 
 
 @pytest.fixture

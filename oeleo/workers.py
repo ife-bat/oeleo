@@ -218,6 +218,9 @@ class Worker(WorkerBase):
                     connector=self.local_connector,
                 )
                 break
+            except PermissionError as e:
+                log.error(f"Permission denied when checking {f}: {e}")
+                return None
             except Exception as e:
                 log.error(f"Error when checking {f}: {e}")
                 time.sleep(sleep_time)
@@ -264,6 +267,8 @@ class Worker(WorkerBase):
                 self.number_of_local_files += 1
                 self.make_external_name(f)
                 local_vals = self._check_local(f)
+                if local_vals is None:
+                    continue
 
                 if self.external_name in external_files:
                     log.info(f"{f.name} -> {self.external_name}")

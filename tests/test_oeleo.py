@@ -9,6 +9,7 @@ from oeleo.connectors import LocalConnector
 from oeleo.movers import simple_mover, connected_mover
 from oeleo.utils import start_logger
 from oeleo.schedulers import SimpleScheduler
+from oeleo.workers import simple_worker
 
 start_logger()
 log = logging.getLogger("test-oeleo")
@@ -197,3 +198,29 @@ def test_worker_with_simple_scheduler(
 
     assert len(os.listdir(from_directory)) == 3
     assert len(os.listdir(to_directory)) == 2
+
+
+def test_worker_with_simple_scheduler_with_subdirs(
+    local_tmp_path_with_subdirs,
+    external_tmp_path,
+    db_tmp_path,
+):
+    worker = simple_worker(
+        db_name=db_tmp_path,
+        base_directory_from=local_tmp_path_with_subdirs,
+        base_directory_to=external_tmp_path,
+        include_subdirs=True,
+        external_subdirs=True,
+    )
+    from_directory = worker.local_connector.directory
+    to_directory = worker.external_connector.directory
+
+    s = SimpleScheduler(
+        worker,
+        run_interval_time=0.1,
+        max_run_intervals=2,
+    )
+    s.start()
+
+    assert len(list(Path(from_directory).rglob("*.xyz"))) == 4
+    assert len(list(Path(to_directory).rglob("*.xyz"))) == 4
