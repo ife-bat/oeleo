@@ -169,3 +169,4 @@ transfer.py
 /.env
 /oeleo-bins/
 /app/output/
+/output/*

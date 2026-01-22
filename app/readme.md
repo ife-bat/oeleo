@@ -4,12 +4,47 @@ This app example uses the `oeleo` `ssh_worker` (see the script `oa.py` for detai
 
 ## Build app with pyinstaller
 
+### Create a win desktop app for Oeleo
+
+The app requires `pystray` so you have to make sure it is available in your environment:
+
+```bash
+uv sync --all-extras
+
+```
+
+
+Easiest way to build an app is to use the auto-py-to-exe tool.
+
+```bash
+uv add --dev auto-py-to-exe
+
+```
+
+### run the tool (dont use py3.10.0 - it has a bug)
+```bash
+uv run auto-py-to-exe
+
+```
+
+There should also be a config.json file in the app folder. This is the config file for the auto-py-to-exe tool.
+You can load it in the through the Settings menu in the tool.
+
 ### Installing using pyinstaller
 
 You need the full path to the oeleo.ico file. This is located in the app directory.
+You can run pyinstaller through auto-py-to-exe after all the settings are inserted (for example by loading config.json).
+
+The pyinstaller command should be something like this:
 
 ```bash
-pyinstaller --noconfirm --onefile --windowed --icon "full path to oeleo.ico" --name "start" --hidden-import "pystray._win32 oa.pyw"  
+pyinstaller --noconfirm --onefile --windowed --icon "<full path to oeleo.ico>" --name "<name-of-the-app>" --hidden-import "pystray._win32 oa.pyw"  "<full path to the script oa.pyw>"
+```
+
+Here is how it looks on my computer:
+
+```bash
+pyinstaller --noconfirm --onefile --windowed --icon "C:\scripting\oeleo\app\oeleo.ico" --name "oeleo_runner" --hidden-import "pystray._win32"  "C:\scripting\oeleo\app\oa.pyw"
 ```
 
 ### Checking installation

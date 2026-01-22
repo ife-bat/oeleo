@@ -46,6 +46,11 @@ from_year = int(from_year)
 from_month = int(from_month)
 from_day = int(from_day)
 
+include_subdirs = os.environ.get("OA_INCLUDE_SUBDIRS", False)
+include_subdirs = to_bool(include_subdirs)
+external_subdirs = os.environ.get("OA_EXTERNAL_SUBDIRS", False)
+external_subdirs = to_bool(external_subdirs)
+
 my_filters = [
     (
         "not_before",
@@ -78,7 +83,11 @@ def ssh_connection():
         reporter = LogReporter()
 
     log.debug("*A2O* creating worker")
-    worker = ssh_worker(reporter=reporter)
+    worker = ssh_worker(
+        reporter=reporter,
+        include_subdirs=True,
+        external_subdirs=True,
+    )
     log.debug("*A2O* creating scheduler")
     s = SimpleScheduler(
         worker,

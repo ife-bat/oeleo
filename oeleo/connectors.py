@@ -170,6 +170,8 @@ class SSHConnector(Connector):
         text += f"{self.host=}\n"
         text += f"{self.directory=}\n"
         text += f"{self.is_posix=}\n"
+        text += f"{self.use_password=}\n"
+        text += f"{self.include_subdirs=}\n"
         text += f"{self.c=}\n"
 
         return text
@@ -261,7 +263,7 @@ class SSHConnector(Connector):
         # experimental feature:
         if additional_filters := kwargs.get("additional_filters"):
             logging.debug(
-                "Got additional_filters for SSHConnector. This is not implemented yet!"
+                f"Got additional_filters for SSHConnector. This is not implemented yet! {additional_filters}"
             )
 
             # file_list = additional_filtering(file_list, additional_filters)
