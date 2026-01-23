@@ -258,7 +258,8 @@ Just plans, no promises given.
 - [x] Code understandable for others
 - [x] Looking good
 - [x] Fairly easy to use
-- [ ] Easy to use
+- [x] Easy to use
+- [ ] Not extremely slow
 - [ ] Easy to debug runs (e.g. editing sql)
 
 ## Licence
