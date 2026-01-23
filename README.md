@@ -285,6 +285,8 @@ for name in ("paramiko", "fabric", "invoke"):
 
 ```bash
 # update version in pyproject.toml, e.g. from 0.5.3 to 0.6.0
+uv version --bump minor
+
 ```
 ## Testing
 
