@@ -311,6 +311,19 @@ class SSHConnector(Connector):
         checksum = result.stdout.strip().split()[0]
         return checksum
 
+    def _ensure_remote_dir(self, remote_dir: Path) -> None:
+        if self.c is None:
+            log.debug("Connecting ...")
+            self.connect()
+
+        if self.is_posix:
+            cmd = f'mkdir -p "{remote_dir}"'
+        else:
+            cmd = f'if not exist "{remote_dir}" mkdir "{remote_dir}"'
+
+        log.debug(f"Ensuring remote dir exists: {remote_dir}")
+        self.c.run(cmd, hide=True, in_stream=False)
+
     def move_func(self, path: Path, to: Path, *args, **kwargs) -> bool:
         exceptions = []
         if self.c is None:  # make this as a decorator ("@connected")
@@ -319,6 +332,7 @@ class SSHConnector(Connector):
 
         for i in range(CONNECTION_RETRIES):
             try:
+                self._ensure_remote_dir(to.parent)
                 log.debug(f"Copying {path} to {to}")
                 self.c.put(str(path), remote=str(to))
                 return True

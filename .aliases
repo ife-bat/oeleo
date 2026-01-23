@@ -1,0 +1,5 @@
+alias test='uv run pytest'
+alias sshenv='source ./set-ssh-env.sh'
+alias testssh='source ./set-ssh-env.sh && uv run pytest -m ssh'
+alias startssh='./start-ssh-container.sh'
+alias buildapp='pyinstaller --noconfirm --onefile --windowed --icon "$(pwd -W)\\app\\oeleo.ico" --name "oeleo_runner" --hidden-import "pystray._win32" "$(pwd -W)\\app\\oa.pyw"'

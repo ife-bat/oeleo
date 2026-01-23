@@ -47,6 +47,8 @@ Here is how it looks on my computer:
 pyinstaller --noconfirm --onefile --windowed --icon "C:\scripting\oeleo\app\oeleo.ico" --name "oeleo_runner" --hidden-import "pystray._win32"  "C:\scripting\oeleo\app\oa.pyw"
 ```
 
+Note! it will end up in the dist folder by default (so you need to manually move it to another place if you want it to be versioned).
+
 ### Checking installation
 
 Move the "start.exe" file to the check folder. Make sure you have a valid ".env" file (use the "example.env" file as "template") in the same folder as "start.exe"

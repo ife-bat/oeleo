@@ -17,6 +17,14 @@ These tests are skipped by default. They require a real SSH server.
 
 1) Start a disposable SSH server:
 
+Option A: use the helper script (Git Bash):
+
+```bash
+./start-ssh-container.sh
+```
+
+Option B: run the container manually:
+
 ```bash
 docker run -d --name oeleo-ssh -p 2222:2222 \
   -e USER_NAME=oeleo \
