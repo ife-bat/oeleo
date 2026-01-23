@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from datetime import datetime
 import logging
 import os
 from typing import Protocol, Any
@@ -6,6 +7,7 @@ import time
 from math import ceil
 import warnings
 import sys
+import subprocess
 from threading import Thread
 
 try:
@@ -19,7 +21,7 @@ except ImportError:
 from rich.progress import TextColumn, SpinnerColumn
 from rich.progress import Progress as RichProgress
 
-from oeleo.utils import start_logger
+from oeleo.utils import start_logger, get_log_path
 from oeleo.console import simple_console
 
 # used for same_line reporting in Reporter.report
@@ -107,6 +109,11 @@ class ReporterBase(Protocol):
     def notify(self, status: str, title: str = None):
         pass
 
+    def update_metadata(
+        self, last_run_at: datetime = None, next_run_at: datetime = None
+    ):
+        pass
+
     @contextmanager
     def progress(self, *args, **kwargs):
         p = self.Progress(*args, **kwargs)
@@ -138,12 +145,20 @@ class LogReporter(ReporterBase):
     def close(self):
         pass
 
+    def update_metadata(
+        self, last_run_at: datetime = None, next_run_at: datetime = None
+    ):
+        pass
+
 
 class LogAndTrayReporter(ReporterBase):
     """Reporter with a system tray icon that also writes to the log."""
 
     def __init__(self):
         self.status_message = ""
+        self.last_status_at = None
+        self.last_run_at = None
+        self.next_run_at = None
         self.icon_state = False
         self.icon_image = None
         self.icon_state = False
@@ -161,11 +176,34 @@ class LogAndTrayReporter(ReporterBase):
     def _on_quit_clicked(self, icon, item):
         self.kill_me = True
 
+    def _on_open_log_clicked(self, icon, item):
+        log_path = get_log_path()
+        if not log_path.exists():
+            self.notify("Log file not found", title="oeleo")
+            return
+
+        try:
+            if sys.platform.startswith("win"):
+                os.startfile(log_path)  # type: ignore[attr-defined]
+            elif sys.platform == "darwin":
+                subprocess.run(["open", str(log_path)], check=False)
+            else:
+                subprocess.run(["xdg-open", str(log_path)], check=False)
+        except Exception as exc:
+            log.error(f"Failed to open log file: {exc}")
+            self.notify("Failed to open log file", title="oeleo")
+
     def _update_icon(self):
         while True:
             self.icon.icon = (
                 self.icon_image.get(self.status_message) or self.icon_image["oeleo"]
             )
+            status = self.status_message or "idle"
+            if self.last_status_at is not None:
+                status_time = self._format_time(self.last_status_at)
+                self.icon.title = f"oeleo - {status} ({status_time})"
+            else:
+                self.icon.title = f"oeleo - {status}"
             time.sleep(0.1)
 
     def _make_all_icons(self):
@@ -174,6 +212,7 @@ class LogAndTrayReporter(ReporterBase):
             "run": create_icon(64, 64, "black", "red"),
             "check": create_icon(64, 64, "white", "green"),
             "finished": create_icon(64, 64, "black", "white"),
+            "sleep": create_icon(64, 64, "black", "blue"),
         }
 
     @staticmethod
@@ -191,16 +230,11 @@ class LogAndTrayReporter(ReporterBase):
             self.icon_image["oeleo"],
             menu=pystray.Menu(
                 pystray.MenuItem(text=name, action=None, default=True),
-                pystray.MenuItem(
-                    "Action",
-                    pystray.Menu(
-                        pystray.MenuItem(
-                            "[to be implemented]",
-                            self._on_action_clicked,
-                            checked=None,
-                        ),
-                    ),
-                ),
+                pystray.MenuItem(self._status_label, None, enabled=False),
+                pystray.MenuItem(self._last_update_label, None, enabled=False),
+                pystray.MenuItem(self._last_run_label, None, enabled=False),
+                pystray.MenuItem(self._next_run_label, None, enabled=False),
+                pystray.MenuItem("Open log", self._on_open_log_clicked),
                 pystray.MenuItem(
                     "Quit",
                     pystray.Menu(
@@ -226,6 +260,28 @@ class LogAndTrayReporter(ReporterBase):
         self.icon_update_thread.daemon = True
         self.icon_update_thread.start()
 
+    def _format_time(self, value: datetime) -> str:
+        return value.strftime("%Y-%m-%d %H:%M:%S")
+
+    def _status_label(self, item):
+        status = self.status_message or "idle"
+        return f"Status: {status}"
+
+    def _last_update_label(self, item):
+        if self.last_status_at is None:
+            return "Last update: n/a"
+        return f"Last update: {self._format_time(self.last_status_at)}"
+
+    def _last_run_label(self, item):
+        if self.last_run_at is None:
+            return "Last run: n/a"
+        return f"Last run: {self._format_time(self.last_run_at)}"
+
+    def _next_run_label(self, item):
+        if self.next_run_at is None:
+            return "Next run: n/a"
+        return f"Next run: {self._format_time(self.next_run_at)}"
+
     @staticmethod
     def report(status, *args, **kwargs):
         """Report status."""
@@ -244,6 +300,7 @@ class LogAndTrayReporter(ReporterBase):
         else:
             message = "oeleo"
         self.status_message = message
+        self.last_status_at = datetime.now()
 
     def clear(self):
         # TODO: implement clearing tray
@@ -260,6 +317,14 @@ class LogAndTrayReporter(ReporterBase):
 
     def should_die(self) -> bool:
         return self.kill_me
+
+    def update_metadata(
+        self, last_run_at: datetime = None, next_run_at: datetime = None
+    ):
+        if last_run_at is not None:
+            self.last_run_at = last_run_at
+        if next_run_at is not None:
+            self.next_run_at = next_run_at
 
 
 class Reporter(ReporterBase):
@@ -305,6 +370,11 @@ class Reporter(ReporterBase):
         pass
 
     def notify(self, status: str, title: str = None):
+        pass
+
+    def update_metadata(
+        self, last_run_at: datetime = None, next_run_at: datetime = None
+    ):
         pass
 
 

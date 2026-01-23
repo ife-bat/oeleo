@@ -1,7 +1,7 @@
 import atexit
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Protocol, Union, Any
 import warnings
 
@@ -89,17 +89,22 @@ class SimpleScheduler(SchedulerBase):
             self.worker.run()
             self._last_run = datetime.now()
             self._run_counter += 1
+            next_run_at = self._last_run + timedelta(seconds=self.run_interval_time)
+            self.worker.reporter.update_metadata(
+                last_run_at=self._last_run, next_run_at=next_run_at
+            )
 
             if self._run_counter >= self.max_run_intervals:
                 log.debug("-> BREAK")
                 break
 
             used_time = 0.0
+            poll_interval = 1.0
+            self.worker.reporter.status("sleep")
 
             while used_time < self.run_interval_time:
-                time.sleep(0.5)
+                time.sleep(poll_interval)
                 self.worker.die_if_necessary()
-                time.sleep(self._sleep_interval)
                 used_time = (datetime.now() - self._last_run).total_seconds()
                 log.debug(f"slept for {used_time} s of {self.run_interval_time} s")
         atexit.unregister(self._cleanup)

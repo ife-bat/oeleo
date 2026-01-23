@@ -43,6 +43,13 @@ def calculate_checksum(file_path: Path) -> str:
     return file_hash.hexdigest()
 
 
+def get_log_path(logdir=None) -> Path:
+    if logdir is None:
+        logdir = os.environ.get("OELEO_LOG_DIR", os.getcwd())
+    logdir = Path(logdir)
+    return logdir / "oeleo.log"
+
+
 def start_logger(logdir=None, only_oeleo=False, screen_level=logging.CRITICAL):
     """Start logging to file for the oeleo package"""
 
@@ -68,7 +75,7 @@ def start_logger(logdir=None, only_oeleo=False, screen_level=logging.CRITICAL):
         logdir = Path(os.getcwd())
         log.debug(f"Using {logdir} instead")
 
-    log_path = logdir / "oeleo.log"
+    log_path = get_log_path(logdir)
     file_handler = RotatingFileHandler(
         log_path, maxBytes=FILE_LOG_MAX_BYTES, backupCount=FILE_LOG_BACKUP_COUNT
     )

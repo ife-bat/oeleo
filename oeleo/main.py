@@ -8,11 +8,43 @@ import dotenv
 from oeleo.connectors import register_password
 from oeleo.console import console
 from oeleo.schedulers import SimpleScheduler
+from oeleo.reporters import LogAndTrayReporter
 from oeleo.utils import start_logger
 from oeleo.workers import simple_worker, ssh_worker, sharepoint_worker
 
-from pprint import pprint
 
+DEFAULT_ENVIRONMENT = """
+OELEO_BASE_DIR_FROM=C:\scripting\oeleo\check\from
+OELEO_BASE_DIR_TO=/somewher_in_myserver
+OELEO_FILTER_EXTENSION=.xyz
+OELEO_DB_NAME=test_app.db
+OELEO_LOG_DIR=log
+OELEO_EXTERNAL_HOST=A-IP-NUMBER
+OELEO_USERNAME=coolkid
+OELEO_PASSWORD=
+OELEO_KEY_FILENAME=C:\\Users\\coolkid\\.ssh\\id_myserver
+
+# oeleo app config:
+OA_SINGLE_RUN=false
+OA_MAX_RUN_INTERVALS=200
+OA_HOURS_SLEEP=0.01
+OA_FROM_YEAR=2023
+OA_FROM_MONTH=1
+OA_FROM_DAY=1
+OA_STARTS_WITH=2023;2024
+OA_ADD_CHECK=true
+OA_INCLUDE_SUBDIRS=true
+OA_EXTERNAL_SUBDIRS=true
+"""
+
+def load_default_environment():
+    """Load the default environment variables."""
+    for line in DEFAULT_ENVIRONMENT.split("\n"):
+        if line.startswith("#"):
+            continue
+        if line.strip():
+            key, value = line.strip().split("=")
+            os.environ[key] = value
 
 def simple_multi_dir():
     dotenv.load_dotenv()
@@ -170,9 +202,38 @@ def example_with_ssh_and_env():
     worker.run()
 
 
-main = example_bare_minimum
+def example_with_tray_reporter():
+    print(" Scheduler with tray reporter ".center(80, "-"))
+    load_default_environment()
+    start_logger(screen_level=logging.DEBUG, only_oeleo=True)
+    logging.info("Starting oeleo!")
+
+    hours_sleep = float(os.environ.get("OA_HOURS_SLEEP", 0.5))
+    max_run_intervals = int(os.environ.get("OA_MAX_RUN_INTERVALS", 200))
+
+    reporter = LogAndTrayReporter()
+    try:
+        worker = ssh_worker(reporter=reporter)
+    except KeyError as exc:
+        missing = str(exc).strip("'")
+        logging.error(f"Missing env var: {missing}")
+        logging.error("Load your .env or set the required OELEO_* variables.")
+        reporter.notify(f"Missing env var: {missing}", title="oeleo")
+        return
+
+    s = SimpleScheduler(
+        worker,
+        run_interval_time=3600 * hours_sleep,
+        max_run_intervals=max_run_intervals,
+    )
+    s.start()
+
+
+
+
+main = example_with_tray_reporter
 
 if __name__ == "__main__":
-    # main()
+    main()
     # example_with_ssh_connection_and_rich_scheduler()
-    simple_multi_dir()
+    # simple_multi_dir()
