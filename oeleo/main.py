@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 from datetime import datetime
@@ -10,7 +11,12 @@ from oeleo.console import console
 from oeleo.schedulers import SimpleScheduler
 from oeleo.reporters import LogAndTrayReporter
 from oeleo.utils import start_logger
-from oeleo.workers import simple_worker, ssh_worker, sharepoint_worker
+from oeleo.workers import (
+    simple_worker,
+    simple_async_worker,
+    ssh_worker,
+    sharepoint_worker,
+)
 
 
 DEFAULT_ENVIRONMENT = """
@@ -229,11 +235,25 @@ def example_with_tray_reporter():
     s.start()
 
 
+def example_async_check():
+    """Run an async check using the async worker wrapper."""
+    dotenv.load_dotenv()
+    start_logger(screen_level=logging.DEBUG, only_oeleo=True)
+    logging.info("Starting oeleo async check!")
+
+    worker = simple_async_worker()
+    worker.connect_to_db()
+    asyncio.run(worker.async_check(update_db=True))
+
+
 
 
 main = example_with_tray_reporter
 
 if __name__ == "__main__":
-    main()
+    if os.environ.get("OELEO_ASYNC_CHECK", "").lower() in {"1", "true", "yes"}:
+        example_async_check()
+    else:
+        main()
     # example_with_ssh_connection_and_rich_scheduler()
     # simple_multi_dir()

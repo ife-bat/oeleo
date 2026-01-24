@@ -2,6 +2,7 @@ import datetime
 import logging
 import random
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Protocol, Union
 
 import peewee
@@ -38,34 +39,43 @@ class DbHandler(Protocol):
     def register(self, f: Path):
         ...
 
-    def is_changed(self, **checks: Any) -> bool:
+    def is_changed(self, record: Any, **checks: Any) -> bool:
         ...
 
-    def update_record(self, external_name: Path, code: int = 1, **checks: Any):
+    def update_record(
+        self, record: Any, external_name: Path, code: int = 1, **checks: Any
+    ):
         ...
 
 
 class MockDbHandler(DbHandler):
     def __init__(self):
         self.db_name = "mock"
+        self._current_record = None
 
     def initialize_db(self):
         print("INITIALIZING DB")
 
     def register(self, f: Path):
         print(f"REGISTERING {f}")
+        self._current_record = SimpleNamespace(code=0)
+        return self._current_record
 
-    def is_changed(self, **checks) -> bool:
+    def is_changed(self, record: Any, **checks) -> bool:
         print("CHECKING IF IT HAS CHANGED")
         print(f"checks: {checks}")
         _is_changed = random.choice([True, False])
         print(f"is-changed: {_is_changed}")
         return _is_changed
 
-    def update_record(self, external_name: Path, code: int = 1, **checks: Any):
+    def update_record(
+        self, record: Any, external_name: Path, code: int = 1, **checks: Any
+    ):
         print("UPDATE RECORD IN DB")
         print(f"external name: {external_name}")
         print(f"additional checks: {checks}")
+        if record is not None:
+            record.code = code
 
 
 class SimpleDbHandler(DbHandler):
@@ -81,6 +91,11 @@ class SimpleDbHandler(DbHandler):
     @staticmethod
     def _set_up_sqlite_db():
         database_proxy.initialize(peewee.SqliteDatabase(None))
+
+    def _ensure_connection(self) -> None:
+        """Ensure this thread has an open connection."""
+        if self.db_instance.is_closed():
+            self.db_instance.connect(reuse_if_open=True)
 
     @property
     def record(self):
@@ -101,32 +116,38 @@ class SimpleDbHandler(DbHandler):
 
     def register(self, f: Path):
         """Get or create record of the file and check if it needs to be copied."""
-        self._current_record, new = self.db_model.get_or_create(local_name=f.name)
+        self._ensure_connection()
+        record, new = self.db_model.get_or_create(local_name=f.name)
         if new:
-            self.record.code = 0
-            self.record.save()
+            record.code = 0
+            record.save()
+        return record
 
-    def is_changed(self, **checks) -> bool:
-        if self.record.code == 0:
+    def is_changed(self, record: FileList, **checks) -> bool:
+        self._ensure_connection()
+        if record.code == 0:
             return True
 
         _is_changed = False
         for k in checks:
             try:
-                v = getattr(self.record, k)
+                v = getattr(record, k)
             except AttributeError as e:
                 raise AttributeError("oeleo-model-key mismatch") from e
             if v != checks[k]:
                 _is_changed = True
         return _is_changed
 
-    def update_record(self, external_name: Path, code: int = 1, **checks: Any):
+    def update_record(
+        self, record: FileList, external_name: Path, code: int = 1, **checks: Any
+    ):
+        self._ensure_connection()
         checksum = checks.get("checksum", None)
-        self.record.checksum = checksum
-        self.record.processed_date = datetime.datetime.now()
-        self.record.code = code
-        self.record.external_name = external_name
-        self.record.save()
+        record.checksum = checksum
+        record.processed_date = datetime.datetime.now()
+        record.code = code
+        record.external_name = external_name
+        record.save()
 
     @property
     def code(self):

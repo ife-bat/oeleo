@@ -13,8 +13,11 @@ log = logging.getLogger("test-oeleo")
 TESTENV_PATH = Path(__file__).with_name(".testenv").resolve()
 
 
-def pytest_configure():
+def pytest_configure(config):
     pytest.checksum_local_file_tmp_path = "7920697396c631989f51a80df0813e86"
+    config.addinivalue_line(
+        "markers", "integration: integration tests that are skipped by default"
+    )
 
 
 @pytest.fixture
@@ -70,8 +73,8 @@ def external_tmp_path(tmp_path):
 
 
 @pytest.fixture
-def db_tmp_path():
-    return ":memory:"
+def db_tmp_path(tmp_path):
+    return str(tmp_path / "oeleo-test.db")
 
 
 @pytest.fixture
