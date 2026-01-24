@@ -1,3 +1,4 @@
+import asyncio
 import getpass
 import hashlib
 import logging
@@ -73,6 +74,26 @@ class Connector(Protocol):
     def move_func(self, path: Path, to: Path, *args, **kwargs) -> bool:
         ...
 
+    async def async_connect(self, **kwargs) -> None:
+        ...
+
+    async def async_reconnect(self, **kwargs) -> None:
+        ...
+
+    async def async_close(self) -> None:
+        ...
+
+    async def async_base_filter_sub_method(
+        self, glob_pattern: str = "*", **kwargs
+    ) -> Union[Iterator[Path], List[Path]]:
+        ...
+
+    async def async_calculate_checksum(self, f: Path, hide: bool = True) -> Hash:
+        ...
+
+    async def async_move_func(self, path: Path, to: Path, *args, **kwargs) -> bool:
+        ...
+
 
 class LocalConnector(Connector):
     def __init__(self, directory=None, **kwargs):
@@ -100,6 +121,15 @@ class LocalConnector(Connector):
     def close(self):
         pass
 
+    async def async_connect(self, **kwargs) -> None:
+        await asyncio.to_thread(self.connect, **kwargs)
+
+    async def async_reconnect(self, **kwargs) -> None:
+        await asyncio.to_thread(self.reconnect, **kwargs)
+
+    async def async_close(self) -> None:
+        await asyncio.to_thread(self.close)
+
     def base_filter_sub_method(
         self, glob_pattern: str = "*", **kwargs
     ) -> Iterator[Path]:  # RENAME TO enquire
@@ -120,8 +150,19 @@ class LocalConnector(Connector):
             file_list = additional_filtering(file_list, additional_filters)
         return file_list
 
+    async def async_base_filter_sub_method(
+        self, glob_pattern: str = "*", **kwargs
+    ) -> List[Path]:
+        file_list = await asyncio.to_thread(
+            lambda: list(self.base_filter_sub_method(glob_pattern, **kwargs))
+        )
+        return file_list
+
     def calculate_checksum(self, f: Path, hide: bool = True) -> Hash:
         return calculate_checksum(f)
+
+    async def async_calculate_checksum(self, f: Path, hide: bool = True) -> Hash:
+        return await asyncio.to_thread(self.calculate_checksum, f, hide)
 
     def move_func(self, path: Path, to: Path, *args, **kwargs) -> bool:
         log.debug("\nmove_func function for LocalConnector")
@@ -132,6 +173,9 @@ class LocalConnector(Connector):
         if self.include_subdirs:
             return simple_recursive_mover(path, to, *args, **kwargs)
         return simple_mover(path, to, *args, **kwargs)
+
+    async def async_move_func(self, path: Path, to: Path, *args, **kwargs) -> bool:
+        return await asyncio.to_thread(self.move_func, path, to, *args, **kwargs)
 
 
 class SSHConnector(Connector):
@@ -200,6 +244,9 @@ class SSHConnector(Connector):
             host=self.host, user=self.username, connect_kwargs=connect_kwargs
         )
 
+    async def async_connect(self, **kwargs) -> None:
+        await asyncio.to_thread(self.connect, **kwargs)
+
     def reconnect(self, **kwargs) -> None:
         try:
             self.close()
@@ -211,6 +258,9 @@ class SSHConnector(Connector):
         except Exception as e:
             log.debug(f"Got an exception during connecting: {e}")
             raise OeleoConnectionError("Could not connect")
+
+    async def async_reconnect(self, **kwargs) -> None:
+        await asyncio.to_thread(self.reconnect, **kwargs)
 
     def _check_connection_and_exit(self):
         # used only when developing oeleo
@@ -239,6 +289,9 @@ class SSHConnector(Connector):
 
     def close(self):
         self.c.close()
+
+    async def async_close(self) -> None:
+        await asyncio.to_thread(self.close)
 
     def __delete__(self, instance):
         if self.c is not None:
@@ -277,6 +330,13 @@ class SSHConnector(Connector):
 
         return file_list
 
+    async def async_base_filter_sub_method(
+        self, glob_pattern: str = "", **kwargs: Any
+    ) -> list:
+        return await asyncio.to_thread(
+            self.base_filter_sub_method, glob_pattern, **kwargs
+        )
+
     def _list_content(self, glob_pattern="*", max_depth=1, hide=False):
         if self.c is None:  # make this as a decorator ("@connected")
             log.debug("Connecting ...")
@@ -310,6 +370,9 @@ class SSHConnector(Connector):
             log.debug("it failed - should raise an exception her (future work)")
         checksum = result.stdout.strip().split()[0]
         return checksum
+
+    async def async_calculate_checksum(self, f, hide=True):
+        return await asyncio.to_thread(self.calculate_checksum, f, hide)
 
     def _ensure_remote_dir(self, remote_dir: Path) -> None:
         if self.c is None:
@@ -348,6 +411,9 @@ class SSHConnector(Connector):
         log.debug(f"TO       : {to}")
         log.debug(f"EXCEPTIONS: {exceptions}")
         return False
+
+    async def async_move_func(self, path: Path, to: Path, *args, **kwargs) -> bool:
+        return await asyncio.to_thread(self.move_func, path, to, *args, **kwargs)
 
 
 class SharePointConnection:
@@ -396,6 +462,15 @@ class SharePointConnector(Connector):
 
         return text
 
+    async def async_connect(self, **kwargs) -> None:
+        await asyncio.to_thread(self.connect, **kwargs)
+
+    async def async_reconnect(self, **kwargs) -> None:
+        await asyncio.to_thread(self.reconnect, **kwargs)
+
+    async def async_close(self) -> None:
+        await asyncio.to_thread(self.close)
+
     def __delete__(self, instance):
         if self.connection is not None:
             self.connection.close()
@@ -423,6 +498,11 @@ class SharePointConnector(Connector):
                 file_list.append(Path(filename))
         return file_list
 
+    async def async_base_filter_sub_method(
+        self, glob_pattern: str = "", **kwargs: Any
+    ) -> List[Path]:
+        return await asyncio.to_thread(self.base_filter_sub_method, glob_pattern, **kwargs)
+
     def calculate_checksum(self, f: Path, hide=True):
         try:
             b = self.connection.folder.get_file(f.name)
@@ -432,6 +512,9 @@ class SharePointConnector(Connector):
 
         file_hash = hashlib.md5(b)
         return file_hash.hexdigest()
+
+    async def async_calculate_checksum(self, f: Path, hide=True):
+        return await asyncio.to_thread(self.calculate_checksum, f, hide)
 
     def move_func(self, path: Path, to: Path, *args, **kwargs) -> bool:
         try:
@@ -454,3 +537,6 @@ class SharePointConnector(Connector):
             return False
 
         return True
+
+    async def async_move_func(self, path: Path, to: Path, *args, **kwargs) -> bool:
+        return await asyncio.to_thread(self.move_func, path, to, *args, **kwargs)
