@@ -105,6 +105,12 @@ class SimpleScheduler(SchedulerBase):
             while used_time < self.run_interval_time:
                 time.sleep(poll_interval)
                 self.worker.die_if_necessary()
+                if self.worker.reporter.consume_force_run():
+                    log.debug("Force run requested; breaking sleep early")
+                    self.worker.reporter.update_metadata(
+                        next_run_at=datetime.now()
+                    )
+                    break
                 used_time = (datetime.now() - self._last_run).total_seconds()
                 log.debug(f"slept for {used_time} s of {self.run_interval_time} s")
         atexit.unregister(self._cleanup)

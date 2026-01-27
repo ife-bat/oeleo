@@ -106,6 +106,12 @@ class ReporterBase(Protocol):
     def should_die(self) -> bool:
         ...
 
+    def request_force_run(self):
+        ...
+
+    def consume_force_run(self) -> bool:
+        ...
+
     def notify(self, status: str, title: str = None):
         pass
 
@@ -125,6 +131,9 @@ class ReporterBase(Protocol):
 
 class LogReporter(ReporterBase):
     """Minimal reporter that only writes to the log."""
+
+    def __init__(self):
+        self._force_run_requested = False
 
     @staticmethod
     def report(status, *args, **kwargs):
@@ -150,6 +159,15 @@ class LogReporter(ReporterBase):
     ):
         pass
 
+    def request_force_run(self):
+        self._force_run_requested = True
+
+    def consume_force_run(self) -> bool:
+        if self._force_run_requested:
+            self._force_run_requested = False
+            return True
+        return False
+
 
 class LogAndTrayReporter(ReporterBase):
     """Reporter with a system tray icon that also writes to the log."""
@@ -166,6 +184,7 @@ class LogAndTrayReporter(ReporterBase):
         self.icon_thread = None
         self.icon_update_thread = None
         self.kill_me = False
+        self._force_run_requested = False
         self.create_tray_icon("oeleo")
 
     def _on_action_clicked(self, icon, item):
@@ -192,6 +211,11 @@ class LogAndTrayReporter(ReporterBase):
         except Exception as exc:
             log.error(f"Failed to open log file: {exc}")
             self.notify("Failed to open log file", title="oeleo")
+
+    def _on_force_run_clicked(self, icon, item):
+        self._force_run_requested = True
+        log.debug("Force run requested from tray")
+        self.notify("Force run requested", title="oeleo")
 
     def _update_icon(self):
         while True:
@@ -234,6 +258,7 @@ class LogAndTrayReporter(ReporterBase):
                 pystray.MenuItem(self._last_update_label, None, enabled=False),
                 pystray.MenuItem(self._last_run_label, None, enabled=False),
                 pystray.MenuItem(self._next_run_label, None, enabled=False),
+                pystray.MenuItem("Force run", self._on_force_run_clicked),
                 pystray.MenuItem("Open log", self._on_open_log_clicked),
                 pystray.MenuItem(
                     "Quit",
@@ -326,6 +351,15 @@ class LogAndTrayReporter(ReporterBase):
         if next_run_at is not None:
             self.next_run_at = next_run_at
 
+    def request_force_run(self):
+        self._force_run_requested = True
+
+    def consume_force_run(self) -> bool:
+        if self._force_run_requested:
+            self._force_run_requested = False
+            return True
+        return False
+
 
 class Reporter(ReporterBase):
     """Minimal reporter that uses console for outputs."""
@@ -333,6 +367,9 @@ class Reporter(ReporterBase):
     layout = None
 
     Progress = RichProgress
+
+    def __init__(self):
+        self._force_run_requested = False
 
     @staticmethod
     def report(status, same_line=False, **kwargs):
@@ -376,6 +413,15 @@ class Reporter(ReporterBase):
         self, last_run_at: datetime = None, next_run_at: datetime = None
     ):
         pass
+
+    def request_force_run(self):
+        self._force_run_requested = True
+
+    def consume_force_run(self) -> bool:
+        if self._force_run_requested:
+            self._force_run_requested = False
+            return True
+        return False
 
 
 def check_reporter():
