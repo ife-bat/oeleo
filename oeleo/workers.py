@@ -1,3 +1,4 @@
+import asyncio
 from collections import deque
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -78,6 +79,21 @@ class WorkerBase(Protocol):
         ...
 
     def die_if_necessary(self):
+        ...
+
+    async def async_connect_to_db(self):
+        ...
+
+    async def async_filter_local(self, **kwargs):
+        ...
+
+    async def async_check(self, update_db=False, force=False, **kwargs):
+        ...
+
+    async def async_run(self, max_concurrency: int = 1):
+        ...
+
+    async def async_close(self):
         ...
 
 
@@ -297,12 +313,12 @@ class Worker(WorkerBase):
 
                 if update_db:
                     log.debug("updating db")
-                    self.bookkeeper.register(f)
-                    if self.bookkeeper.code < 2:
+                    record = self.bookkeeper.register(f)
+                    if record.code < 2:
                         if not force and not exists:
-                            code = self.bookkeeper.code
+                            code = record.code
                         self.bookkeeper.update_record(
-                            self.external_name, code=code, **local_vals
+                            record, self.external_name, code=code, **local_vals
                         )
             progress.remove_task(task)
 
@@ -386,41 +402,41 @@ class Worker(WorkerBase):
         """Process a single file."""
         del self.status
         self.die_if_necessary()
-        self.make_external_name(f)
-        self.bookkeeper.register(f)
+        external_name = self.compute_external_name(f)
+        record = self.bookkeeper.register(f)
         try:
             checks = self.checker.check(f)
         except Exception as e:
             log.error(f"Error when checking {f}: {e}")
             return f
 
-        if not self.bookkeeper.is_changed(**checks):
-            log.debug(f"{f.name} == {self.external_name}")
+        if not self.bookkeeper.is_changed(record, **checks):
+            log.debug(f"{f.name} == {external_name}")
             self.reporter.report(".", same_line=True)
             return
 
-        log.debug(f"{f.name} -> {self.external_name}")
+        log.debug(f"{f.name} -> {external_name}")
 
         self.status = ("changed", True)
 
         if self.reconnect:
             self.external_connector.reconnect()
-        success = self.external_connector.move_func(f, self.external_name)
+        success = self.external_connector.move_func(f, external_name)
 
         if not success:
             log.debug("failed - so trying one more time after reconnecting...")
             self.external_connector.reconnect()
-            success = self.external_connector.move_func(f, self.external_name)
+            success = self.external_connector.move_func(f, external_name)
 
         if success:
             self.status = ("moved", True)
-            self.bookkeeper.update_record(self.external_name, **checks)
+            self.bookkeeper.update_record(record, external_name, **checks)
             self.reporter.report("o", same_line=True)
-            log.debug(f"{f.name} -> {self.external_name} copied")
+            log.debug(f"{f.name} -> {external_name} copied")
             return
 
         self.reporter.report("!", same_line=True)
-        log.debug(f"{f.name} -> {self.external_name} FAILED COPY!")
+        log.debug(f"{f.name} -> {external_name} FAILED COPY!")
         return f
 
     def _default_external_name_generator(self, f):
@@ -434,11 +450,13 @@ class Worker(WorkerBase):
             ext_name = self.external_connector.directory / f.name
         return ext_name
 
-    def make_external_name(self, f):
+    def compute_external_name(self, f: Path) -> Union[Path, str]:
         if self.external_name_generator is not None:
-            name = self.external_name_generator(self.external_connector, f)
-        else:
-            name = self._default_external_name_generator(f)
+            return self.external_name_generator(self.external_connector, f)
+        return self._default_external_name_generator(f)
+
+    def make_external_name(self, f):
+        name = self.compute_external_name(f)
         self.external_name = name
         self.status = ("name", f.name)
         self.status = ("external_name", str(self.external_name))
@@ -479,6 +497,56 @@ class Worker(WorkerBase):
             self.reporter.report("You told me to die! Dying...")
             self.close()
             sys.exit(0)
+
+
+class AsyncWorker(Worker):
+    """Async-friendly worker with thread-based wrappers for blocking I/O."""
+
+    async def async_connect_to_db(self):
+        await asyncio.to_thread(self.connect_to_db)
+
+    async def async_filter_local(self, **kwargs):
+        return await asyncio.to_thread(self.filter_local, **kwargs)
+
+    async def async_check(self, update_db=False, force=True, **kwargs):
+        return await asyncio.to_thread(Worker.check, self, update_db, force, **kwargs)
+
+    async def async_run(self, max_concurrency: int = 1):
+        log.debug("<ASYNC RUN>")
+        self.die_if_necessary()
+        self.status = ("state", "run")
+        self.status = ("local_exists", False)
+
+        failed_files = []
+        semaphore = asyncio.Semaphore(max_concurrency)
+
+        async def handle_file(f: Path):
+            async with semaphore:
+                self.status = ("local_exists", True)
+                try:
+                    return await asyncio.to_thread(self._process_file, f)
+                except Exception as e:
+                    log.error(f"Error when processing file: {e}")
+                    return f
+
+        for chunk in chunkify(self.file_names, n=20):
+            self.die_if_necessary()
+            results = await asyncio.gather(*(handle_file(f) for f in chunk))
+            for failed_file in results:
+                if failed_file:
+                    failed_files.append(failed_file)
+
+        if not self.status["local_exists"]:
+            self.reporter.report(
+                "No files to handle. Did you forget to run `worker.filter_local()`?"
+            )
+
+        log.debug("<ASYNC RUN FINISHED>")
+        self.status = ("state", "finished")
+        return failed_files
+
+    async def async_close(self):
+        await asyncio.to_thread(self.close)
 
 
 def simple_worker(
@@ -534,6 +602,52 @@ def simple_worker(
     log.debug(f"to  :{base_directory_to}")
 
     worker = Worker(
+        checker=checker,
+        local_connector=local_connector,
+        external_connector=external_connector,
+        bookkeeper=bookkeeper,
+        extension=extension,
+        dry_run=dry_run,
+        reporter=reporter,
+        reconnect=True,
+        subdirs=include_subdirs,
+        external_subdirs=external_subdirs,
+    )
+    return worker
+
+
+def simple_async_worker(
+    base_directory_from=None,
+    base_directory_to=None,
+    db_name=None,
+    dry_run=False,
+    extension=None,
+    reporter=None,
+    include_subdirs=False,
+    external_subdirs=False,
+):
+    """Create an AsyncWorker for copying files locally."""
+    db_name = db_name or os.environ["OELEO_DB_NAME"]
+    base_directory_from = base_directory_from or os.environ["OELEO_BASE_DIR_FROM"]
+    base_directory_to = base_directory_to or os.environ["OELEO_BASE_DIR_TO"]
+    if extension is None:
+        extension = os.environ["OELEO_FILTER_EXTENSION"]
+
+    bookkeeper = SimpleDbHandler(db_name)
+    checker = ChecksumChecker()
+
+    local_connector = LocalConnector(
+        directory=base_directory_from, include_subdirs=include_subdirs
+    )
+    external_connector = LocalConnector(
+        directory=base_directory_to, include_subdirs=external_subdirs
+    )
+    reporter = reporter or Reporter()
+    log.debug("<Simple Async Worker created>")
+    log.debug(f"from:{base_directory_from}")
+    log.debug(f"to  :{base_directory_to}")
+
+    worker = AsyncWorker(
         checker=checker,
         local_connector=local_connector,
         external_connector=external_connector,
@@ -617,6 +731,58 @@ def ssh_worker(
     return worker
 
 
+def ssh_async_worker(
+    base_directory_from: Union[str, None, Path] = None,
+    base_directory_to: Union[str, None, Path] = None,
+    db_name: Union[str, None] = None,
+    extension: str = None,
+    use_password: bool = False,
+    dry_run: bool = False,
+    reporter: ReporterBase = None,
+    is_posix: bool = True,
+    include_subdirs: bool = False,
+    external_subdirs: bool = False,
+):
+    """Create an AsyncWorker with SSHConnector."""
+    db_name = db_name or os.environ["OELEO_DB_NAME"]
+    base_directory_from = base_directory_from or os.environ["OELEO_BASE_DIR_FROM"]
+    base_directory_to = base_directory_to or os.environ["OELEO_BASE_DIR_TO"]
+    extension = extension or os.environ["OELEO_FILTER_EXTENSION"]
+
+    local_connector = LocalConnector(
+        directory=base_directory_from,
+        include_subdirs=include_subdirs,
+    )
+    external_connector = SSHConnector(
+        directory=base_directory_to,
+        use_password=use_password,
+        is_posix=is_posix,
+        include_subdirs=external_subdirs,
+    )
+
+    bookkeeper = SimpleDbHandler(db_name)
+    checker = ChecksumChecker()
+    reporter = reporter or Reporter()
+
+    log.debug("<SSH Async Worker created>")
+    log.debug(f"from:{local_connector.directory}")
+    log.debug(f"to  :{external_connector.host}:{external_connector.directory}")
+
+    worker = AsyncWorker(
+        checker=checker,
+        local_connector=local_connector,
+        external_connector=external_connector,
+        bookkeeper=bookkeeper,
+        extension=extension,
+        dry_run=dry_run,
+        reporter=reporter,
+        reconnect=True,
+        subdirs=include_subdirs,
+        external_subdirs=external_subdirs,
+    )
+    return worker
+
+
 def sharepoint_worker(
     base_directory_from: Union[Path, None] = None,
     url: Union[Path, None] = None,
@@ -674,6 +840,59 @@ def sharepoint_worker(
     log.debug(f"to  :{external_connector.url}:{external_connector.directory}")
 
     worker = Worker(
+        checker=checker,
+        local_connector=local_connector,
+        external_connector=external_connector,
+        bookkeeper=bookkeeper,
+        extension=extension,
+        external_name_generator=external_name_generator,
+        dry_run=dry_run,
+        reporter=reporter,
+    )
+    return worker
+
+
+def sharepoint_async_worker(
+    base_directory_from: Union[Path, None] = None,
+    url: Union[Path, None] = None,
+    sitename: Union[str, None] = None,
+    doc_library_to: Union[str, None] = None,
+    db_name: Union[str, None] = None,
+    extension: str = None,
+    reporter: ReporterBase = None,
+    dry_run: bool = False,
+):
+    """Create an AsyncWorker with SharePointConnector."""
+
+    def external_name_generator(con, name):
+        return Path(name.name)
+
+    db_name = db_name or os.environ["OELEO_DB_NAME"]
+    base_directory_from = base_directory_from or os.environ["OELEO_BASE_DIR_FROM"]
+    doc_library_to = doc_library_to or os.environ["OELEO_SHAREPOINT_DOC_LIBRARY"]
+    url = url or os.getenv("OELEO_SHAREPOINT_URL")
+    sitename = sitename or os.getenv("OELEO_SHAREPOINT_SITENAME")
+
+    extension = extension or os.environ["OELEO_FILTER_EXTENSION"]
+    username = os.getenv("OELEO_SHAREPOINT_USERNAME", None)
+
+    local_connector = LocalConnector(directory=base_directory_from)
+    external_connector = SharePointConnector(
+        username=username,
+        host=sitename,
+        url=url,
+        directory=doc_library_to,
+    )
+
+    bookkeeper = SimpleDbHandler(db_name)
+    checker = ChecksumChecker()
+    reporter = reporter or Reporter()
+    log.debug("<SharePoint Async Worker created>")
+
+    log.debug(f"from: {local_connector.directory}")
+    log.debug(f"to  :{external_connector.url}:{external_connector.directory}")
+
+    worker = AsyncWorker(
         checker=checker,
         local_connector=local_connector,
         external_connector=external_connector,

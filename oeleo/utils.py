@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import logging
 from logging.handlers import RotatingFileHandler
@@ -41,6 +42,11 @@ def calculate_checksum(file_path: Path) -> str:
         while chunk := f.read(8192):
             file_hash.update(chunk)
     return file_hash.hexdigest()
+
+
+async def async_calculate_checksum(file_path: Path) -> str:
+    """Async wrapper for calculate_checksum using a thread."""
+    return await asyncio.to_thread(calculate_checksum, file_path)
 
 
 def get_log_path(logdir=None) -> Path:

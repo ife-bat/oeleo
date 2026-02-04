@@ -258,7 +258,8 @@ Just plans, no promises given.
 - [x] Code understandable for others
 - [x] Looking good
 - [x] Fairly easy to use
-- [ ] Easy to use
+- [x] Easy to use
+- [ ] Not extremely slow
 - [ ] Easy to debug runs (e.g. editing sql)
 
 ## Licence
@@ -285,6 +286,8 @@ for name in ("paramiko", "fabric", "invoke"):
 
 ```bash
 # update version in pyproject.toml, e.g. from 0.5.3 to 0.6.0
+uv version --bump minor
+
 ```
 ## Testing
 

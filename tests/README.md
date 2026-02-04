@@ -23,6 +23,24 @@ Option A: use the helper script (Git Bash):
 ./start-ssh-container.sh
 ```
 
+## Async/sync benchmark integration test
+
+This test is skipped by default and compares the async worker against the
+sync worker on a small local dataset.
+
+Enable it with:
+
+```bash
+export OELEO_ASYNC_BENCH=1
+uv run pytest -m integration -k async_vs_sync_speed
+```
+
+Optionally require async to be faster:
+
+```bash
+export OELEO_ASYNC_EXPECT_FASTER=1
+```
+
 Option B: run the container manually:
 
 ```bash
