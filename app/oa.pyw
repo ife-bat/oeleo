@@ -1,7 +1,9 @@
 from datetime import datetime
+import ctypes
 import time  # noqa: F401
 import os
 import logging
+import sys
 
 import dotenv
 
@@ -15,6 +17,23 @@ from oeleo.utils import start_logger, to_bool
 from oeleo.reporters import LogAndTrayReporter, LogReporter
 from oeleo.workers import ssh_worker
 from oeleo.schedulers import SimpleScheduler
+
+
+def _has_interactive_desktop():
+    """Return True if running in a session with a visible desktop.
+
+    When a scheduled task runs as 'Run whether user is logged on or not',
+    it executes in session 0 with no desktop.  pystray will fail there,
+    so we fall back to LogReporter.
+    """
+    if sys.platform != "win32":
+        return True
+    try:
+        hwnd = ctypes.windll.user32.GetDesktopWindow()
+        return hwnd != 0
+    except Exception:
+        return False
+
 
 dotenv.load_dotenv()
 start_logger(only_oeleo=False)
@@ -77,7 +96,7 @@ log.debug(f"{hours_sleep=}")
 def ssh_connection():
     run_interval_time = 3600 * hours_sleep
 
-    if pystray is not None:
+    if pystray is not None and _has_interactive_desktop():
         reporter = LogAndTrayReporter()
     else:
         reporter = LogReporter()
@@ -101,7 +120,7 @@ def ssh_connection():
 
 
 def single_ssh_connection():
-    if pystray is not None:
+    if pystray is not None and _has_interactive_desktop():
         reporter = LogAndTrayReporter()
     else:
         reporter = LogReporter()
