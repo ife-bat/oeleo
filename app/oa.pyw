@@ -85,8 +85,8 @@ def ssh_connection():
     log.debug("*A2O* creating worker")
     worker = ssh_worker(
         reporter=reporter,
-        include_subdirs=True,
-        external_subdirs=True,
+        include_subdirs=include_subdirs,
+        external_subdirs=external_subdirs,
     )
     log.debug("*A2O* creating scheduler")
     s = SimpleScheduler(
