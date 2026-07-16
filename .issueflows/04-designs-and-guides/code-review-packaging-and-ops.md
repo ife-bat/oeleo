@@ -15,10 +15,12 @@ See [`code-review-overview.md`](code-review-overview.md) for the index.
 
 ### DOC-01 — Docs/toolchain drift
 
-- README still shows `pip install oeleo` and `python -m build` / twine; day-to-day is **uv**.
-- README: “Python 3.8 support is no longer required” for ≥0.6, but `requires-python = ">=3.8,<3.13"` remains.
+**Resolved in #19** (floor raised earlier in #11): README Development uses `uv sync` / `uv run` / `uv build` / `uv publish`, and states `requires-python = ">=3.11,<3.13"`. Consumer install remains `pip install oeleo` from PyPI.
+
+Still open / related:
+
 - `requirements.txt` at repo root is tiny/legacy relative to `uv.lock`.
-- Agents should follow **`uv`** + `pyproject.toml` over README anecdotes when they conflict; fix docs in a dedicated issue.
+- Prefer **`uv`** + `pyproject.toml` if any remaining doc anecdotes disagree.
 
 ## Windows app / PyInstaller
 
