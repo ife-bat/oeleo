@@ -109,6 +109,8 @@ class SimpleDbHandler(DbHandler):
     def is_changed(self, **checks) -> bool:
         if self.record.code == 0:
             return True
+        if self.record.code >= 2:
+            return False
 
         _is_changed = False
         for k in checks:
