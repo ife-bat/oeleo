@@ -1,6 +1,6 @@
 # Status: Issue #17
 
-- [x] Done
+- [ ] Done
 
 ## What's done
 
@@ -15,4 +15,4 @@
 
 ## Remaining work
 
-- None.
+- `/iflow-close` (confirm Done, PR merge/archive, version bump decision).
