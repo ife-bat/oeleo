@@ -276,8 +276,8 @@ for name in ("paramiko", "fabric", "invoke"):
 
 ## Development
 
-- Developed using `uv` on `python 3.11`.
-- For version `0.6` and newer, Python `3.8` support is no longer required.
+- Developed using `uv` on `python 3.11+`.
+- Requires Python `>=3.11,<3.13` (see `pyproject.toml`).
 
 ### Some useful commands
 

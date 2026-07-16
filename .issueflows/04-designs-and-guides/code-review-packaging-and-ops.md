@@ -61,8 +61,10 @@ Do not run `nox -s pack` expecting it to match current packaging without verific
 2. On `iflow close`, bump version only when the change is user-facing/release-worthy (skill reads this-project “Release & version bump”).
 3. Publish remains a human/ops step (PyPI token); agents prepare the bump + changelog note, don’t upload secrets.
 
-## Dependency health (informational)
+## Dependency health & Dependabot
 
-- **SharePlum** / older Office365 cookie auth may constrain SharePoint longevity.
-- **Fabric** is appropriate for SSH; pin/transitively watch paramiko.
-- Dev pins: `black<23`, `pytest<8`, `nox<2024` — consider refreshing in a dedicated chore issue (not mixed with feature work).
+- **Active plan:** [`code-review-dependabot.md`](code-review-dependabot.md) — **29 open** alerts as of 2026-07-16; treat as P0 track **DEP-01**.
+- Blocking pins today: `black<23`, `pytest<8` in `[dependency-groups] dev` — these prevent patched resolves.
+- **SharePlum** / older Office365 cookie auth may constrain SharePoint longevity (also pulls `lxml`).
+- **Fabric** → paramiko/cryptography; refresh via lock upgrade, watch residual paramiko SHA-1 advisory with no patched release.
+- Dev pins (`nox<2024`, old black/pytest) belong in the same security refresh PR or an immediate follow-up — not mixed with feature/bug logic.
