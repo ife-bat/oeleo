@@ -6,7 +6,7 @@
 
 ## Stack / runtime
 
-- **Language:** Python (`requires-python = ">=3.8,<3.13"` in `pyproject.toml`; develop with **3.11** per README; CI uses **3.12**).
+- **Language:** Python (`requires-python = ">=3.11,<3.13"` in `pyproject.toml`; develop with **3.11+**; CI uses **3.12**).
 - **Package manager:** **`uv`** (`uv.lock` present). Prefer `uv run` / `uv sync` — do **not** assume Poetry for day-to-day work (`noxfile.py` still mentions Poetry; treat that as legacy).
 - **Build backend:** hatchling.
 - **Core deps:** peewee, python-dotenv, rich, Fabric, SharePlum; optional `pystray` via `[project.optional-dependencies] all`.
