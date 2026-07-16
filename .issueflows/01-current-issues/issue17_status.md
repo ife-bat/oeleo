@@ -11,8 +11,8 @@
 - README + `.env_example` operator docs.
 - Unit tests for per-file skip/opt-in, fail-path reconnect, env/kwarg resolution.
 - Design docs: REL-01 marked done (overview, correctness, backlog).
+- `uv run pytest -m "not ssh"` — 25 passed (incl. 5 new reconnect tests).
 
 ## Remaining work
 
-- Run `uv run pytest -m "not ssh"` and confirm green.
-- `/iflow-close` (PR merge, archive tracking, version bump decision).
+- `/iflow-close` (confirm Done, PR merge/archive, version bump decision).
