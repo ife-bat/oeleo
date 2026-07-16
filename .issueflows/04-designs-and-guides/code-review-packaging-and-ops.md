@@ -63,8 +63,9 @@ Do not run `nox -s pack` expecting it to match current packaging without verific
 
 ## Dependency health & Dependabot
 
-- **Active plan:** [`code-review-dependabot.md`](code-review-dependabot.md) — **29 open** alerts as of 2026-07-16; treat as P0 track **DEP-01**.
-- Blocking pins today: `black<23`, `pytest<8` in `[dependency-groups] dev` — these prevent patched resolves.
+- **DEP-01 done (#11):** `uv.lock` refreshed; `black>=26.3.1`, `pytest>=9.0.3`, `python-dotenv>=1.2.2`; `requires-python = ">=3.11,<3.13"`.
+- **DEP-02 done (#12):** `poetry.lock` confirmed absent on `main`; residual paramiko SHA-1 documented (no patched release). See [`code-review-dependabot.md`](code-review-dependabot.md).
+- **Next:** DEP-03 (#13) — add grouped `.github/dependabot.yml`.
 - **SharePlum** / older Office365 cookie auth may constrain SharePoint longevity (also pulls `lxml`).
-- **Fabric** → paramiko/cryptography; refresh via lock upgrade, watch residual paramiko SHA-1 advisory with no patched release.
-- Dev pins (`nox<2024`, old black/pytest) belong in the same security refresh PR or an immediate follow-up — not mixed with feature/bug logic.
+- **Fabric** → paramiko 5.0.0 / cryptography 49.0.0; paramiko SHA-1 advisory may remain open until upstream fix.
+- Legacy `noxfile.py` `pack` session still references Poetry (TOOL-01) — not a Dependabot scan target without a committed lockfile.

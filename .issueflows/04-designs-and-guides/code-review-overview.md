@@ -64,7 +64,7 @@ env (.env) → factories (simple_worker / ssh_worker / sharepoint_worker)
 
 | ID | Finding | Topic doc |
 |----|---------|-----------|
-| DEP-01 | **29 open Dependabot alerts** (13 high) on `uv.lock` — cryptography, urllib3, pillow, lxml, black, … | dependabot |
+| ~~DEP-01~~ | ~~29 open Dependabot alerts~~ — **resolved in #11** (lock refresh); residual paramiko SHA-1 documented in DEP-02 | dependabot |
 | BUG-01 | Frozen files (`code=2`) are **not** respected in `Worker.run` / `is_changed` | correctness |
 | BUG-02 | DB keys files by **basename only** → collisions when `include_subdirs=True` | correctness |
 | BUG-03 | `app/oa.pyw` logs `worker.db_path` which **does not exist** on `Worker` | correctness |
@@ -84,7 +84,7 @@ env (.env) → factories (simple_worker / ssh_worker / sharepoint_worker)
 | TEST-01 | Large stubbed test surface; SharePoint untested; many SSH paths only lightly covered | testing |
 | TOOL-01 | `noxfile.py` still Poetry-based while project uses `uv` + hatchling | packaging |
 | DOC-01 | README vs `pyproject.toml` Python version / build commands drift | packaging |
-| DEP-02 | Residual Dependabot cases (e.g. paramiko SHA-1 with no patched release) + stale poetry.lock scan noise | dependabot |
+| ~~DEP-02~~ | Residual Dependabot cases — **resolved in #12** (`poetry.lock` absent; paramiko SHA-1 documented) | dependabot |
 | DEP-03 | No Dependabot/grouped auto-update config → alerts pile up | dependabot |
 
 ### Low / cleanup
@@ -111,7 +111,7 @@ env (.env) → factories (simple_worker / ssh_worker / sharepoint_worker)
 2. **`iflow plan`** — cite finding IDs; keep scope to one severity band when possible.
 3. **`iflow yolo` / label `yolo`** — only for backlog rows marked **yolo-fit**.
 4. **`iflow epic`** — use for rows marked **epic** (DB identity, connector hardening, CLI).
-5. Treat **DEP-01** (Dependabot refresh) as its own PR — do not mix with logic bugs (BUG-*) in the same change set.
+5. **DEP-01** and **DEP-02** are done (#11, #12). Next dependency track: **DEP-03** (#13, Dependabot config). Do not mix dependency PRs with logic bugs (BUG-*).
 6. After non-trivial decisions, **update the relevant topic doc** (and this overview’s summary table if severity changes).
 
 ## Out of scope for this review
