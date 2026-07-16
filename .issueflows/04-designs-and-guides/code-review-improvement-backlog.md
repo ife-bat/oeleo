@@ -28,7 +28,7 @@ Do this as a **dedicated PR**, not mixed with BUG-* logic fixes. Details: [`code
 | [#15](https://github.com/ife-bat/oeleo/issues/15) | Honor bookkeeping `code=2` (locked) during `Worker.run` | BUG-01 | **yolo-fit** | Unit test required · label `yolo` |
 | [#14](https://github.com/ife-bat/oeleo/issues/14) | Fix `OA_SINGLE_RUN` crash: replace `worker.db_path` | BUG-03 | **yolo-fit** | Log `bookkeeper.db_name` · label `yolo` |
 | [#16](https://github.com/ife-bat/oeleo/issues/16) | Peewee `processed_date` default must be callable | BUG-04 | **yolo-fit** | One-liner + test · label `yolo` |
-| [#17](https://github.com/ife-bat/oeleo/issues/17) | Stop reconnecting SSH before every file by default | REL-01 | **standard** | Confirm ops preference; reconnect-on-failure only |
+| ~~[#17](https://github.com/ife-bat/oeleo/issues/17)~~ | ~~Stop reconnecting SSH before every file by default~~ | ~~REL-01~~ | **done** | Default `False`; opt-in kwarg / `OELEO_RECONNECT`; fail-path retry kept |
 
 ## P1 — Data model & identity
 
@@ -103,7 +103,7 @@ Filed on GitHub (2026-07-16). Two parallel tracks (separate branches/PRs):
 1. [#14](https://github.com/ife-bat/oeleo/issues/14) BUG-03 — yolo  
 2. [#15](https://github.com/ife-bat/oeleo/issues/15) BUG-01 — yolo  
 3. [#16](https://github.com/ife-bat/oeleo/issues/16) BUG-04 — yolo  
-4. [#17](https://github.com/ife-bat/oeleo/issues/17) REL-01 — plan + confirm  
+4. ~~[#17](https://github.com/ife-bat/oeleo/issues/17) REL-01~~ — done  
 5. [#18](https://github.com/ife-bat/oeleo/issues/18) SEC-01 — plan  
 6. [#19](https://github.com/ife-bat/oeleo/issues/19) DOC-01 — yolo  
 
