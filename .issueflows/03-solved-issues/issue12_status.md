@@ -1,22 +1,23 @@
 # Status: Issue #12
 
-- [ ] Done
+- [x] Done
 
 ## What's done
 
 - Verified `poetry.lock` absent on `origin/main` (no deletion needed).
 - Verified single resolved versions in `uv.lock` for all security-sensitive packages; all meet patched floors from DEP-01.
-- Dependabot API: 403 in agent env — open alert count unverified here; maintainer should confirm on GitHub Security tab.
 - Updated design docs:
   - `code-review-dependabot.md` — post-DEP-01 snapshot, residual paramiko note, DEP-02 resolved
   - `code-review-overview.md` — DEP-01/DEP-02 marked done
   - `code-review-packaging-and-ops.md` — dependency health section refreshed
-- Posted summary comment on GitHub issue #12.
-- `uv run pytest -m "not ssh"` — 20 passed, 3 deselected.
+- `uv run pytest -m "not ssh"` — 20 passed, 3 deselected (close sanity check).
+- PR #22 opened: https://github.com/ife-bat/oeleo/pull/22
 
 ## Remaining work
 
-- `/iflow-close`: commit, push, PR; maintainer confirms Dependabot alert count on Security tab and posts issue comment if desired (API blocked in agent env).
+- None for #12. Maintainer optional follow-up:
+  - Confirm Dependabot open-alert count on GitHub Security tab (API 403 in agent env).
+  - Post DEP-02 summary comment on #12 if desired (suggested text in PR body).
 
 ## Verification notes
 
@@ -31,3 +32,7 @@
 | pytest | 9.1.1 | ≥ 9.0.3 | yes |
 | idna | 3.18 | ≥ 3.15 | yes |
 | paramiko | 5.0.0 | no SHA-1 patch | residual — documented |
+
+## Notes
+
+- Next dependency track: DEP-03 (#13) — grouped Dependabot config.
