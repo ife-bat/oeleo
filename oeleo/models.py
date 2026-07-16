@@ -19,7 +19,7 @@ log = logging.getLogger("oeleo")
 
 
 class FileList(peewee.Model):
-    processed_date = peewee.DateTimeField(default=datetime.datetime.now())
+    processed_date = peewee.DateTimeField(default=datetime.datetime.now)
     local_name = peewee.CharField(unique=True)
     external_name = peewee.CharField(null=True)
     checksum = peewee.CharField(null=True)
