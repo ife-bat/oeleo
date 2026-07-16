@@ -9,7 +9,7 @@ Snapshot date: **2026-07-16** (post-DEP-01 / DEP-02; re-check open alerts on Git
 |-------|-------|--------|
 | DEP-01 | [#11](https://github.com/ife-bat/oeleo/issues/11) — lock refresh + pin widen | **Done** (merged) |
 | DEP-02 | [#12](https://github.com/ife-bat/oeleo/issues/12) — residuals + `poetry.lock` | **Done** (this PR) |
-| DEP-03 | [#13](https://github.com/ife-bat/oeleo/issues/13) — grouped Dependabot config | Open |
+| DEP-03 | [#13](https://github.com/ife-bat/oeleo/issues/13) — grouped Dependabot config | **Done** (`.github/dependabot.yml`) |
 
 **Pre-DEP-01 (2026-07-16):** 29 open alerts (13 high, 13 medium, 3 low), mostly on `uv.lock`, blocked by `black<23` and `pytest<8`.
 
@@ -75,9 +75,9 @@ Widened `black` / `pytest` dev pins, raised `python-dotenv` floor, `uv lock --up
 | Stale `poetry.lock` | Absent on `main` — no deletion needed |
 | Recurring alerts | Deferred to DEP-03 ([#13](https://github.com/ife-bat/oeleo/issues/13)) |
 
-### DEP-03 — Dependabot config (open, [#13](https://github.com/ife-bat/oeleo/issues/13))
+### DEP-03 — Dependabot config ([#13](https://github.com/ife-bat/oeleo/issues/13)) — **Done**
 
-Add `.github/dependabot.yml` for grouped weekly `uv` / pip updates so alerts do not pile up again.
+`.github/dependabot.yml` configures weekly grouped updates for the `uv` lockfile (`dev-tools` pattern group + `all-dependencies` catch-all) and `github-actions`. uv groups use `patterns` only — not `dependency-type`.
 
 ## What not to do
 
