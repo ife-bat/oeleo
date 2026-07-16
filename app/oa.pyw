@@ -127,7 +127,7 @@ def single_ssh_connection():
 
     log.debug("*A2O* creating worker")
     worker = ssh_worker(reporter=reporter)
-    log.debug(f"*A2O* connecting to db ({worker.db_path})")
+    log.debug(f"*A2O* connecting to db ({worker.bookkeeper.db_name})")
     worker.connect_to_db()
     if add_check:
         log.debug("*A2O* checking")

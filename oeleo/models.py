@@ -19,7 +19,7 @@ log = logging.getLogger("oeleo")
 
 
 class FileList(peewee.Model):
-    processed_date = peewee.DateTimeField(default=datetime.datetime.now())
+    processed_date = peewee.DateTimeField(default=datetime.datetime.now)
     local_name = peewee.CharField(unique=True)
     external_name = peewee.CharField(null=True)
     checksum = peewee.CharField(null=True)
@@ -109,6 +109,8 @@ class SimpleDbHandler(DbHandler):
     def is_changed(self, **checks) -> bool:
         if self.record.code == 0:
             return True
+        if self.record.code >= 2:
+            return False
 
         _is_changed = False
         for k in checks:
