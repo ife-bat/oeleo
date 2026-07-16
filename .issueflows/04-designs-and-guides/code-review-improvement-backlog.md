@@ -11,14 +11,24 @@ Entry point: [`code-review-overview.md`](code-review-overview.md).
 
 ---
 
-## P0 — Correctness (do first)
+## P0 — Dependabot / dependency security (parallel track)
 
-| Title (suggested GitHub issue) | IDs | Size | Notes |
-|--------------------------------|-----|------|-------|
-| Honor bookkeeping `code=2` (locked) during `Worker.run` | BUG-01 | **yolo-fit** | Unit test required |
-| Fix `OA_SINGLE_RUN` crash: replace `worker.db_path` | BUG-03 | **yolo-fit** | Log `bookkeeper.db_name` |
-| Peewee `processed_date` default must be callable | BUG-04 | **yolo-fit** | One-liner + test |
-| Stop reconnecting SSH before every file by default | REL-01 | **yolo-fit** / standard | Confirm ops preference; reconnect-on-failure only |
+Do this as a **dedicated PR**, not mixed with BUG-* logic fixes. Details: [`code-review-dependabot.md`](code-review-dependabot.md).
+
+| GitHub | Title | IDs | Size | Notes |
+|--------|-------|-----|------|-------|
+| [#11](https://github.com/ife-bat/oeleo/issues/11) | Clear Dependabot alerts: widen black/pytest pins + refresh uv.lock | DEP-01 | **standard** | ~29 open alerts; floors: cryptography≥48.0.1, urllib3≥2.7, pillow≥12.2, lxml≥6.1, python-dotenv≥1.2.2, black≥26.3.1, pytest≥9.0.3 |
+| [#12](https://github.com/ife-bat/oeleo/issues/12) | Document residual Dependabot cases; remove stale poetry.lock if present | DEP-02 | **yolo-fit** | After DEP-01 · label `yolo` |
+| [#13](https://github.com/ife-bat/oeleo/issues/13) | Add grouped Dependabot config for uv/pip | DEP-03 | **yolo-fit** | Prevent recurrence · label `yolo` |
+
+## P0 — Correctness (do first / can interleave with DEP-01)
+
+| GitHub | Title | IDs | Size | Notes |
+|--------|-------|-----|------|-------|
+| [#15](https://github.com/ife-bat/oeleo/issues/15) | Honor bookkeeping `code=2` (locked) during `Worker.run` | BUG-01 | **yolo-fit** | Unit test required · label `yolo` |
+| [#14](https://github.com/ife-bat/oeleo/issues/14) | Fix `OA_SINGLE_RUN` crash: replace `worker.db_path` | BUG-03 | **yolo-fit** | Log `bookkeeper.db_name` · label `yolo` |
+| [#16](https://github.com/ife-bat/oeleo/issues/16) | Peewee `processed_date` default must be callable | BUG-04 | **yolo-fit** | One-liner + test · label `yolo` |
+| [#17](https://github.com/ife-bat/oeleo/issues/17) | Stop reconnecting SSH before every file by default | REL-01 | **standard** | Confirm ops preference; reconnect-on-failure only |
 
 ## P1 — Data model & identity
 
@@ -29,10 +39,10 @@ Entry point: [`code-review-overview.md`](code-review-overview.md).
 
 ## P1 — Security / SSH hardening
 
-| Title | IDs | Size | Notes |
-|-------|-----|------|-------|
-| Shell-safe remote path handling in `SSHConnector` | SEC-01 | **standard** | `shlex.quote` or avoid shell; tests with spaces |
-| Make `OELEO_PASSWORD` optional for key-based SSH | SEC-03 | **yolo-fit** | Don’t require env when `use_password=False` |
+| GitHub | Title | IDs | Size | Notes |
+|--------|-------|-----|------|-------|
+| [#18](https://github.com/ife-bat/oeleo/issues/18) | Shell-safe remote path handling in `SSHConnector` | SEC-01 | **standard** | `shlex.quote` or avoid shell; tests with spaces |
+| — | Make `OELEO_PASSWORD` optional for key-based SSH | SEC-03 | **yolo-fit** | Don’t require env when `use_password=False` · *not filed yet* |
 
 ## P2 — API cleanup
 
@@ -62,12 +72,12 @@ Entry point: [`code-review-overview.md`](code-review-overview.md).
 
 ## P3 — Docs & packaging hygiene
 
-| Title | IDs | Size | Notes |
-|-------|-----|------|-------|
-| Align README with uv + actual Python floor | DOC-01 | **yolo-fit** | |
-| Portable PyInstaller spec / build script | CLEAN-03 | **standard** | Relative paths |
-| Retire or rewrite Poetry-based `nox pack` | TOOL-01 | **standard** | |
-| Delete `base_filter_old` and unused imports | CLEAN-01 | **yolo-fit** | |
+| GitHub | Title | IDs | Size | Notes |
+|--------|-------|-----|------|-------|
+| [#19](https://github.com/ife-bat/oeleo/issues/19) | Align README with uv + actual Python floor | DOC-01 | **yolo-fit** | label `yolo` |
+| — | Portable PyInstaller spec / build script | CLEAN-03 | **standard** | Relative paths · *not filed yet* |
+| — | Retire or rewrite Poetry-based `nox pack` | TOOL-01 | **standard** | *not filed yet* |
+| — | Delete `base_filter_old` and unused imports | CLEAN-01 | **yolo-fit** | *not filed yet* |
 
 ## P4 — Product wishlist (defer unless requested)
 
@@ -81,16 +91,25 @@ Entry point: [`code-review-overview.md`](code-review-overview.md).
 
 ## Suggested first wave (concrete sequence)
 
-Good sequence for issue-flow without an epic:
+Filed on GitHub (2026-07-16). Two parallel tracks (separate branches/PRs):
 
-1. BUG-03 (`db_path`) — yolo  
-2. BUG-01 (locked files) — yolo  
-3. BUG-04 (datetime default) — yolo  
-4. REL-01 (reconnect default) — plan + confirm  
-5. SEC-01 (quote SSH paths) — plan  
-6. DOC-01 (README/uv) — yolo  
+**Track A — dependencies**
 
-Then open an **epic** for BUG-02 (relative-path bookkeeping).
+1. [#11](https://github.com/ife-bat/oeleo/issues/11) DEP-01 — plan + confirm  
+2. [#12](https://github.com/ife-bat/oeleo/issues/12) DEP-02 / [#13](https://github.com/ife-bat/oeleo/issues/13) DEP-03 — yolo  
+
+**Track B — correctness**
+
+1. [#14](https://github.com/ife-bat/oeleo/issues/14) BUG-03 — yolo  
+2. [#15](https://github.com/ife-bat/oeleo/issues/15) BUG-01 — yolo  
+3. [#16](https://github.com/ife-bat/oeleo/issues/16) BUG-04 — yolo  
+4. [#17](https://github.com/ife-bat/oeleo/issues/17) REL-01 — plan + confirm  
+5. [#18](https://github.com/ife-bat/oeleo/issues/18) SEC-01 — plan  
+6. [#19](https://github.com/ife-bat/oeleo/issues/19) DOC-01 — yolo  
+
+Later: open an **epic** for BUG-02 (relative-path bookkeeping) — not filed yet.
+
+Prefer landing **#11 (DEP-01)** early so CI and local envs are not stuck on known-vulnerable wheels while other work continues. Pick with `iflow pick`.
 
 ## When updating this backlog
 

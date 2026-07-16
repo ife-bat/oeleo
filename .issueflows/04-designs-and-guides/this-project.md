@@ -39,7 +39,7 @@ Config is via **environment variables** / `.env` (see `.env_example` and README)
 
 - Issue work goes through **issue-flow** (`.issueflows/`, `iflow …` skills). Focus issue only under `01-current-issues`.
 - Branch names: `<N>-<short-slug>`. Assume squash-merges; use `iflow cleanup` after merge.
-- Before planning/implementing, skim `.issueflows/04-designs-and-guides/` — especially [`code-review-overview.md`](code-review-overview.md).
+- Before planning/implementing, skim `.issueflows/04-designs-and-guides/` — especially [`code-review-overview.md`](code-review-overview.md). Dependency/security bumps: [`code-review-dependabot.md`](code-review-dependabot.md).
 - Public composition API: factories in `oeleo/workers.py` + `Worker` methods `connect_to_db` → `filter_local` → (`check`) → `run` → `close`.
 - Logging: package logger name `"oeleo"`; prefer `start_logger(...)` from `oeleo.utils`.
 - **Multi-root workspaces:** this repo uses **uv**, not conda. Sibling repos may differ — keep toolchain notes here.
