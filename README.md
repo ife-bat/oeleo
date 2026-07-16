@@ -19,9 +19,14 @@ Python package / app that can be used for transferring files from an instrument-
 
 ### Install
 
+From PyPI (end users):
+
 ```bash
-$ pip install oeleo
+pip install oeleo
 ```
+
+From a clone (development), use **uv** — see [Development](#development).
+
 ### Run
 
 1. Create an `oeleo` worker instance.
@@ -276,44 +281,29 @@ for name in ("paramiko", "fabric", "invoke"):
 
 ## Development
 
-- Developed using `uv` on `python 3.11+`.
-- Requires Python `>=3.11,<3.13` (see `pyproject.toml`).
-
-### Some useful commands
-
-#### Update version
+Day-to-day toolchain is **uv** (`uv.lock` is committed). Requires Python `>=3.11,<3.13` (see `pyproject.toml`); develop on **3.11+** (CI uses 3.12).
 
 ```bash
-# update version in pyproject.toml, e.g. from 0.5.3 to 0.6.0
-```
-## Testing
+# Sync the project environment (add --all-extras when you need pystray)
+uv sync
+uv sync --all-extras
 
-Unit tests:
+# Unit tests (default / CI path)
+uv run pytest -m "not ssh"
 
-```bash
-uv run pytest
-```
-
-SSH integration tests (requires a local SSH server):
-
-```bash
+# SSH integration tests (needs a local SSH server — see tests/README.md)
 uv run pytest -m ssh
-```
 
-See `tests/README.md` for Docker setup, environment variables, and helper scripts.
+# Format (black + isort; not enforced in CI)
+uv run black oeleo tests app
+uv run isort oeleo tests app
 
-#### Build
+# Bump version in pyproject.toml (e.g. 0.7.0 → 0.7.1)
+uv version --bump patch
 
-```bash
-python -m build
-```
-
-#### Publish
-
-If you are using 2-factor authentication, you need to create a token on pypi.org and run:
-
-```bash
-python -m twine upload -u __token__ -p <token> dist/*
+# Build and publish
+uv build
+uv publish   # uses PyPI token from the environment / keyring
 ```
 
 ### Next

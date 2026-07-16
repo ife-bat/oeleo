@@ -48,7 +48,7 @@ Config is via **environment variables** / `.env` (see `.env_example` and README)
 
 - **Static version (uv):** `[project] version` lives in `pyproject.toml` (currently `0.7.0`).
 - Bump with `uv version --bump <level>` before the release commit when closing a release-oriented issue.
-- Publish historically via build + twine (README); keep PyPI tokens out of the repo.
+- Publish with `uv build` / `uv publish` (see README); keep PyPI tokens out of the repo.
 
 ## Entry points
 
