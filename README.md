@@ -99,6 +99,7 @@ OELEO_BASE_DIR_TO=C:\data\pub
 OELEO_FILTER_EXTENSION=.csv
 OELEO_DB_NAME=local2pub.db
 OELEO_LOG_DIR=C:\oeleo\logs
+# OELEO_RECONNECT=true
 
 ## only needed for advanced connectors:
 # OELEO_DB_HOST=<db host>
@@ -125,6 +126,7 @@ Core transfer settings:
 - `OELEO_FILTER_EXTENSION`: file extension filter (include the dot, e.g. `.csv`).
 - `OELEO_DB_NAME`: sqlite database filename used for bookkeeping.
 - `OELEO_LOG_DIR`: directory for log files; defaults to the current working directory.
+- `OELEO_RECONNECT`: when `true` / `1` / `yes`, reconnect the destination connector before each changed file (useful on flaky networks). Default is off so SSH runs keep one session across files. A failed copy still reconnects once and retries regardless of this setting. Factories also accept a `reconnect=` kwarg that overrides the env var.
 
 SSH connector settings:
 - `OELEO_EXTERNAL_HOST`: SSH host (optionally with port, e.g. `host:2222`).

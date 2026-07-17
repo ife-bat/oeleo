@@ -55,21 +55,9 @@ log.debug(f"*A2O* connecting to db ({worker.db_path})")
 
 ---
 
-### REL-01 — Reconnect before every file
+### ~~REL-01 — Reconnect before every file~~ (done in #17)
 
-`Worker` defaults `reconnect=True`. In `_process_file`:
-
-```python
-if self.reconnect:
-    self.external_connector.reconnect()
-success = self.external_connector.move_func(...)
-```
-
-For SSH this closes/opens Fabric sessions per file (plus retries inside `move_func`). Slow and fragile under rate limits / server MaxStartups.
-
-**Fix direction:** Default `reconnect=False`; reconnect only after failed move (already partially done). Keep env/flag for flaky networks. Add test or at least document.
-
-**Issue size:** small behavior change — confirm with operators; **yolo-fit** if default change is accepted, else gated behind flag.
+~~`Worker` defaults `reconnect=True`.~~ **Resolved:** default is `reconnect=False`; opt-in via `Worker(..., reconnect=True)`, factory `reconnect=`, or `OELEO_RECONNECT`. Failed moves still reconnect once and retry. Per-file reconnect remains available for flaky networks.
 
 ## Medium severity
 
@@ -162,4 +150,4 @@ Tray quit → hard process exit from deep inside worker. Hard to test; surprisin
 2. Two same basenames in different subdirs get two DB rows and two destinations.
 3. `OA_SINGLE_RUN` path does not AttributeError.
 4. Failed SSH list does not look like “empty directory” without error status.
-5. `reconnect=False` performs one connect for N successful copies (mock Fabric Connection).
+5. ~~`reconnect=False` performs one connect for N successful copies (mock Fabric Connection).~~ — covered by unit tests in #17.

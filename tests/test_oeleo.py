@@ -1,6 +1,8 @@
 import logging
 import os
 from pathlib import Path
+from unittest.mock import MagicMock
+
 import dotenv
 import pytest
 
@@ -9,7 +11,7 @@ from oeleo.connectors import LocalConnector
 from oeleo.movers import simple_mover, connected_mover
 from oeleo.utils import start_logger
 from oeleo.schedulers import SimpleScheduler
-from oeleo.workers import simple_worker
+from oeleo.workers import Worker, resolve_reconnect, simple_worker
 
 start_logger()
 log = logging.getLogger("test-oeleo")
@@ -224,3 +226,113 @@ def test_worker_with_simple_scheduler_with_subdirs(
 
     assert len(list(Path(from_directory).rglob("*.xyz"))) == 4
     assert len(list(Path(to_directory).rglob("*.xyz"))) == 4
+
+
+def _worker_with_mock_external(tmp_path, reconnect=False, move_side_effect=None):
+    """Build a Worker with mocked connectors/bookkeeper for reconnect tests."""
+    local = MagicMock()
+    local.directory = tmp_path / "from"
+    local.directory.mkdir(exist_ok=True)
+
+    external = MagicMock()
+    external.directory = tmp_path / "to"
+    external.directory.mkdir(exist_ok=True)
+    if move_side_effect is not None:
+        external.move_func.side_effect = move_side_effect
+    else:
+        external.move_func.return_value = True
+
+    bookkeeper = MagicMock()
+    bookkeeper.is_changed.return_value = True
+
+    checker = MagicMock()
+    checker.check.return_value = {"checksum": "abc"}
+
+    reporter = MagicMock()
+    reporter.should_die.return_value = False
+
+    worker = Worker(
+        checker=checker,
+        bookkeeper=bookkeeper,
+        local_connector=local,
+        external_connector=external,
+        reporter=reporter,
+        reconnect=reconnect,
+    )
+    return worker, external
+
+
+def test_reconnect_false_skips_per_file_reconnect(tmp_path):
+    worker, external = _worker_with_mock_external(tmp_path, reconnect=False)
+    for i in range(3):
+        f = tmp_path / "from" / f"file{i}.xyz"
+        f.write_text("data")
+        worker._process_file(f)
+
+    assert external.reconnect.call_count == 0
+    assert external.move_func.call_count == 3
+
+
+def test_reconnect_true_reconnects_before_each_changed_file(tmp_path):
+    worker, external = _worker_with_mock_external(tmp_path, reconnect=True)
+    for i in range(3):
+        f = tmp_path / "from" / f"file{i}.xyz"
+        f.write_text("data")
+        worker._process_file(f)
+
+    assert external.reconnect.call_count == 3
+    assert external.move_func.call_count == 3
+
+
+def test_failed_move_reconnects_even_when_reconnect_false(tmp_path):
+    worker, external = _worker_with_mock_external(
+        tmp_path, reconnect=False, move_side_effect=[False, True]
+    )
+    f = tmp_path / "from" / "file.xyz"
+    f.parent.mkdir(exist_ok=True)
+    f.write_text("data")
+
+    result = worker._process_file(f)
+
+    assert result is None
+    assert external.reconnect.call_count == 1
+    assert external.move_func.call_count == 2
+
+
+def test_resolve_reconnect_defaults_and_env(monkeypatch):
+    monkeypatch.delenv("OELEO_RECONNECT", raising=False)
+    assert resolve_reconnect(None) is False
+    assert resolve_reconnect(True) is True
+    assert resolve_reconnect(False) is False
+
+    monkeypatch.setenv("OELEO_RECONNECT", "true")
+    assert resolve_reconnect(None) is True
+    assert resolve_reconnect(False) is False
+
+
+def test_simple_worker_reconnect_from_env(
+    monkeypatch, db_tmp_path, local_tmp_path, external_tmp_path
+):
+    monkeypatch.delenv("OELEO_RECONNECT", raising=False)
+    worker = simple_worker(
+        db_name=db_tmp_path,
+        base_directory_from=local_tmp_path,
+        base_directory_to=external_tmp_path,
+    )
+    assert worker.reconnect is False
+
+    monkeypatch.setenv("OELEO_RECONNECT", "1")
+    worker_env = simple_worker(
+        db_name=db_tmp_path,
+        base_directory_from=local_tmp_path,
+        base_directory_to=external_tmp_path,
+    )
+    assert worker_env.reconnect is True
+
+    worker_kw = simple_worker(
+        db_name=db_tmp_path,
+        base_directory_from=local_tmp_path,
+        base_directory_to=external_tmp_path,
+        reconnect=False,
+    )
+    assert worker_kw.reconnect is False
