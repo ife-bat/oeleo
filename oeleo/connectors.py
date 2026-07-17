@@ -327,7 +327,7 @@ class SSHConnector(Connector):
             self.connect()
 
         cmd = f"md5sum {self._remote_shell_token(self.directory / f)}"
-        result = self.c.run(cmd, hide=hide)
+        result = self.c.run(cmd, hide=hide, in_stream=False)
         if not result.ok:
             log.debug("it failed - should raise an exception her (future work)")
         checksum = result.stdout.strip().split()[0]
