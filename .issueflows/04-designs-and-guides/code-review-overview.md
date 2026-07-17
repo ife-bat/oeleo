@@ -68,7 +68,7 @@ env (.env) → factories (simple_worker / ssh_worker / sharepoint_worker)
 | BUG-01 | Frozen files (`code=2`) are **not** respected in `Worker.run` / `is_changed` | correctness |
 | BUG-02 | DB keys files by **basename only** → collisions when `include_subdirs=True` | correctness |
 | BUG-03 | `app/oa.pyw` logs `worker.db_path` which **does not exist** on `Worker` | correctness |
-| SEC-01 | SSH `find` / `md5sum` / `mkdir` built via string interpolation (shell injection risk) | security |
+| ~~SEC-01~~ | ~~SSH `find` / `md5sum` / `mkdir` string interpolation~~ — **resolved in #18** (`shlex.quote` / `_remote_shell_token`) | security |
 | ~~REL-01~~ | ~~`Worker.reconnect=True` reconnects **before every file**~~ — **resolved in #17** (`reconnect=False` default; opt-in via kwarg / `OELEO_RECONNECT`) | correctness |
 
 ### Medium

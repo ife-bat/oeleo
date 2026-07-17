@@ -41,7 +41,7 @@ Do this as a **dedicated PR**, not mixed with BUG-* logic fixes. Details: [`code
 
 | GitHub | Title | IDs | Size | Notes |
 |--------|-------|-----|------|-------|
-| [#18](https://github.com/ife-bat/oeleo/issues/18) | Shell-safe remote path handling in `SSHConnector` | SEC-01 | **standard** | `shlex.quote` or avoid shell; tests with spaces |
+| ~~[#18](https://github.com/ife-bat/oeleo/issues/18)~~ | ~~Shell-safe remote path handling in `SSHConnector`~~ | ~~SEC-01~~ | **done** | POSIX `shlex.quote`; unit + gated SSH space-path tests |
 | — | Make `OELEO_PASSWORD` optional for key-based SSH | SEC-03 | **yolo-fit** | Don’t require env when `use_password=False` · *not filed yet* |
 
 ## P2 — API cleanup
@@ -104,7 +104,7 @@ Filed on GitHub (2026-07-16). Two parallel tracks (separate branches/PRs):
 2. [#15](https://github.com/ife-bat/oeleo/issues/15) BUG-01 — yolo  
 3. [#16](https://github.com/ife-bat/oeleo/issues/16) BUG-04 — yolo  
 4. ~~[#17](https://github.com/ife-bat/oeleo/issues/17) REL-01~~ — done  
-5. [#18](https://github.com/ife-bat/oeleo/issues/18) SEC-01 — plan  
+5. ~~[#18](https://github.com/ife-bat/oeleo/issues/18) SEC-01~~ — done  
 6. [#19](https://github.com/ife-bat/oeleo/issues/19) DOC-01 — yolo  
 
 Later: open an **epic** for BUG-02 (relative-path bookkeeping) — not filed yet.
