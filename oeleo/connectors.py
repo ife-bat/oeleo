@@ -2,6 +2,7 @@ import getpass
 import hashlib
 import logging
 import os
+import shlex
 import sys
 import time
 from pathlib import Path, PurePosixPath, PureWindowsPath
@@ -187,6 +188,18 @@ class SSHConnector(Connector):
             log.debug("Not on posix")
         log.debug(f"The ssh directory is: {self.directory}")
 
+    def _remote_shell_token(self, value: Any) -> str:
+        """Quote a path/token for remote shell interpolation (SEC-01).
+
+        POSIX remotes use ``shlex.quote`` (the supported / tested path).
+        Windows remotes get a best-effort ``cmd.exe`` double-quote wrap only;
+        full Windows shell safety is not claimed without a dedicated harness.
+        """
+        text = str(value)
+        if self.is_posix:
+            return shlex.quote(text)
+        return '"' + text.replace('"', '""') + '"'
+
     def connect(self, **kwargs) -> None:
         if self.use_password:
             connect_kwargs = {
@@ -216,11 +229,14 @@ class SSHConnector(Connector):
         # used only when developing oeleo
         log.debug("Connected?")
         if self.is_posix:
-            cmd = f"find {self.directory} -maxdepth 1 -name '*'"
+            cmd = (
+                f"find {self._remote_shell_token(self.directory)} "
+                f"-maxdepth 1 -name {self._remote_shell_token('*')}"
+            )
             log.debug(cmd)
             self.c.run(cmd)
         else:
-            cmd = f"dir {self.directory}"
+            cmd = f"dir {self._remote_shell_token(self.directory)}"
             log.debug(cmd)
             self.c.run(cmd)
         sys.exit()
@@ -228,11 +244,14 @@ class SSHConnector(Connector):
     def check_connection_and_exit(self):
         log.debug("Connected?")
         if self.is_posix:
-            cmd = f"find {self.directory} -maxdepth 1 -name '*'"
+            cmd = (
+                f"find {self._remote_shell_token(self.directory)} "
+                f"-maxdepth 1 -name {self._remote_shell_token('*')}"
+            )
             log.debug(cmd)
             self.c.run(cmd)
         else:
-            cmd = f"dir {self.directory}"
+            cmd = f"dir {self._remote_shell_token(self.directory)}"
             log.debug(cmd)
             self.c.run(cmd)
         sys.exit()
@@ -282,10 +301,13 @@ class SSHConnector(Connector):
             log.debug("Connecting ...")
             self.connect()
 
+        directory_q = self._remote_shell_token(self.directory)
+        pattern_q = self._remote_shell_token(glob_pattern)
         if max_depth is None:
-            cmd = f"find {self.directory} -name '{glob_pattern}'"
+            cmd = f"find {directory_q} -name {pattern_q}"
         else:
-            cmd = f"find {self.directory} -maxdepth {max_depth} -name '{glob_pattern}'"
+            depth = int(max_depth)
+            cmd = f"find {directory_q} -maxdepth {depth} -name {pattern_q}"
         log.debug(cmd)
         file_list = []
         try:
@@ -304,7 +326,7 @@ class SSHConnector(Connector):
             log.debug("Connecting ...")
             self.connect()
 
-        cmd = f'md5sum "{self.directory/f}"'
+        cmd = f"md5sum {self._remote_shell_token(self.directory / f)}"
         result = self.c.run(cmd, hide=hide)
         if not result.ok:
             log.debug("it failed - should raise an exception her (future work)")
@@ -316,10 +338,12 @@ class SSHConnector(Connector):
             log.debug("Connecting ...")
             self.connect()
 
+        remote_q = self._remote_shell_token(remote_dir)
         if self.is_posix:
-            cmd = f'mkdir -p "{remote_dir}"'
+            cmd = f"mkdir -p {remote_q}"
         else:
-            cmd = f'if not exist "{remote_dir}" mkdir "{remote_dir}"'
+            # Best-effort cmd.exe quoting only; POSIX is the SEC-01 acceptance path.
+            cmd = f"if not exist {remote_q} mkdir {remote_q}"
 
         log.debug(f"Ensuring remote dir exists: {remote_dir}")
         self.c.run(cmd, hide=True, in_stream=False)

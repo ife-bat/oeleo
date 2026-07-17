@@ -1,4 +1,5 @@
 import os
+import shlex
 from pathlib import PurePosixPath
 
 import pytest
@@ -13,6 +14,12 @@ def _missing_env_vars():
         "OELEO_PASSWORD",
     ]
     return [key for key in required if not os.getenv(key)]
+
+
+def _run_quoted(connector, template, *parts, **kwargs):
+    """Run a remote command with each path-like part shell-quoted."""
+    quoted = [shlex.quote(str(p)) for p in parts]
+    return connector.c.run(template.format(*quoted), **kwargs)
 
 
 @pytest.fixture(scope="module")
@@ -35,14 +42,24 @@ def ssh_remote_dir():
         result = setup_connector.c.run("mktemp -d", hide=True, in_stream=False)
         base_dir = result.stdout.strip()
 
-        setup_connector.c.run(
-            f"mkdir -p {base_dir}/sub", hide=True, in_stream=False
+        _run_quoted(
+            setup_connector,
+            "mkdir -p {}/sub",
+            base_dir,
+            hide=True,
+            in_stream=False,
         )
-        setup_connector.c.run(
-            f"printf 'root' > {base_dir}/root.txt", hide=True, in_stream=False
+        _run_quoted(
+            setup_connector,
+            "printf 'root' > {}/root.txt",
+            base_dir,
+            hide=True,
+            in_stream=False,
         )
-        setup_connector.c.run(
-            f"printf 'nested' > {base_dir}/sub/nested.txt",
+        _run_quoted(
+            setup_connector,
+            "printf 'nested' > {}/sub/nested.txt",
+            base_dir,
             hide=True,
             in_stream=False,
         )
@@ -50,8 +67,10 @@ def ssh_remote_dir():
         yield base_dir
     finally:
         if base_dir:
-            setup_connector.c.run(
-                f"rm -rf {base_dir}",
+            _run_quoted(
+                setup_connector,
+                "rm -rf {}",
+                base_dir,
                 warn=True,
                 hide=True,
                 in_stream=False,
@@ -111,8 +130,10 @@ def test_ssh_connector_creates_missing_remote_dirs(ssh_remote_dir, tmp_path):
         remote_dir = PurePosixPath(ssh_remote_dir) / "newdir"
         remote_file = remote_dir / "local.txt"
 
-        connector.c.run(
-            f"rm -rf {remote_dir}",
+        _run_quoted(
+            connector,
+            "rm -rf {}",
+            remote_dir,
             hide=True,
             in_stream=False,
             warn=True,
@@ -121,8 +142,59 @@ def test_ssh_connector_creates_missing_remote_dirs(ssh_remote_dir, tmp_path):
         success = connector.move_func(local_file, remote_file)
         assert success is True
 
-        result = connector.c.run(
-            f"test -f {remote_file}",
+        result = _run_quoted(
+            connector,
+            "test -f {}",
+            remote_file,
+            hide=True,
+            in_stream=False,
+            warn=True,
+        )
+        assert result.ok
+    finally:
+        connector.close()
+
+
+@pytest.mark.ssh
+def test_ssh_connector_handles_spaces_in_remote_path(ssh_remote_dir, tmp_path):
+    connector = SSHConnector(
+        directory=ssh_remote_dir,
+        use_password=True,
+        is_posix=True,
+        include_subdirs=True,
+    )
+    connector.connect()
+    try:
+        local_file = tmp_path / "spaced name.txt"
+        local_file.write_text("hello spaces")
+
+        remote_dir = PurePosixPath(ssh_remote_dir) / "dir with spaces"
+        remote_file = remote_dir / "spaced name.txt"
+
+        _run_quoted(
+            connector,
+            "rm -rf {}",
+            remote_dir,
+            hide=True,
+            in_stream=False,
+            warn=True,
+        )
+
+        success = connector.move_func(local_file, remote_file)
+        assert success is True
+
+        checksum = connector.calculate_checksum(
+            PurePosixPath("dir with spaces") / "spaced name.txt"
+        )
+        assert isinstance(checksum, str) and len(checksum) == 32
+
+        files = connector.base_filter_sub_method(".txt")
+        assert any(f.name == "spaced name.txt" for f in files)
+
+        result = _run_quoted(
+            connector,
+            "test -f {}",
+            remote_file,
             hide=True,
             in_stream=False,
             warn=True,

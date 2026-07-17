@@ -15,24 +15,9 @@ Trust boundaries:
 
 ## Findings
 
-### SEC-01 — Remote command construction (high)
+### ~~SEC-01 — Remote command construction (high)~~ (done in #18)
 
-`SSHConnector` builds shell commands with interpolated paths/patterns:
-
-- `find {self.directory} -name '{glob_pattern}'`
-- `md5sum "{self.directory/f}"`
-- `mkdir -p "{remote_dir}"`
-
-If `directory`, filenames, or glob patterns ever contain shell metacharacters (or attacker-controlled names under the source tree that become remote paths), this is classic injection. Even without a hostile actor, spaces/quotes in paths can break commands oddly.
-
-**Mitigations (prefer in order):**
-
-1. Pass paths via Fabric/`remote` APIs that avoid a shell where possible (`put` already used for upload).
-2. Use `shlex.quote` for every interpolated token.
-3. Reject path components with unexpected characters at connector validation time.
-4. Prefer `sftp`/`stat` for checksums if available instead of `md5sum` via shell.
-
-**Issue size:** medium; **not** pure yolo if behavior changes on exotic paths — add SSH tests with spaces in names.
+~~`SSHConnector` built shell commands with unquoted / lightly quoted interpolation.~~ **Resolved:** POSIX remotes use `_remote_shell_token` / `shlex.quote` for `find`, `md5sum`, and `mkdir -p` (and debug helpers). Windows remotes get best-effort `cmd.exe` quoting only. Unit tests assert quoted commands; gated SSH integration covers spaces in remote paths. Shell-free SFTP checksum/`mkdir` left as optional follow-up.
 
 ---
 
