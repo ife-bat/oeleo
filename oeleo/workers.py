@@ -26,10 +26,21 @@ from oeleo.connectors import (
 from oeleo.console import console
 from oeleo.models import DbHandler, MockDbHandler, SimpleDbHandler
 from oeleo.reporters import Reporter, ReporterBase
+from oeleo.utils import to_bool
 
 T = TypeVar("T")
 
 log = logging.getLogger("oeleo")
+
+
+def resolve_reconnect(reconnect: Union[bool, None] = None) -> bool:
+    """Resolve per-file reconnect: explicit kwarg, else OELEO_RECONNECT, else False."""
+    if reconnect is not None:
+        return reconnect
+    raw = os.environ.get("OELEO_RECONNECT")
+    if raw is None or raw == "":
+        return False
+    return to_bool(raw)
 
 
 def chunkify(file_list: Iterable[T], n: int = 10) -> Iterable[List[T]]:
@@ -128,11 +139,13 @@ class Worker(WorkerBase):
         local_connector: Connector = None
         external_connector: Connector = None
 
-    Additional optinal arguments:
+    Additional optional arguments:
         dry_run: Bool
         extension: str (with the .)
         reporter: Reporter
-        reconnect: Bool (reconnect to the external server if connection is lost)
+        reconnect: Bool — when True, reconnect the external connector before each
+            changed file (opt-in for flaky networks). Default False. A failed move
+            always reconnects once and retries regardless of this flag.
         external_name_generator: Callable that accepts the class instance and a string
     """
 
@@ -144,7 +157,7 @@ class Worker(WorkerBase):
     extension: str = None
     reporter: ReporterBase = Reporter()
     external_name_generator: Callable[[Any, Path], Path] = field(default=None)
-    reconnect: bool = True
+    reconnect: bool = False
     file_names: Iterable[Path] = field(init=False, default_factory=list)
     subdirs: bool = False
     external_subdirs: bool = False
@@ -490,6 +503,7 @@ def simple_worker(
     reporter=None,
     include_subdirs=False,
     external_subdirs=False,
+    reconnect: Union[bool, None] = None,
 ):
     """Create a Worker for copying files locally.
 
@@ -503,6 +517,8 @@ def simple_worker(
         include_subdirs: set to True if you want to include subdirectories.
         external_subdirs: set to True if you want to include subdirectory structure in the external directory
           (only makes sense if include_subdirs is True).
+        reconnect: when True, reconnect before each changed file. When None (default),
+            use OELEO_RECONNECT if set, otherwise False.
 
     Returns:
         simple worker that can copy files between two local folder.
@@ -541,7 +557,7 @@ def simple_worker(
         extension=extension,
         dry_run=dry_run,
         reporter=reporter,
-        reconnect=True,
+        reconnect=resolve_reconnect(reconnect),
         subdirs=include_subdirs,
         external_subdirs=external_subdirs,
     )
@@ -559,6 +575,7 @@ def ssh_worker(
     is_posix: bool = True,
     include_subdirs: bool = False,
     external_subdirs: bool = False,
+    reconnect: Union[bool, None] = None,
 ):
     """Create a Worker with SSHConnector.
 
@@ -573,6 +590,8 @@ def ssh_worker(
         reporter: reporter to use. If None, a default reporter will be used.
         include_subdirs: include subdirectories when filtering local files.
         external_subdirs: include subdirectories when filtering remote files.
+        reconnect: when True, reconnect before each changed file. When None (default),
+            use OELEO_RECONNECT if set, otherwise False. Failed moves still reconnect once.
 
     Returns:
         worker with SSHConnector attached to it.
@@ -610,7 +629,7 @@ def ssh_worker(
         extension=extension,
         dry_run=dry_run,
         reporter=reporter,
-        reconnect=True,
+        reconnect=resolve_reconnect(reconnect),
         subdirs=include_subdirs,
         external_subdirs=external_subdirs,
     )
@@ -626,6 +645,7 @@ def sharepoint_worker(
     extension: str = None,
     reporter: ReporterBase = None,
     dry_run: bool = False,
+    reconnect: Union[bool, None] = None,
 ):
     """Create a Worker with SharePointConnector.
 
@@ -638,6 +658,8 @@ def sharepoint_worker(
         extension: file extension to filter on (for example '.csv').
         reporter: reporter to use. If None, a default reporter will be used.
         dry_run: set to True if you would like to run without updating or moving anything.
+        reconnect: when True, reconnect before each changed file. When None (default),
+            use OELEO_RECONNECT if set, otherwise False.
 
     Returns:
         worker with SharePoint attached to it.
@@ -682,5 +704,6 @@ def sharepoint_worker(
         external_name_generator=external_name_generator,
         dry_run=dry_run,
         reporter=reporter,
+        reconnect=resolve_reconnect(reconnect),
     )
     return worker
