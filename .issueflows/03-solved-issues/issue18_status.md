@@ -1,6 +1,6 @@
 # Status: Issue #18
 
-- [ ] Done
+- [x] Done
 
 ## What's done
 
@@ -13,4 +13,4 @@
 
 ## Remaining work
 
-- `/iflow-close` (Done checkbox, archive, PR merge).
+- None.
