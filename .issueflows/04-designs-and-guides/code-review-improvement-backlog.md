@@ -103,13 +103,8 @@ Filed on GitHub (2026-07-16). Two parallel tracks (separate branches/PRs):
 1. [#14](https://github.com/ife-bat/oeleo/issues/14) BUG-03 — yolo  
 2. [#15](https://github.com/ife-bat/oeleo/issues/15) BUG-01 — yolo  
 3. [#16](https://github.com/ife-bat/oeleo/issues/16) BUG-04 — yolo  
-<<<<<<< HEAD
-4. [#17](https://github.com/ife-bat/oeleo/issues/17) REL-01 — plan + confirm  
-5. ~~[#18](https://github.com/ife-bat/oeleo/issues/18) SEC-01~~ — done  
-=======
 4. ~~[#17](https://github.com/ife-bat/oeleo/issues/17) REL-01~~ — done  
-5. [#18](https://github.com/ife-bat/oeleo/issues/18) SEC-01 — plan  
->>>>>>> origin/main
+5. ~~[#18](https://github.com/ife-bat/oeleo/issues/18) SEC-01~~ — done  
 6. [#19](https://github.com/ife-bat/oeleo/issues/19) DOC-01 — yolo  
 
 Later: open an **epic** for BUG-02 (relative-path bookkeeping) — not filed yet.
