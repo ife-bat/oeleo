@@ -323,10 +323,6 @@ class SSHConnector(Connector):
     def close(self):
         self.c.close()
 
-    def __delete__(self, instance):
-        if self.c is not None:
-            self.c.close()
-
     def base_filter_sub_method(self, glob_pattern: str = "", **kwargs: Any) -> list:
         log.debug("base filter function for SSHConnector")
         log.debug("got this glob pattern:")
@@ -453,10 +449,6 @@ class SharePointConnection:
     def close(self):
         pass
 
-    def reconnect(self, **kwargs) -> None:
-        self.close()
-        self.connect()
-
 
 class SharePointConnector(Connector):
     def __init__(
@@ -483,10 +475,6 @@ class SharePointConnector(Connector):
         text += f"{self.connection=}\n"
 
         return text
-
-    def __delete__(self, instance):
-        if self.connection is not None:
-            self.connection.close()
 
     def connect(self, **kwargs) -> None:
         self.connection = SharePointConnection(

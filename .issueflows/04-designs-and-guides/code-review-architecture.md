@@ -50,7 +50,7 @@ Codes (documented in README): `0` copy, `1` copy-if-changed, `2` never copy (loc
 
 1. **Extension type:** factories type `extension: str` but `base_filter` accepts `list` of extensions (`main.simple_multi_dir` passes a list). Typing/docs should allow `str | list[str]`.
 2. **`register_password`:** name implies “set password”; implementation only prompts when `pwd is None` and never assigns a provided password (**BUG-05**).
-3. **Destructor misuse:** `__delete__` on connectors is not a Python finalizer (`__del__`). Dead/wrong hook — remove or replace with context manager (`__enter__`/`__exit__`).
+3. **Destructor misuse:** ~~`__delete__` on connectors~~ — removed (#34). Prefer context managers (`__enter__`/`__exit__`) if cleanup hooks are needed later.
 4. **`connected_mover`:** thin wrapper rarely used by `Worker` (worker calls `connector.move_func` directly). Keep as public helper or demote to tests.
 
 ## Dead / duplicate / inconsistent code (CLEAN-*)
