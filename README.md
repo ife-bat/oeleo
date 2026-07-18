@@ -1,23 +1,12 @@
 # oeleo
-Python package / app that can be used for transferring files from an instrument-PC to a data server.
 
+Python package / app for transferring files from an instrument PC to a data server.
 
-## Features (or limitations)
-- Transferring using an ssh connection should preferably be used with key-pairs. This might involve some
-  setting up on your server (ACL) to prevent security issues (the `oeleo` user should only have access to
-  the data folder on your server).
-- Accessing ssh can be done using password if you are not able to figure out how to set proper ownerships 
-  on your server.
-- `oeleo` is one-eyed. Meaning that tracking of the "state of the duplicates" is only performed on the local side (where `oeleo` is running).
-- However, `oeleo` contains a `check` method that can help you figure out if starting copying is a  
-  good idea or not. And populate the database if you want.
-- The db that stores information about the "state of the duplicates" is stored relative to the folder 
-  `oeleo` is running from. If you delete it (by accident?), `oeleo` will make a new empty one from scratch next time you run.
-- Configuration is done using environmental variables. 
+`oeleo` is **one-eyed**: transfer state is tracked only on the local side (SQLite bookkeeping by checksum). Configuration uses environment variables.
 
-## Usage
+**Documentation:** see the [`docs/`](docs/) folder (Zensical). Preview locally with `uv sync --group docs` then `uv run zensical serve`. A Read the Docs site will be wired up separately.
 
-### Install
+## Install
 
 From PyPI (end users):
 
@@ -25,19 +14,9 @@ From PyPI (end users):
 pip install oeleo
 ```
 
-From a clone (development), use **uv** — see [Development](#development).
+From a clone (development), use **uv** — see [docs/development.md](docs/development.md).
 
-### Run
-
-1. Create an `oeleo` worker instance.
-2. Connect the worker's `bookkeeper` to a `sqlite3` database.
-3. Filter local files.
-4. Run to copy files.
-5. Repeat from step 3.
-
-### Examples and descriptions
-
-#### Simple script for copying between local folders
+## Quick example (local → local)
 
 ```python
 import os
@@ -54,33 +33,17 @@ from oeleo.utils import start_logger
 
 
 def main():
-  log = start_logger()
-  # assuming you have made a .env file:
+  start_logger()
   dotenv.load_dotenv()
 
-  db_name = os.environ["OELEO_DB_NAME"]
-  base_directory_from = Path(os.environ["OELEO_BASE_DIR_FROM"])
-  base_directory_to = Path(os.environ["OELEO_BASE_DIR_TO"])
-  filter_extension = os.environ["OELEO_FILTER_EXTENSION"]
-
-  # Making a worker using the Worker class.
-  # You can also use the `factory` functions in `oeleo.worker`
-  # (e.g. `ssh_worker` and `simple_worker`)
-  bookkeeper = SimpleDbHandler(db_name)
-  checker = ChecksumChecker()
-  local_connector = LocalConnector(directory=base_directory_from)
-  external_connector = LocalConnector(directory=base_directory_to)
-
   worker = Worker(
-    checker=checker,
-    local_connector=local_connector,
-    external_connector=external_connector,
-    bookkeeper=bookkeeper,
-    extension=filter_extension
+    checker=ChecksumChecker(),
+    local_connector=LocalConnector(directory=Path(os.environ["OELEO_BASE_DIR_FROM"])),
+    external_connector=LocalConnector(directory=Path(os.environ["OELEO_BASE_DIR_TO"])),
+    bookkeeper=SimpleDbHandler(os.environ["OELEO_DB_NAME"]),
+    extension=os.environ["OELEO_FILTER_EXTENSION"],
   )
 
-  # Running the worker with 5 minutes intervals.
-  # You can also use an oeleo scheduler for this.
   worker.connect_to_db()
   while True:
     worker.filter_local()
@@ -92,225 +55,12 @@ if __name__ == "__main__":
   main()
 ```
 
-#### Environment `.env` file
-```.env
-OELEO_BASE_DIR_FROM=C:\data\local
-OELEO_BASE_DIR_TO=C:\data\pub
-OELEO_FILTER_EXTENSION=.csv
-OELEO_DB_NAME=local2pub.db
-OELEO_LOG_DIR=C:\oeleo\logs
-# OELEO_RECONNECT=true
-
-## only needed for advanced connectors:
-# OELEO_DB_HOST=<db host>
-# OELEO_DB_PORT=<db port>
-# OELEO_DB_USER=<db user>
-# OELEO_DB_PASSWORD=<db user>
-# OELEO_EXTERNAL_HOST=<ssh hostname>
-# OELEO_USERNAME=<ssh username>
-# OELEO_PASSWORD=<ssh password>
-# OELEO_KEY_FILENAME=<ssh key-pair filename>
-
-## only needed for SharePointConnector:
-# OELEO_SHAREPOINT_USERNAME=<sharepoint username (fallbacks to ssh username if missing)>
-# OELEO_SHAREPOINT_URL=<url to sharepoint>
-# OELEO_SHAREPOINT_SITENAME=<name of sharepoint site>
-# OELEO_SHAREPOINT_DOC_LIBRARY=<name of sharepoint library>
-```
-
-#### Environment variables reference
-
-Core transfer settings:
-- `OELEO_BASE_DIR_FROM`: local source directory.
-- `OELEO_BASE_DIR_TO`: destination directory (local or remote, depending on connector).
-- `OELEO_FILTER_EXTENSION`: file extension filter (include the dot, e.g. `.csv`).
-- `OELEO_DB_NAME`: sqlite database filename used for bookkeeping.
-- `OELEO_LOG_DIR`: directory for log files; defaults to the current working directory.
-- `OELEO_RECONNECT`: when `true` / `1` / `yes`, reconnect the destination connector before each changed file (useful on flaky networks). Default is off so SSH runs keep one session across files. A failed copy still reconnects once and retries regardless of this setting. Factories also accept a `reconnect=` kwarg that overrides the env var.
-- **Destination connection checks:** before each `Worker.run` (and again after a copy fails even with reconnect-retry), oeleo probes the destination via `Connector.ensure_connection()`. If the target directory/host/SharePoint library is gone, the current run aborts with `OeleoConnectionError` instead of marking every remaining file as failed. `SimpleScheduler` catches that error, reports it, and waits for the next interval so a temporary VPN/mount outage does not kill the process.
-
-SSH connector settings:
-- `OELEO_EXTERNAL_HOST`: SSH host (optionally with port, e.g. `host:2222`).
-- `OELEO_USERNAME`: SSH username.
-- `OELEO_PASSWORD`: SSH password (used when connecting with password).
-- `OELEO_KEY_FILENAME`: SSH private key path (used when connecting with key-pair).
-
-SharePoint connector settings:
-- `OELEO_SHAREPOINT_URL`: SharePoint base URL (e.g. `https://yourcompany.sharepoint.com`).
-- `OELEO_SHAREPOINT_SITENAME`: SharePoint site name.
-- `OELEO_SHAREPOINT_DOC_LIBRARY`: SharePoint document library name.
-- `OELEO_SHAREPOINT_USERNAME`: SharePoint username; falls back to `OELEO_USERNAME` if unset.
-
-App settings (`app/oa.pyw`):
-- `OA_SINGLE_RUN`: run once and exit when `true`.
-- `OA_ADD_CHECK`: run the check step before copying when `true`.
-- `OA_MAX_RUN_INTERVALS`: number of scheduler runs before stopping.
-- `OA_HOURS_SLEEP`: hours to sleep between runs.
-- `OA_FROM_YEAR`: filter out files older than this year.
-- `OA_FROM_MONTH`: filter out files older than this month.
-- `OA_FROM_DAY`: filter out files older than this day.
-- `OA_STARTS_WITH`: only include files starting with any of these prefixes; delimit with `;`.
-- `OA_INCLUDE_SUBDIRS`: include subdirectories in local search when `true`.
-- `OA_EXTERNAL_SUBDIRS`: include subdirectories on the destination when `true`.
-
-#### Database
-
-The database contains one table called `filelist`:
-
-| id  | processed_date             | local_name         | external_name                         | checksum                         | code |
-|-----|:---------------------------|:-------------------|:--------------------------------------|:---------------------------------|-----:|
-| 1   | 2022-07-05 15:55:02.521154 | file_number_1.xyz	 | C:\oeleo\check\to\file_number_1.xyz   | c976e564825667d7c11ba200457af263 |    1 |
-| 2   | 2022-07-05 15:55:02.536152 | file_number_10.xyz | C:\oeleo\check\to\file_number_10.xyz	 | d502512c0d32d7503feb3fd3dd287376 |    1 |
-| 3   | 2022-07-05 15:55:02.553157 | file_number_2.xyz	 | C:\oeleo\check\to\file_number_2.xyz   | cb89d576f5bd57566c78247892baffa3 |    1 |
-
-The `processed_date` is when the file was last updated (meaning last time `oeleo` found a new checksum for it).
-
-The table below shows what the different values of `code` mean:
-
-| code | meaning                       |
-|:-----|:------------------------------|
-| 0    | `should-be-copied`            |
-| 1    | `should-be-copied-if-changed` |
-| 2    | `should-not-be-copied`        |
-
-Hint! You can **lock** (chose to never copy) a file by editing the `code` manually to 2. 
-
-
-#### Using an `oeleo` scheduler
-
-Instead of for example using a while loop to keep `oeleo` running continuously or at selected intervals, 
-you can use a scheduler (e.g. `rocketry`, `watchdog`, `schedule`, or more advanced options such as `AirFlow`).
-
-`oeleo` also includes its own schedulers. This is an example of how to use the `oeleo.SimpleScheduler`:
-
-
-```python
-import dotenv
-
-from oeleo.schedulers import SimpleScheduler
-from oeleo.workers import simple_worker
-
-# assuming you have created an appropriate .env file
-dotenv.load_dotenv()
-worker = simple_worker()
-s = SimpleScheduler(
-        worker,
-        run_interval_time=4,  # seconds
-        max_run_intervals=4,
-    )
-s.start()
-```
-
-
-#### Copy files from a Windows PC to a Linux server through ssh
-
-```python
-import logging
-import os
-from pathlib import Path
-
-import dotenv
-
-from oeleo.connectors import register_password
-from oeleo.utils import start_logger
-from oeleo.workers import ssh_worker
-
-log = start_logger()
-
-print(" ssh ".center(80, "-"))
-log.setLevel(logging.DEBUG)
-log.info(f"Starting oeleo!")
-dotenv.load_dotenv()
-
-external_dir = "/srv/data"
-filter_extension = ".res"
-
-register_password(os.environ["OELEO_PASSWORD"])
-
-worker = ssh_worker(
-  db_name="ssh_to_server.db",
-  base_directory_from=Path(r"data\raw"),
-  base_directory_to=external_dir,
-  extension=filter_extension,
-)
-worker.connect_to_db()
-try:
-  worker.check(update_db=True)
-  worker.filter_local()
-  worker.run()
-finally:
-  worker.close()
-```
-
-## Future planned improvements
-
-Just plans, no promises given.
-
-- make even nicer printing and logging.
-- create CLI.
-- create an executable (partly done -- see the app folder).
-- create a web-app.
-- create a GUI (not likely).
-
-## Status
-
-- [x] Works on my PC &rarr; PC
-- [x] Works on my PC &rarr; my server
-- [x] Works on my server &rarr; my server
-- [x] Works on my instrument PC &rarr; my instrument PC
-- [x] Works on my instrument PC &rarr; my server
-- [x] Works OK
-- [x] Deployable
-- [x] On testpypi
-- [x] On pypi
-- [x] Code understandable for others
-- [x] Looking good
-- [x] Fairly easy to use
-- [ ] Easy to use
-- [ ] Easy to debug runs (e.g. editing sql)
+More examples (scheduler, SSH), full env-var reference, and database details: [docs/usage.md](docs/usage.md), [docs/configuration.md](docs/configuration.md), [docs/database.md](docs/database.md).
 
 ## Licence
+
 MIT
 
-## Hints
-You can silence the log output from paramiko (and Fabric/Invoke) like this:
+## Development lead
 
-```python
-import logging
-
-for name in ("paramiko", "fabric", "invoke"):
-    logging.getLogger(name).setLevel(logging.WARNING)
-```
-
-## Development
-
-Day-to-day toolchain is **uv** (`uv.lock` is committed). Requires Python `>=3.11,<3.13` (see `pyproject.toml`); develop on **3.11+** (CI uses 3.12).
-
-```bash
-# Sync the project environment (add --all-extras when you need pystray)
-uv sync
-uv sync --all-extras
-
-# Unit tests (default / CI path)
-uv run pytest -m "not ssh"
-
-# SSH integration tests (needs a local SSH server — see tests/README.md)
-uv run pytest -m ssh
-
-# Format (black + isort; not enforced in CI)
-uv run black oeleo tests app
-uv run isort oeleo tests app
-
-# Bump version in pyproject.toml (e.g. 0.7.0 → 0.7.1)
-uv version --bump patch
-
-# Build and publish
-uv build
-uv publish   # uses PyPI token from the environment / keyring
-```
-
-### Next
-- Improve logging
-
-### Development lead
-- Jan Petter Maehlen, IFE
+Jan Petter Maehlen, IFE
