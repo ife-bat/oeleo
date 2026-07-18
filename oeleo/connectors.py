@@ -40,7 +40,9 @@ def register_password(pwd: str = None) -> None:
     if pwd is None:
         # Consider replacing this with the Rich prompt.
         session_password = getpass.getpass(prompt="Password: ")
-        os.environ["OELEO_PASSWORD"] = session_password
+    else:
+        session_password = pwd
+    os.environ["OELEO_PASSWORD"] = session_password
     log.debug(" Password registered!")
 
 

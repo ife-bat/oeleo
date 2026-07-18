@@ -75,18 +75,11 @@ processed_date = peewee.DateTimeField(default=datetime.datetime.now())
 
 ---
 
-### BUG-05 — `register_password(pwd)` ignores `pwd`
+### BUG-05 — `register_password(pwd)` ignores `pwd` — fixed (#33)
 
-```python
-def register_password(pwd: str = None) -> None:
-    if pwd is None:
-        session_password = getpass.getpass(...)
-        os.environ["OELEO_PASSWORD"] = session_password
-```
+`register_password` now sets `os.environ["OELEO_PASSWORD"]` when `pwd` is provided; `pwd is None` still prompts via getpass.
 
-Call sites like `register_password(os.environ["OELEO_PASSWORD"])` are no-ops. Either set `os.environ` when `pwd` is provided, or rename to `prompt_password()`.
-
-**yolo-fit.**
+**Done.**
 
 ---
 
