@@ -2,18 +2,11 @@ from collections import deque
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
-import multiprocessing
-from multiprocessing import Process, Queue
 import os
 import sys
 from dataclasses import dataclass, field
-from math import ceil
 from pathlib import Path
-from typing import Any, Callable, Generator, Iterable, List, Protocol, TypeVar, Union
-
-from rich.panel import Panel
-from rich.text import Text
-from rich.progress import Progress, SpinnerColumn, TextColumn
+from typing import Any, Callable, Iterable, List, Protocol, TypeVar, Union
 
 from oeleo.checkers import ChecksumChecker
 from oeleo.connectors import (
