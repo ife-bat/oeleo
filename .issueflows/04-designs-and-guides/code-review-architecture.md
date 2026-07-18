@@ -40,8 +40,8 @@ Codes (documented in README): `0` copy, `1` copy-if-changed, `2` never copy (loc
 | ID | Smell | Evidence | Suggestion |
 |----|-------|----------|------------|
 | ARCH-01 | Module-global Peewee proxy | `models.database_proxy` shared by all `SimpleDbHandler` instances | Per-handler `SqliteDatabase` instance; drop proxy or scope it to one process/DB |
-| ARCH-02 | Mutable dataclass default | `Worker.reporter: ReporterBase = Reporter()` | `field(default_factory=Reporter)` |
-| ARCH-03 | Wrong `Protocol` import | `from asyncio import Protocol` in `workers.py` | `from typing import Protocol` (same as models/connectors) |
+| ARCH-02 | Mutable dataclass default | ~~`Worker.reporter: ReporterBase = Reporter()`~~ — fixed (#35) | `field(default_factory=Reporter)` |
+| ARCH-03 | Wrong `Protocol` import | ~~`from asyncio import Protocol`~~ — fixed (#35) | `from typing import Protocol` (same as models/connectors) |
 | ARCH-04 | Eager connect in ctor | `Worker.__post_init__` calls `external_connector.connect()` | Connect lazily in `run`/`check` or factories; document lifecycle |
 | ARCH-05 | Env as implicit API | Many `os.environ["OELEO_…"]` KeyErrors deep in constructors | Small `Settings`/`Config` dataclass loaded once with validation + clear errors (used by factories + app) |
 | ARCH-06 | Incomplete Protocol parity | SSH additional_filters logged as unimplemented; SharePoint filter is substring `in` name | Document capability matrix; raise `NotImplementedError` or implement |
