@@ -170,4 +170,6 @@ transfer.py
 /.env
 /oeleo-bins/
 /app/output/
-/output/*
+/output/
+graphify-out/cache/
+oeleo.log*
