@@ -117,6 +117,8 @@ Examples:
 
 **Issue size:** medium; good epic stage “harden connector errors”.
 
+**Related (partial, #8):** destination health is now probed via `Connector.ensure_connection()` at `Worker.run` start and after an exhausted move retry; lost destinations abort the run (`OeleoConnectionError`) and `SimpleScheduler` retries next interval. REL-02 soft failures for list/checksum sentinels remain open.
+
 ---
 
 ### REL-03 — Generator consumption / `file_names` lifecycle

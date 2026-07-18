@@ -127,6 +127,7 @@ Core transfer settings:
 - `OELEO_DB_NAME`: sqlite database filename used for bookkeeping.
 - `OELEO_LOG_DIR`: directory for log files; defaults to the current working directory.
 - `OELEO_RECONNECT`: when `true` / `1` / `yes`, reconnect the destination connector before each changed file (useful on flaky networks). Default is off so SSH runs keep one session across files. A failed copy still reconnects once and retries regardless of this setting. Factories also accept a `reconnect=` kwarg that overrides the env var.
+- **Destination connection checks:** before each `Worker.run` (and again after a copy fails even with reconnect-retry), oeleo probes the destination via `Connector.ensure_connection()`. If the target directory/host/SharePoint library is gone, the current run aborts with `OeleoConnectionError` instead of marking every remaining file as failed. `SimpleScheduler` catches that error, reports it, and waits for the next interval so a temporary VPN/mount outage does not kill the process.
 
 SSH connector settings:
 - `OELEO_EXTERNAL_HOST`: SSH host (optionally with port, e.g. `host:2222`).

@@ -20,6 +20,7 @@ from oeleo.checkers import ChecksumChecker
 from oeleo.connectors import (
     Connector,
     LocalConnector,
+    OeleoConnectionError,
     SSHConnector,
     SharePointConnector,
 )
@@ -331,6 +332,17 @@ class Worker(WorkerBase):
         )
         log.debug("<CHECK FINISHED>")
 
+    def _ensure_external_connection(self):
+        """Probe the destination; report and re-raise if unreachable."""
+        try:
+            self.external_connector.ensure_connection()
+        except OeleoConnectionError as e:
+            msg = f"Destination connection lost; aborting run ({e})"
+            self.reporter.report(msg)
+            self.reporter.notify(msg, title="error")
+            self.status = ("state", "connection-lost")
+            raise
+
     def run(self):
         """Copy the files that needs to be copied and update the db.
 
@@ -345,6 +357,7 @@ class Worker(WorkerBase):
 
         log.debug("<RUN>")
         self.die_if_necessary()
+        self._ensure_external_connection()
         self.status = ("state", "run")
         self.status = ("local_exists", False)
 
@@ -378,6 +391,8 @@ class Worker(WorkerBase):
                     failed_file = future.result()
                     if failed_file:
                         failed_files.append(failed_file)
+                except OeleoConnectionError:
+                    raise
                 except Exception as e:
                     log.error(f"Error when processing file: {e}")
         return failed_files
@@ -390,6 +405,8 @@ class Worker(WorkerBase):
                 failed_file = self._process_file(f)
                 if failed_file:
                     failed_files.append(failed_file)
+            except OeleoConnectionError:
+                raise
             except Exception as e:
                 log.error(f"Error when processing file: {e}")
                 failed_files.append(f)
@@ -434,6 +451,8 @@ class Worker(WorkerBase):
 
         self.reporter.report("!", same_line=True)
         log.debug(f"{f.name} -> {self.external_name} FAILED COPY!")
+        # File-level failure: abort the whole run only if the destination is gone.
+        self._ensure_external_connection()
         return f
 
     def _default_external_name_generator(self, f):

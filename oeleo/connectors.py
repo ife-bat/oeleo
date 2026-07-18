@@ -74,6 +74,10 @@ class Connector(Protocol):
     def move_func(self, path: Path, to: Path, *args, **kwargs) -> bool:
         ...
 
+    def ensure_connection(self) -> None:
+        """Raise OeleoConnectionError if the destination is unreachable."""
+        ...
+
 
 class LocalConnector(Connector):
     def __init__(self, directory=None, **kwargs):
@@ -100,6 +104,25 @@ class LocalConnector(Connector):
 
     def close(self):
         pass
+
+    def ensure_connection(self) -> None:
+        path = Path(self.directory)
+        try:
+            if not path.exists() or not path.is_dir():
+                raise OeleoConnectionError(
+                    f"Local destination not available: {path}"
+                )
+            path.stat()
+            if not os.access(path, os.R_OK | os.X_OK):
+                raise OeleoConnectionError(
+                    f"Local destination not accessible: {path}"
+                )
+        except OeleoConnectionError:
+            raise
+        except OSError as e:
+            raise OeleoConnectionError(
+                f"Local destination not available: {path}"
+            ) from e
 
     def base_filter_sub_method(
         self, glob_pattern: str = "*", **kwargs
@@ -224,6 +247,30 @@ class SSHConnector(Connector):
         except Exception as e:
             log.debug(f"Got an exception during connecting: {e}")
             raise OeleoConnectionError("Could not connect")
+
+    def ensure_connection(self) -> None:
+        if self.c is None:
+            try:
+                self.connect()
+            except Exception as e:
+                raise OeleoConnectionError("Could not connect") from e
+        try:
+            remote_q = self._remote_shell_token(self.directory)
+            if self.is_posix:
+                cmd = f"test -d {remote_q}"
+            else:
+                cmd = f"if not exist {remote_q} exit /b 1"
+            result = self.c.run(cmd, hide=True, in_stream=False, warn=True)
+            if not result.ok:
+                raise OeleoConnectionError(
+                    f"Remote destination not available: {self.directory}"
+                )
+        except OeleoConnectionError:
+            raise
+        except Exception as e:
+            raise OeleoConnectionError(
+                f"Lost connection to remote destination: {self.directory}"
+            ) from e
 
     def _check_connection_and_exit(self):
         # used only when developing oeleo
@@ -435,6 +482,19 @@ class SharePointConnector(Connector):
 
     def close(self):
         self.connection.close()
+
+    def ensure_connection(self) -> None:
+        try:
+            if self.connection is None:
+                self.connect()
+            # Touch the doc library listing; any transport/auth failure aborts.
+            _ = self.connection.folder.files
+        except OeleoConnectionError:
+            raise
+        except Exception as e:
+            raise OeleoConnectionError(
+                "SharePoint destination not available"
+            ) from e
 
     def base_filter_sub_method(
         self, glob_pattern: str = "", **kwargs: Any
