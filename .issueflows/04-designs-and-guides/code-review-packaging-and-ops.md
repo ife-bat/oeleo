@@ -67,7 +67,7 @@ Do not run `nox -s pack` expecting it to match current packaging without verific
 
 - **DEP-01 done (#11):** `uv.lock` refreshed; `black>=26.3.1`, `pytest>=9.0.3`, `python-dotenv>=1.2.2`; `requires-python = ">=3.11,<3.13"`.
 - **DEP-02 done (#12):** `poetry.lock` confirmed absent on `main`; residual paramiko SHA-1 documented (no patched release). See [`code-review-dependabot.md`](code-review-dependabot.md).
-- **Next:** DEP-03 (#13) — add grouped `.github/dependabot.yml`.
-- **SharePlum** / older Office365 cookie auth may constrain SharePoint longevity (also pulls `lxml`).
+- **DEP-03 done (#13):** grouped `.github/dependabot.yml` for uv/pip.
+- **SharePlum** / older Office365 cookie auth may constrain SharePoint longevity (also pulls `lxml`) — product decision in [#45](https://github.com/ife-bat/oeleo/issues/45).
 - **Fabric** → paramiko 5.0.0 / cryptography 49.0.0; paramiko SHA-1 advisory may remain open until upstream fix.
-- Legacy `noxfile.py` `pack` session still references Poetry (TOOL-01) — not a Dependabot scan target without a committed lockfile.
+- Legacy `noxfile.py` `pack` session still references Poetry ([#48](https://github.com/ife-bat/oeleo/issues/48) TOOL-01) — not a Dependabot scan target without a committed lockfile.
