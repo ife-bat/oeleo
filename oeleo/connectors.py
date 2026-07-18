@@ -170,7 +170,17 @@ class SSHConnector(Connector):
         use_password=False,
         include_subdirs=False,
     ):
-        self.session_password = os.environ["OELEO_PASSWORD"]
+        self.use_password = use_password
+        if self.use_password:
+            try:
+                self.session_password = os.environ["OELEO_PASSWORD"]
+            except KeyError as e:
+                raise ValueError(
+                    "OELEO_PASSWORD is required when use_password=True"
+                ) from e
+        else:
+            self.session_password = None
+
         self.username = username or os.environ["OELEO_USERNAME"]
         self.host = host or os.environ["OELEO_EXTERNAL_HOST"]
 
@@ -183,7 +193,6 @@ class SSHConnector(Connector):
             )
 
         self.is_posix = is_posix
-        self.use_password = use_password
         self.include_subdirs = include_subdirs
         self.c = None
         self._validate()
@@ -225,9 +234,15 @@ class SSHConnector(Connector):
 
     def connect(self, **kwargs) -> None:
         if self.use_password:
-            connect_kwargs = {
-                "password": os.environ["OELEO_PASSWORD"],
-            }
+            password = self.session_password
+            if password is None:
+                try:
+                    password = os.environ["OELEO_PASSWORD"]
+                except KeyError as e:
+                    raise ValueError(
+                        "OELEO_PASSWORD is required when use_password=True"
+                    ) from e
+            connect_kwargs = {"password": password}
         else:
             connect_kwargs = {
                 "key_filename": [os.environ["OELEO_KEY_FILENAME"]],
