@@ -62,6 +62,7 @@ Config is via **environment variables** / `.env` (see `.env_example` and README)
 | `oeleo_runner.spec` | PyInstaller one-file windowed build |
 | `install_task.ps1` | Register Windows scheduled task for `dist\oeleo_runner.exe` |
 | `tests/` | pytest unit + SSH integration |
+| `docs/` + `zensical.toml` | User docs (Zensical); publish via Read the Docs — see [`documentation-zensical-rtd.md`](documentation-zensical-rtd.md) |
 
 Agent onboarding docs: [`code-review-overview.md`](code-review-overview.md).
 

@@ -1,0 +1,18 @@
+[project]
+site_name = "oeleo"
+site_description = "A one-eyed tool to copy files from an instrument PC to a data server."
+site_author = "Jan Petter Maehlen, IFE"
+copyright = "MIT"
+repo_url = "https://github.com/ife-bat/oeleo"
+repo_name = "ife-bat/oeleo"
+docs_dir = "docs"
+site_dir = "site"
+
+nav = [
+  {"Home" = "index.md"},
+  {"Install" = "install.md"},
+  {"Usage" = "usage.md"},
+  {"Configuration" = "configuration.md"},
+  {"Database" = "database.md"},
+  {"Development" = "development.md"},
+]
