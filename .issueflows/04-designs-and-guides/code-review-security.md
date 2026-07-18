@@ -32,7 +32,7 @@ Local and remote checksums use MD5 (`utils.calculate_checksum`, remote `md5sum`,
 | Topic | Status | Suggestion |
 |-------|--------|------------|
 | `.env` gitignored | Yes | Keep; never log password/key contents |
-| Password in env | Required even for key auth (`SSHConnector.__init__` reads `OELEO_PASSWORD`) | Make password optional when `use_password=False` |
+| Password in env | Optional for key auth (#32); required when `use_password=True` | Done — `SSHConnector` skips `OELEO_PASSWORD` unless password auth |
 | `register_password` | Puts secret in `os.environ` | OK for session; avoid writing back to `.env` from code |
 | Logs | Rich/file logging can echo paths/hosts | Ensure connect kwargs never logged at INFO |
 | Tray “Open log” | Opens log via OS handler | Log path is local — OK; don’t put secrets in log messages |
