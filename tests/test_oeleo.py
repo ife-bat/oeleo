@@ -7,7 +7,7 @@ import dotenv
 import pytest
 
 from oeleo import utils
-from oeleo.connectors import LocalConnector
+from oeleo.connectors import LocalConnector, OeleoConnectionError
 from oeleo.movers import simple_mover, connected_mover
 from oeleo.utils import start_logger
 from oeleo.schedulers import SimpleScheduler
@@ -336,3 +336,87 @@ def test_simple_worker_reconnect_from_env(
         reconnect=False,
     )
     assert worker_kw.reconnect is False
+
+
+def test_local_ensure_connection_ok_and_missing(tmp_path):
+    dest = tmp_path / "to"
+    dest.mkdir()
+    LocalConnector(directory=dest).ensure_connection()
+
+    missing = tmp_path / "missing"
+    with pytest.raises(OeleoConnectionError):
+        LocalConnector(directory=missing).ensure_connection()
+
+
+def test_run_aborts_when_ensure_connection_fails_at_start(tmp_path):
+    worker, external = _worker_with_mock_external(tmp_path)
+    external.ensure_connection.side_effect = OeleoConnectionError("gone")
+    files = []
+    for i in range(3):
+        f = tmp_path / "from" / f"file{i}.xyz"
+        f.write_text("data")
+        files.append(f)
+    worker.file_names = files
+
+    with pytest.raises(OeleoConnectionError):
+        worker.run()
+
+    assert external.move_func.call_count == 0
+    worker.reporter.notify.assert_called()
+
+
+def test_run_aborts_mid_run_when_connection_lost_after_failed_move(tmp_path):
+    worker, external = _worker_with_mock_external(tmp_path)
+    # Start probe OK; after the second file's exhausted retries, probe fails.
+    external.ensure_connection.side_effect = [None, OeleoConnectionError("gone")]
+    external.move_func.side_effect = [True, False, False]
+    files = []
+    for i in range(3):
+        f = tmp_path / "from" / f"file{i}.xyz"
+        f.write_text("data")
+        files.append(f)
+    worker.file_names = files
+
+    with pytest.raises(OeleoConnectionError):
+        worker.run()
+
+    # file0: one move; file1: two moves; file2 never reached
+    assert external.move_func.call_count == 3
+    assert worker.bookkeeper.update_record.call_count == 1
+
+
+def test_run_continues_when_move_fails_but_connection_ok(tmp_path):
+    worker, external = _worker_with_mock_external(tmp_path)
+    external.move_func.return_value = False
+    files = []
+    for i in range(3):
+        f = tmp_path / "from" / f"file{i}.xyz"
+        f.write_text("data")
+        files.append(f)
+    worker.file_names = files
+
+    worker.run()
+
+    assert external.move_func.call_count == 6  # two attempts per file
+    # start-of-run + once after each failed file
+    assert external.ensure_connection.call_count == 4
+
+
+def test_scheduler_retries_next_interval_after_connection_loss(tmp_path):
+    worker, external = _worker_with_mock_external(tmp_path)
+    external.ensure_connection.side_effect = OeleoConnectionError("gone")
+    f = tmp_path / "from" / "file.xyz"
+    f.write_text("data")
+    worker.file_names = [f]
+    worker.filter_local = MagicMock(return_value=[f])
+
+    s = SimpleScheduler(
+        worker,
+        run_interval_time=0.05,
+        max_run_intervals=2,
+    )
+    s.start()
+
+    assert s._run_counter == 2
+    assert external.move_func.call_count == 0
+    assert external.ensure_connection.call_count == 2

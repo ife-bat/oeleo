@@ -9,6 +9,7 @@ from rich import print
 from rich.live import Live
 from rich.panel import Panel
 
+from oeleo.connectors import OeleoConnectionError
 from oeleo.workers import WorkerBase
 
 log = logging.getLogger("oeleo")
@@ -85,8 +86,17 @@ class SimpleScheduler(SchedulerBase):
             self.state["iterations"] += 1
             log.debug(f"ITERATING ({self.state['iterations']})")
 
-            self.worker.filter_local(additional_filters=self.additional_filters)
-            self.worker.run()
+            try:
+                self.worker.filter_local(additional_filters=self.additional_filters)
+                self.worker.run()
+            except OeleoConnectionError as e:
+                log.error(
+                    "Destination connection lost (%s); will retry next interval",
+                    e,
+                )
+                self.worker.reporter.report(
+                    f"Destination connection lost; retrying next interval ({e})"
+                )
             self._last_run = datetime.now()
             self._run_counter += 1
             next_run_at = self._last_run + timedelta(seconds=self.run_interval_time)
