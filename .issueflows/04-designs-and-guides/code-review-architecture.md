@@ -57,9 +57,9 @@ Codes (documented in README): `0` copy, `1` copy-if-changed, `2` never copy (loc
 
 | Item | Location | Action |
 |------|----------|--------|
-| `base_filter_old` | `filters.py` | Delete once confirmed unused |
+| ~~`base_filter_old`~~ | `filters.py` | Removed (#36) |
 | `_check_connection_and_exit` + `check_connection_and_exit` | `SSHConnector` | Keep one debug helper or move to `check/` playground |
-| Unused imports in `workers.py` | `multiprocessing`, `Panel`, `Text`, `ceil`, … | Trim when touching file |
+| ~~Unused imports in `workers.py`~~ | `multiprocessing`, `Panel`, `Text`, `ceil`, … | Trimmed (#36) |
 | Dual consoles | `console.py` `simple_console` vs `console` | Merge or document why both exist |
 | `main.py` as scratchpad | hard-coded developer paths | Keep examples generic or move to `docs/examples/` |
 | Mix of `log` / `logging` / `print` | connectors, movers, reporters | Standardize on `log = logging.getLogger("oeleo")` |
