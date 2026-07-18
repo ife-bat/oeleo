@@ -81,7 +81,8 @@ uv run pytest -m ssh
 ### Notes
 
 - The tests use password auth and assume a POSIX shell on the server.
-- `SSHConnector` requires `OELEO_PASSWORD` even if you plan to use keys.
+- Key-based SSH (`use_password=False`) does not require `OELEO_PASSWORD`; set
+  `OELEO_KEY_FILENAME` instead. Password auth still needs `OELEO_PASSWORD`.
 - If your Fabric setup does not accept `host:port`, map the container to port 22
   or configure an SSH host entry in `~/.ssh/config`.
 
