@@ -83,17 +83,11 @@ processed_date = peewee.DateTimeField(default=datetime.datetime.now())
 
 ---
 
-### BUG-06 — `SharePointConnection.reconnect` broken
+### BUG-06 — `SharePointConnection.reconnect` broken — fixed (#34)
 
-```python
-def reconnect(self, **kwargs) -> None:
-    self.close()
-    self.connect()  # method does not exist on SharePointConnection
-```
+Removed broken `SharePointConnection.reconnect` (called missing `connect()`). Connector `__delete__` hooks removed (not Python finalizers). `SharePointConnector` still reconnects via Protocol `close`+`connect`.
 
-If anything calls this helper’s `reconnect`, it fails. `SharePointConnector.reconnect` uses Protocol default → `SharePointConnector.connect` (OK). Dead/broken helper still a footgun.
-
-**yolo-fit** cleanup.
+**Done.**
 
 ---
 
