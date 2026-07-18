@@ -6,11 +6,10 @@ import multiprocessing
 from multiprocessing import Process, Queue
 import os
 import sys
-from asyncio import Protocol
 from dataclasses import dataclass, field
 from math import ceil
 from pathlib import Path
-from typing import Any, Generator, Union, Callable, Iterable, List, TypeVar
+from typing import Any, Callable, Generator, Iterable, List, Protocol, TypeVar, Union
 
 from rich.panel import Panel
 from rich.text import Text
@@ -156,7 +155,7 @@ class Worker(WorkerBase):
     local_connector: Connector = None
     external_connector: Connector = None
     extension: str = None
-    reporter: ReporterBase = Reporter()
+    reporter: ReporterBase = field(default_factory=Reporter)
     external_name_generator: Callable[[Any, Path], Path] = field(default=None)
     reconnect: bool = False
     file_names: Iterable[Path] = field(init=False, default_factory=list)
