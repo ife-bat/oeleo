@@ -204,8 +204,8 @@ class Worker(WorkerBase):
         """Selects the files that should be processed through filtering."""
         self.status = ("state", "filter-local")
         self.status = ("filtered_once", True)
-        local_files = self.local_connector.base_filter_sub_method(
-            self.extension, **kwargs
+        local_files = list(
+            self.local_connector.base_filter_sub_method(self.extension, **kwargs)
         )
 
         self.file_names = local_files

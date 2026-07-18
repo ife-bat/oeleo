@@ -114,13 +114,11 @@ Examples:
 
 ---
 
-### REL-03 — Generator consumption / `file_names` lifecycle
+### REL-03 — Generator consumption / `file_names` lifecycle — fixed (#31)
 
-`filter_local` may leave a generator in `file_names`. `run` chunks it once; a second `run` without re-filter sees empty. `add_local` warns about generators; `filter_local` does not always materialize to `list`.
+`filter_local` now materializes connector results with `list(...)` so `file_names` survives a second `run()` without re-filtering.
 
-**Fix:** materialize to `list` in `filter_local` (tests already often use lists from local connector when extension is list; glob generators are the risk).
-
-**yolo-fit.**
+**Done.**
 
 ---
 
