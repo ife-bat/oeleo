@@ -1,6 +1,6 @@
 # Status: Issue #39 — Raise on SSH list/checksum failure (REL-02)
 
-- [ ] Done
+- [x] Done
 
 ## What's done
 
@@ -9,7 +9,8 @@
 - `Worker.check` notifies + aborts on list failure; per-file checksum transfer errors notify and continue without DB update. `_process_file` notifies on checksum transfer error.
 - Unit tests in `tests/test_connector_errors.py`; design docs updated (REL-02 / backlog).
 - `uv run pytest -m "not ssh"` — 59 passed.
+- Closed via `/iflow-close`; tracking moved to `03-solved-issues`.
 
 ## Remaining work
 
-- `/iflow-close` (commit already prepared via agent PR flow; close for status/archive/PR finalize).
+- None.
