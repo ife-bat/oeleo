@@ -13,6 +13,7 @@ from oeleo.connectors import (
     Connector,
     LocalConnector,
     OeleoConnectionError,
+    OeleoTransferError,
     SSHConnector,
     SharePointConnector,
 )
@@ -261,7 +262,13 @@ class Worker(WorkerBase):
 
             # cannot be a generator since we need to do a `if in` lookup:
             task = progress.add_task("Getting external files...", total=None)
-            external_files = list(self.filter_external(**kwargs))
+            try:
+                external_files = list(self.filter_external(**kwargs))
+            except OeleoConnectionError as e:
+                msg = f"Failed to list external files; aborting check ({e})"
+                self.reporter.report(msg)
+                self.reporter.notify(msg, title="error")
+                raise
             log.debug(f"Checking {len(external_files)} files")
             progress.remove_task(task)
 
@@ -281,10 +288,20 @@ class Worker(WorkerBase):
                     code = 1
                     exists = True
                     self.number_of_external_duplicates += 1
-                    external_vals = self.checker.check(
-                        self.external_name,
-                        connector=self.external_connector,
-                    )
+                    try:
+                        external_vals = self.checker.check(
+                            self.external_name,
+                            connector=self.external_connector,
+                        )
+                    except OeleoTransferError as e:
+                        msg = (
+                            f"Checksum failed for {self.external_name}; "
+                            f"treating as out of sync ({e})"
+                        )
+                        self.reporter.report(msg)
+                        self.reporter.notify(msg, title="error")
+                        self.number_of_duplicates_out_of_sync += 1
+                        continue
                     same = True
                     for k in local_vals:
                         if local_vals[k] != external_vals[k]:
@@ -412,6 +429,11 @@ class Worker(WorkerBase):
         self.bookkeeper.register(f)
         try:
             checks = self.checker.check(f)
+        except OeleoTransferError as e:
+            msg = f"Checksum failed for {f}: {e}"
+            log.error(msg)
+            self.reporter.notify(msg, title="error")
+            return f
         except Exception as e:
             log.error(f"Error when checking {f}: {e}")
             return f

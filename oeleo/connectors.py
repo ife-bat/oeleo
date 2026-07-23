@@ -29,7 +29,13 @@ Hash = str
 
 
 class OeleoConnectionError(Exception):
-    """Raised when a connection cannot be established"""
+    """Raised when a connection cannot be established or remote listing fails."""
+
+    pass
+
+
+class OeleoTransferError(Exception):
+    """Raised when a connected file operation (e.g. checksum) fails."""
 
     pass
 
@@ -369,17 +375,26 @@ class SSHConnector(Connector):
             depth = int(max_depth)
             cmd = f"find {directory_q} -maxdepth {depth} -name {pattern_q}"
         log.debug(cmd)
-        file_list = []
         try:
             result = self.c.run(cmd, hide=hide, in_stream=False)
-            if not result.ok:
-                log.debug("Encountered an error from fabric")
-            else:
-                file_list = result.stdout.strip().split("\n")
+        except OeleoConnectionError:
+            raise
         except Exception as e:
-            print(f"Encountered an exception from fabric: {e}")
+            log.debug(f"Encountered an exception from fabric: {e}")
+            raise OeleoConnectionError(
+                f"Failed to list remote content: {self.directory}"
+            ) from e
 
-        return file_list
+        if not result.ok:
+            log.debug("Encountered an error from fabric during remote list")
+            raise OeleoConnectionError(
+                f"Failed to list remote content: {self.directory}"
+            )
+
+        stdout = (result.stdout or "").strip()
+        if not stdout:
+            return []
+        return [line for line in stdout.split("\n") if line]
 
     def calculate_checksum(self, f, hide=True):
         if self.c is None:  # make this as a decorator ("@connected")
@@ -387,11 +402,25 @@ class SSHConnector(Connector):
             self.connect()
 
         cmd = f"md5sum {self._remote_shell_token(self.directory / f)}"
-        result = self.c.run(cmd, hide=hide, in_stream=False)
+        try:
+            result = self.c.run(cmd, hide=hide, in_stream=False)
+        except OeleoTransferError:
+            raise
+        except Exception as e:
+            log.debug(f"Encountered an exception from fabric during checksum: {e}")
+            raise OeleoTransferError(
+                f"Failed to calculate checksum for {f}"
+            ) from e
+
         if not result.ok:
-            log.debug("it failed - should raise an exception her (future work)")
-        checksum = result.stdout.strip().split()[0]
-        return checksum
+            raise OeleoTransferError(f"Failed to calculate checksum for {f}")
+
+        parts = (result.stdout or "").strip().split()
+        if not parts:
+            raise OeleoTransferError(
+                f"Failed to calculate checksum for {f}: empty output"
+            )
+        return parts[0]
 
     def _ensure_remote_dir(self, remote_dir: Path) -> None:
         if self.c is None:
@@ -515,9 +544,14 @@ class SharePointConnector(Connector):
     def calculate_checksum(self, f: Path, hide=True):
         try:
             b = self.connection.folder.get_file(f.name)
-
-        except ShareplumRequestError:
-            return False
+        except ShareplumRequestError as e:
+            raise OeleoTransferError(
+                f"Failed to calculate checksum for {f}"
+            ) from e
+        except Exception as e:
+            raise OeleoTransferError(
+                f"Failed to calculate checksum for {f}"
+            ) from e
 
         file_hash = hashlib.md5(b)
         return file_hash.hexdigest()
