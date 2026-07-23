@@ -91,20 +91,18 @@ Removed broken `SharePointConnection.reconnect` (called missing `connect()`). Co
 
 ---
 
-### REL-02 — Soft failures become silent skips
+### ~~REL-02 — Soft failures become silent skips~~ (list/checksum addressed in #39)
 
-Examples:
+~~Examples:~~ **Resolved for list + checksum (#39):**
 
-- SSH `_list_content`: catches Exception, prints, returns `[]` → empty remote listing may mark everything out of sync or miss duplicates.
-- SSH `calculate_checksum`: failed `md5sum` logs “should raise” but still parses stdout.
-- SharePoint `calculate_checksum` returns `False` on error (type says `Hash` / str) → comparison weirdness.
-- Local `simple_mover` uses `print` on failure; caller only sees `False`.
+- SSH `_list_content`: Fabric/`result.ok` failure → `OeleoConnectionError` (never silent `[]`). Empty success returns a true empty list.
+- SSH `calculate_checksum`: failed/`empty` `md5sum` → `OeleoTransferError`.
+- SharePoint `calculate_checksum`: `ShareplumRequestError` → `OeleoTransferError` (no `False` sentinel).
+- `Worker.check` notifies and aborts on list failure; per-file checksum `OeleoTransferError` notifies and continues (out of sync / no DB update). `_process_file` notifies and marks the file failed.
 
-**Fix direction:** typed exceptions (`OeleoConnectionError`, `OeleoTransferError`); fail the run or per-file with reporter notify; never return sentinel `False` as checksum.
+**Still open (related):** Local `simple_mover` / `move_func` `False` returns without typed exceptions — follow-up if needed; not part of #39 acceptance.
 
-**Issue size:** medium; good epic stage “harden connector errors”.
-
-**Related (partial, #8):** destination health is now probed via `Connector.ensure_connection()` at `Worker.run` start and after an exhausted move retry; lost destinations abort the run (`OeleoConnectionError`) and `SimpleScheduler` retries next interval. REL-02 soft failures for list/checksum sentinels remain open.
+**Related (#8):** destination health via `ensure_connection()` remains separate from list/checksum semantics.
 
 ---
 
