@@ -59,7 +59,7 @@ Do this as a **dedicated PR**, not mixed with BUG-* logic fixes. Details: [`code
 | GitHub | Title | IDs | Size | Notes |
 |--------|-------|-----|------|-------|
 | ~~[#39](https://github.com/ife-bat/oeleo/issues/39)~~ | ~~Raise on SSH list/checksum failure instead of empty/False~~ | ~~REL-02~~ | **done** | Typed errors + reporter.notify; move_func `False` still open |
-| [#40](https://github.com/ife-bat/oeleo/issues/40) | Replace `sys.exit` in `die_if_necessary` with exception | REL-04 | **standard** | Catch in scheduler/app |
+| ~~[#40](https://github.com/ife-bat/oeleo/issues/40)~~ | ~~Replace `sys.exit` in `die_if_necessary` with exception~~ | ~~REL-04~~ | **done** | `OeleoShutdown`; scheduler/app catch |
 | [#41](https://github.com/ife-bat/oeleo/issues/41) | `dump_db` CSV/JSON export | utils TODOs | **standard** | Helps “easy to debug runs” README goal |
 
 ## P3 — Tests & quality gates
@@ -106,7 +106,7 @@ Filed 2026-07-18 (#31–#48). First-wave DEP/BUG/SEC/DOC items (#8, #11–#19) a
 **Standard / epic track:**
 
 1. [#38](https://github.com/ife-bat/oeleo/issues/38) ARCH-05 — settings object
-2. [#40](https://github.com/ife-bat/oeleo/issues/40) REL-04 — `die_if_necessary` exception
+2. ~~[#40](https://github.com/ife-bat/oeleo/issues/40) REL-04 — `die_if_necessary` exception~~ **done**
 3. [#37](https://github.com/ife-bat/oeleo/issues/37) BUG-02 — relative-path bookkeeping epic
 4. [#45](https://github.com/ife-bat/oeleo/issues/45) SharePoint strategy epic
 

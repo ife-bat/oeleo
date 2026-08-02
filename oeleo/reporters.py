@@ -334,11 +334,13 @@ class LogAndTrayReporter(ReporterBase):
     def close(self, silent=False):
         if self.icon is None:
             return
+        icon = self.icon
+        self.icon = None  # idempotent if close() runs again after tray quit
         if not silent:
-            self.icon.notify("oeleo finished for now.")
+            icon.notify("oeleo finished for now.")
             time.sleep(4)
-            self.icon.remove_notification()
-        self.icon.stop()
+            icon.remove_notification()
+        icon.stop()
 
     def should_die(self) -> bool:
         return self.kill_me

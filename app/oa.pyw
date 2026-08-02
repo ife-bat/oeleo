@@ -13,6 +13,7 @@ except ImportError:
     pystray = None
 
 import oeleo
+from oeleo.connectors import OeleoShutdown
 from oeleo.utils import start_logger, to_bool
 from oeleo.reporters import LogAndTrayReporter, LogReporter
 from oeleo.workers import ssh_worker
@@ -116,7 +117,10 @@ def ssh_connection():
         add_check=add_check,
     )
     log.debug("*A2O* starting scheduler")
-    s.start()
+    try:
+        s.start()
+    except OeleoShutdown:
+        log.info("*A2O* shutdown requested; exiting cleanly")
 
 
 def single_ssh_connection():
@@ -135,7 +139,10 @@ def single_ssh_connection():
     log.debug("*A2O* filtering local")
     worker.filter_local(additional_filters=my_filters)
     log.debug("*A2O* running")
-    worker.run()
+    try:
+        worker.run()
+    except OeleoShutdown:
+        log.info("*A2O* shutdown requested; exiting cleanly")
 
 
 if __name__ == "__main__":
