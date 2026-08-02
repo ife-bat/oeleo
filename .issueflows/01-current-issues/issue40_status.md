@@ -14,4 +14,9 @@
 
 ## Remaining work
 
-- `/iflow-close` (changelog, PR, move issue group when fully done).
+- `/iflow-close` (changelog, finalize PR with Closes #40, move issue group when fully done).
+
+## Notes
+
+- Branch renamed to `cursor/40-catchable-shutdown-exception-eca3` for cloud PR tooling.
+- Draft PR opened during build (early_pr off; cloud agent required a PR).
