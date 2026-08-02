@@ -53,6 +53,7 @@ dev = [
     "isort>=5.10.1,<9.0.0",
     "pytest>=9.0.3",
     "nox>=2023.4.22,<2027.0.0",
+    "issue-flow>=0.4.9.post1",
 ]
 docs = [
     "zensical>=0.0.51",
