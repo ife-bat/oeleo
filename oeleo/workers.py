@@ -3,7 +3,6 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 import os
-import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Iterable, List, Protocol, TypeVar, Union
@@ -13,6 +12,7 @@ from oeleo.connectors import (
     Connector,
     LocalConnector,
     OeleoConnectionError,
+    OeleoShutdown,
     OeleoTransferError,
     SSHConnector,
     SharePointConnector,
@@ -524,7 +524,7 @@ class Worker(WorkerBase):
         if should_die:
             self.reporter.report("You told me to die! Dying...")
             self.close()
-            sys.exit(0)
+            raise OeleoShutdown("Shutdown requested")
 
 
 def simple_worker(

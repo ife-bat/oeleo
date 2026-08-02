@@ -114,11 +114,11 @@ Removed broken `SharePointConnection.reconnect` (called missing `connect()`). Co
 
 ---
 
-### REL-04 — `die_if_necessary` calls `sys.exit(0)`
+### REL-04 — `die_if_necessary` calls `sys.exit(0)` — fixed (#40)
 
-Tray quit → hard process exit from deep inside worker. Hard to test; surprising in library use. Prefer raising a dedicated exception caught by scheduler/app.
+Tray quit now raises `OeleoShutdown` from `Worker.die_if_necessary` (caught by `SimpleScheduler` / `app/oa.pyw`). Process exit stays at the app boundary.
 
-**Medium**, app-focused.
+**Done.**
 
 ## Lower severity / polish
 

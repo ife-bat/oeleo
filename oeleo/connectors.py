@@ -40,6 +40,12 @@ class OeleoTransferError(Exception):
     pass
 
 
+class OeleoShutdown(Exception):
+    """Raised when the operator requests a clean shutdown (e.g. tray quit)."""
+
+    pass
+
+
 def register_password(pwd: str = None) -> None:
     """Helper function to export the password as an environmental variable"""
     log.debug(" -> Register password ")

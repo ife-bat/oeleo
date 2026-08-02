@@ -9,16 +9,13 @@ from rich import print
 from rich.live import Live
 from rich.panel import Panel
 
-from oeleo.connectors import OeleoConnectionError
+from oeleo.connectors import OeleoConnectionError, OeleoShutdown
 from oeleo.workers import WorkerBase
 
 log = logging.getLogger("oeleo")
 
-
-class ScheduleAborted(Exception):
-    """Raised when the user aborts the run."""
-
-    pass
+# Back-compat alias for the typed shutdown exception.
+ScheduleAborted = OeleoShutdown
 
 
 class SchedulerBase(Protocol):
@@ -82,6 +79,7 @@ class SimpleScheduler(SchedulerBase):
     def start(self):
         log.debug("SimpleScheduler *STARTED*")
         self._setup()
+        closed_by_shutdown = False
         while True:
             self.state["iterations"] += 1
             log.debug(f"ITERATING ({self.state['iterations']})")
@@ -97,6 +95,10 @@ class SimpleScheduler(SchedulerBase):
                 self.worker.reporter.report(
                     f"Destination connection lost; retrying next interval ({e})"
                 )
+            except OeleoShutdown:
+                log.info("Shutdown requested; stopping scheduler")
+                closed_by_shutdown = True
+                break
             self._last_run = datetime.now()
             self._run_counter += 1
             next_run_at = self._last_run + timedelta(seconds=self.run_interval_time)
@@ -114,7 +116,12 @@ class SimpleScheduler(SchedulerBase):
 
             while used_time < self.run_interval_time:
                 time.sleep(poll_interval)
-                self.worker.die_if_necessary()
+                try:
+                    self.worker.die_if_necessary()
+                except OeleoShutdown:
+                    log.info("Shutdown requested; stopping scheduler")
+                    closed_by_shutdown = True
+                    break
                 if self.worker.reporter.consume_force_run():
                     log.debug("Force run requested; breaking sleep early")
                     self.worker.reporter.update_metadata(
@@ -123,8 +130,12 @@ class SimpleScheduler(SchedulerBase):
                     break
                 used_time = (datetime.now() - self._last_run).total_seconds()
                 log.debug(f"slept for {used_time} s of {self.run_interval_time} s")
+            if closed_by_shutdown:
+                break
         atexit.unregister(self._cleanup)
-        self.worker.close()
+        # die_if_necessary already closed the worker on tray quit.
+        if not closed_by_shutdown:
+            self.worker.close()
 
     def _update_db(self):
         pass
