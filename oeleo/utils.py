@@ -1,4 +1,7 @@
+import csv
 import hashlib
+import io
+import json
 import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -91,50 +94,158 @@ def start_logger(logdir=None, only_oeleo=False, screen_level=logging.CRITICAL):
     log.addHandler(file_handler)
 
 
-def dump_db(db_name=None, code=None, verbose=False, output_format="human"):
-    """Dump the contents of the database"""
+_DUMP_ROW_FIELDS = (
+    "id",
+    "local_name",
+    "external_name",
+    "checksum",
+    "code",
+    "processed_date",
+)
+
+
+def dump_db(
+    db_name=None,
+    code=None,
+    verbose=False,
+    output_format="human",
+    output=None,
+):
+    """Dump bookkeeping `filelist` rows for debugging.
+
+    Parameters
+    ----------
+    db_name :
+        SQLite path (or ``OELEO_DB_NAME`` when omitted).
+    code :
+        Optional status-code filter (0 / 1 / 2).
+    verbose :
+        Only used for ``output_format="human"`` (compact vs detailed log lines).
+    output_format :
+        ``"human"`` (log only), ``"csv"``, or ``"json"``.
+    output :
+        Optional path; when set with csv/json, write the export there (UTF-8).
+
+    Returns
+    -------
+    str or None
+        CSV/JSON text for machine formats; ``None`` for human.
+
+    Examples
+    --------
+    >>> dump_db("oeleo-file-list.db", output_format="csv", output="filelist.csv")
+    >>> print(dump_db("oeleo-file-list.db", output_format="json"))
+    """
     db_name = db_name or os.environ.get("OELEO_DB_NAME")
     if db_name is None:
         raise ValueError("db_name must be provided")
     bookkeeper = SimpleDbHandler(db_name)
     bookkeeper.initialize_db()
-    dump_bookkeeper(bookkeeper, code=code, verbose=verbose, output_format=output_format)
+    return dump_bookkeeper(
+        bookkeeper,
+        code=code,
+        verbose=verbose,
+        output_format=output_format,
+        output=output,
+    )
 
 
-def dump_worker_db_table(worker, code=None, verbose=True, output_format="human"):
-    """Dump the contents of the database"""
+def dump_worker_db_table(
+    worker, code=None, verbose=True, output_format="human", output=None
+):
+    """Dump the worker's bookkeeping table (same formats as :func:`dump_db`)."""
     bookkeeper = worker.bookkeeper
-    dump_bookkeeper(bookkeeper, code=code, verbose=verbose, output_format=output_format)
+    return dump_bookkeeper(
+        bookkeeper,
+        code=code,
+        verbose=verbose,
+        output_format=output_format,
+        output=output,
+    )
 
 
-def dump_bookkeeper(bookkeeper, code=None, verbose=False, output_format="human"):
-    # currently only dumps to screen in a human-readable format
-    # TODO: option to dump as csv-table
-    # TODO: option to dump as json
-    # TODO: option to dump to log
-
-    if verbose:
-        logging.info("... dumping 'filelist' table")
-        logging.info(f"... file: {bookkeeper.db_name}")
-        logging.info(" records ".center(80, "="))
-    n_records = len(bookkeeper.db_model)
+def _filelist_rows(bookkeeper, code=None):
     if code is None:
         records = bookkeeper.db_model.filter()
     else:
         records = bookkeeper.db_model.filter(code=code)
-    if verbose:
-        for i, record in enumerate(records):
-            logging.info(
-                f" pk {record._pk:03} [{i:03}:{n_records:03}] ".center(80, "-")
-            )
-            logging.info(f"local_name:     {record.local_name}")
-            logging.info(f"external_name:  {record.external_name}")
-            logging.info(f"code:           {record.code}")
-            logging.info(f"processed_date: {record.processed_date}")
-            logging.info(f"checksum:       {record.checksum}")
+    rows = []
+    for record in records:
+        rows.append(
+            {
+                "id": record._pk,
+                "local_name": record.local_name,
+                "external_name": record.external_name,
+                "checksum": record.checksum,
+                "code": record.code,
+                "processed_date": str(record.processed_date)
+                if record.processed_date is not None
+                else None,
+            }
+        )
+    return rows
 
-        logging.info(80 * "=")
-    else:
-        for record in records:
-            txt = f"{record._pk:05}\tc={record.code}\tlf={record.local_name}\tef={record.external_name}"
-            logging.info(txt)
+
+def _rows_as_csv(rows):
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=_DUMP_ROW_FIELDS)
+    writer.writeheader()
+    writer.writerows(rows)
+    return buf.getvalue()
+
+
+def _rows_as_json(rows):
+    return json.dumps(rows, indent=2)
+
+
+def dump_bookkeeper(
+    bookkeeper, code=None, verbose=False, output_format="human", output=None
+):
+    """Export or log `FileList` rows from an initialized bookkeeper.
+
+    Machine formats (``csv`` / ``json``) return a string and optionally write
+    ``output``. Human format logs only and returns ``None``.
+    """
+    fmt = (output_format or "human").lower()
+    if fmt not in {"human", "csv", "json"}:
+        raise ValueError(
+            f"unsupported output_format {output_format!r}; "
+            "expected 'human', 'csv', or 'json'"
+        )
+
+    if fmt == "human":
+        if verbose:
+            logging.info("... dumping 'filelist' table")
+            logging.info(f"... file: {bookkeeper.db_name}")
+            logging.info(" records ".center(80, "="))
+        n_records = len(bookkeeper.db_model)
+        if code is None:
+            records = bookkeeper.db_model.filter()
+        else:
+            records = bookkeeper.db_model.filter(code=code)
+        if verbose:
+            for i, record in enumerate(records):
+                logging.info(
+                    f" pk {record._pk:03} [{i:03}:{n_records:03}] ".center(80, "-")
+                )
+                logging.info(f"local_name:     {record.local_name}")
+                logging.info(f"external_name:  {record.external_name}")
+                logging.info(f"code:           {record.code}")
+                logging.info(f"processed_date: {record.processed_date}")
+                logging.info(f"checksum:       {record.checksum}")
+
+            logging.info(80 * "=")
+        else:
+            for record in records:
+                txt = (
+                    f"{record._pk:05}\tc={record.code}\t"
+                    f"lf={record.local_name}\tef={record.external_name}"
+                )
+                logging.info(txt)
+        return None
+
+    rows = _filelist_rows(bookkeeper, code=code)
+    text = _rows_as_csv(rows) if fmt == "csv" else _rows_as_json(rows)
+    if output is not None:
+        Path(output).write_text(text, encoding="utf-8")
+    return text
