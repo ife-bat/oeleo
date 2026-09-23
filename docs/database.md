@@ -19,3 +19,16 @@ The bookkeeping database contains one table called `filelist`:
 | 2    | `should-not-be-copied`        |
 
 You can **lock** a file (never copy it) by setting `code` to `2` manually.
+
+## Export
+
+Use `oeleo.utils.dump_db` to inspect the bookkeeping table (CSV or JSON):
+
+```python
+from oeleo.utils import dump_db
+
+dump_db("oeleo-file-list.db", output_format="csv", output="filelist.csv")
+print(dump_db("oeleo-file-list.db", output_format="json"))
+```
+
+Optional `code=` filters by status code. `output_format="human"` logs rows (legacy behaviour).
